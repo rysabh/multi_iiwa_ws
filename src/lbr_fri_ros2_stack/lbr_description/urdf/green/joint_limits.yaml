@@ -1,0 +1,35 @@
+kuka_green_A1:
+  lower: -170
+  upper: 170
+  velocity: 98
+  effort: 200
+kuka_green_A2:
+  lower: -120
+  upper: 120
+  velocity: 98
+  effort: 200
+kuka_green_A3:
+  lower: -170
+  upper: 170
+  velocity: 100
+  effort: 200
+kuka_green_A4:
+  lower: -120
+  upper: 120
+  velocity: 130
+  effort: 200
+kuka_green_A5:
+  lower: -170
+  upper: 170
+  velocity: 140
+  effort: 200
+kuka_green_A6:
+  lower: -120
+  upper: 120
+  velocity: 180
+  effort: 200
+kuka_green_A7:
+  lower: -175
+  upper: 175
+  velocity: 180
+  effort: 200

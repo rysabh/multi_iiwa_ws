@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<robot name="dual_iiwa7" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- include the lbr iiwa macro -->
+    <xacro:include filename="$(find lbr_description)/urdf/dual_iiwa7/iiwa7_mod.xacro" />
+
+    <!-- Arguments -->
+    <xacro:arg name="sim" default="true" />
+    <xacro:arg name="system_parameters_path" default="$(find lbr_ros2_control)/config/lbr_system_parameters.yaml" />
+
+
+    <!-- Base link for the world -->
+    <!-- <link name="world" /> -->
+
+    <link name="world">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </link>
+
+
+    <xacro:arg name="robot_name_1" default="kuka_blue" />
+    <xacro:arg name="robot_name_2" default="kuka_green" />
+
+        <!-- kuka_blue-->
+    <xacro:iiwa7
+        robot_name="$(arg robot_name_1)"
+        parent = "world"
+        sim="$(arg sim)"
+        system_parameters_path="$(arg system_parameters_path)">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:iiwa7>
+
+
+    <!-- kuka_green-->
+    <xacro:iiwa7
+        robot_name="$(arg robot_name_2)"
+        parent = "world"
+        sim="$(arg sim)"
+        system_parameters_path="$(arg system_parameters_path)">
+        <origin xyz="1 1 0" rpy="0 0 0"/>
+    </xacro:iiwa7>
+
+</robot>

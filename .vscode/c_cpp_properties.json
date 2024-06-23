@@ -1,0 +1,26 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/cam/lbr-stack/install/lbr_ros2_control/include/**",
+        "/home/cam/lbr-stack/install/lbr_fri_ros2/include/**",
+        "/home/cam/lbr-stack/install/lbr_fri_idl/include/**",
+        "/home/cam/ros2_ws/install/examples_rclcpp_cbg_executor/include/**",
+        "/opt/ros/humble/include/**",
+        "/home/cam/lbr-stack/src/lbr_fri_ros2_stack/lbr_fri_ros2/include/**",
+        "/home/cam/lbr-stack/src/lbr_fri_ros2_stack/lbr_ros2_control/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

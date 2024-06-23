@@ -1,0 +1,158 @@
+kuka_blue:
+- !!python/object/new:trajectory_msgs.msg._joint_trajectory.JointTrajectory
+  state: !!python/tuple
+  - null
+  - _header: !!python/object/new:std_msgs.msg._header.Header
+      state: !!python/tuple
+      - null
+      - _frame_id: world
+        _stamp: !!python/object/new:builtin_interfaces.msg._time.Time
+          state: !!python/tuple
+          - null
+          - _nanosec: 0
+            _sec: 0
+    _joint_names:
+    - kuka_blue_A1
+    - kuka_blue_A2
+    - kuka_blue_A3
+    - kuka_blue_A4
+    - kuka_blue_A5
+    - kuka_blue_A6
+    - kuka_blue_A7
+    _points:
+    - !!python/object/new:trajectory_msgs.msg._joint_trajectory_point.JointTrajectoryPoint
+      state: !!python/tuple
+      - null
+      - _accelerations: !!python/object/apply:array.array
+        - d
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        _effort: !!python/object/apply:array.array
+        - d
+        - []
+        _positions: !!python/object/apply:array.array
+        - d
+        - - 0.24105220271872715
+          - 0.23419110811761057
+          - 0.7931654840254154
+          - -0.8813207019711196
+          - -0.19101743800218923
+          - 2.0855836988861767
+          - -2.217530266491652
+        _time_from_start: !!python/object/new:builtin_interfaces.msg._duration.Duration
+          state: !!python/tuple
+          - null
+          - _nanosec: 0
+            _sec: 0
+        _velocities: !!python/object/apply:array.array
+        - d
+        - - -0.0
+          - -0.0
+          - 0.0
+          - -0.0
+          - -0.0
+          - 0.0
+          - -0.0
+    - !!python/object/new:trajectory_msgs.msg._joint_trajectory_point.JointTrajectoryPoint
+      state: !!python/tuple
+      - null
+      - _accelerations: !!python/object/apply:array.array
+        - d
+        - - 1.0000000000000162
+          - 0.2133729755878921
+          - -0.2817194169400363
+          - 0.09982599749929401
+          - 0.1523062226149524
+          - -0.3141224750103892
+          - 0.06108653063800775
+        _effort: !!python/object/apply:array.array
+        - d
+        - []
+        _positions: !!python/object/apply:array.array
+        - d
+        - - 0.23949236688354814
+          - 0.2338582813040298
+          - 0.7936049200674242
+          - -0.8814764141393014
+          - -0.19125501070614478
+          - 2.086073678379333
+          - -2.217625551451188
+        _time_from_start: !!python/object/new:builtin_interfaces.msg._duration.Duration
+          state: !!python/tuple
+          - null
+          - _nanosec: 78989554
+            _sec: 0
+        _velocities: !!python/object/apply:array.array
+        - d
+        - - 3.283405522367731e-18
+          - 7.005900063693084e-19
+          - -9.249990893391175e-19
+          - 3.277692314650439e-19
+          - 5.000830924248955e-19
+          - -1.0313914691489144e-18
+          - 2.0057185203911696e-19
+kuka_green:
+- !!python/object/new:trajectory_msgs.msg._joint_trajectory.JointTrajectory
+  state: !!python/tuple
+  - null
+  - _header: !!python/object/new:std_msgs.msg._header.Header
+      state: !!python/tuple
+      - null
+      - _frame_id: world
+        _stamp: !!python/object/new:builtin_interfaces.msg._time.Time
+          state: !!python/tuple
+          - null
+          - _nanosec: 0
+            _sec: 0
+    _joint_names:
+    - kuka_green_A1
+    - kuka_green_A2
+    - kuka_green_A3
+    - kuka_green_A4
+    - kuka_green_A5
+    - kuka_green_A6
+    - kuka_green_A7
+    _points:
+    - !!python/object/new:trajectory_msgs.msg._joint_trajectory_point.JointTrajectoryPoint
+      state: !!python/tuple
+      - null
+      - _accelerations: !!python/object/apply:array.array
+        - d
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        _effort: !!python/object/apply:array.array
+        - d
+        - []
+        _positions: !!python/object/apply:array.array
+        - d
+        - - 0.1384566297297699
+          - 0.26502030223865425
+          - -2.164364846629264
+          - 0.881647613383914
+          - 2.8879979160193674
+          - 2.093935112653148
+          - -2.1726769018873173
+        _time_from_start: !!python/object/new:builtin_interfaces.msg._duration.Duration
+          state: !!python/tuple
+          - null
+          - _nanosec: 0
+            _sec: 0
+        _velocities: !!python/object/apply:array.array
+        - d
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
