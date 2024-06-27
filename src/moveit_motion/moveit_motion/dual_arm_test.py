@@ -44,23 +44,22 @@ class MoveGroupActionClientNode(Node):
         
         self.follow_joint_trajectory_for_move_group = f"/{move_group_to_run}/joint_trajectory_controller/follow_joint_trajectory"
         
+        #Follow Trajectory Client
         self.trajectory_client = ActionClient(self, FollowJointTrajectory, self.follow_joint_trajectory_for_move_group)
-
-
         if not self.trajectory_client.wait_for_server(timeout_sec=1):
             raise RuntimeError(
                 f"Couldn't connect to Action Server {self.follow_joint_trajectory_for_move_group}."
             )
 
 
-    def get_current_robot_joint_state(self):
-        _MSG_RECEIVED_BOOL, current_joint_state = wait_for_message(
-            JointState, self, f"/{self.move_group_name}/joint_states", time_to_wait=1.0
-        )
-        if not _MSG_RECEIVED_BOOL:
-            self.get_logger().error("Failed to get current joint state")
-            return None
-        return current_joint_state
+    # def get_current_robot_joint_state(self):
+    #     _MSG_RECEIVED_BOOL, current_joint_state = wait_for_message(
+    #         JointState, self, f"/{self.move_group_name}/joint_states", time_to_wait=1.0
+    #     )
+    #     if not _MSG_RECEIVED_BOOL:
+    #         self.get_logger().error("Failed to get current joint state")
+    #         return None
+    #     return current_joint_state
 
 
  
@@ -88,15 +87,15 @@ class MoveGroupActionClientNode(Node):
 
         return traj_to_modify
     
-    def modify_joint_state_for_sim_robot(self, robot_joint_state):
-        _prefix_to_add = f"{self.move_group_name}"
-        _name_of_all_joints = robot_joint_state.name
-        for i in range(len(_name_of_all_joints)):
-            _current_joint_name = _name_of_all_joints[i]
-            _new_joint_name = f"{_prefix_to_add}_{_current_joint_name}"
-            _name_of_all_joints[i] = _new_joint_name
-        robot_joint_state.header.frame_id = "world"
-        return robot_joint_state
+    # def modify_joint_state_for_sim_robot(self, robot_joint_state):
+    #     _prefix_to_add = f"{self.move_group_name}"
+    #     _name_of_all_joints = robot_joint_state.name
+    #     for i in range(len(_name_of_all_joints)):
+    #         _current_joint_name = _name_of_all_joints[i]
+    #         _new_joint_name = f"{_prefix_to_add}_{_current_joint_name}"
+    #         _name_of_all_joints[i] = _new_joint_name
+    #     robot_joint_state.header.frame_id = "world"
+    #     return robot_joint_state
 
         
     def request_inverse_kinematics(self, pose: Pose) -> JointState:
@@ -230,18 +229,21 @@ def main(args: List = None) -> None:
         move_group_to_run="kuka_green"
     )
 
-    
+    move_group_action_client_node_sim_dual = MoveGroupActionClientNode(
+        node_name="move_group_action_client_node_sim_dual",
+        move_group_to_run="dual_arm"
+    )
 
 
     #kuka_blue
-    kuka_blue_current_joint_state = move_group_action_client_node_sim_blue.get_current_robot_joint_state()
-    move_group_action_client_node_sim_blue.modify_joint_state_for_sim_robot(kuka_blue_current_joint_state)
-    move_group_action_client_node_sim_blue.move_to_joint_pos(kuka_blue_current_joint_state)
+    # kuka_blue_current_joint_state = move_group_action_client_node_sim_blue.get_current_robot_joint_state()
+    # move_group_action_client_node_sim_blue.modify_joint_state_for_sim_robot(kuka_blue_current_joint_state)
+    # move_group_action_client_node_sim_blue.move_to_joint_pos(kuka_blue_current_joint_state)
 
     #kuka_green
-    kuka_green_current_joint_state = move_group_action_client_node_sim_green.get_current_robot_joint_state()
-    move_group_action_client_node_sim_green.modify_joint_state_for_sim_robot(kuka_green_current_joint_state)
-    move_group_action_client_node_sim_green.move_to_joint_pos(kuka_green_current_joint_state)
+    # kuka_green_current_joint_state = move_group_action_client_node_sim_green.get_current_robot_joint_state()
+    # move_group_action_client_node_sim_green.modify_joint_state_for_sim_robot(kuka_green_current_joint_state)
+    # move_group_action_client_node_sim_green.move_to_joint_pos(kuka_green_current_joint_state)
 
 
     
@@ -306,6 +308,10 @@ def main(args: List = None) -> None:
             move_group_action_client_node_sim_green.execute_trajectory_on_real_robot(green_traj_i)
         else: 
             print("planned but not executed")
+
+    for i in range(len(poses)):
+        dual_traj_i = move_group_action_client_node_sim_dual.move_to_pose(poses[i])
+        
     
     
     # print()

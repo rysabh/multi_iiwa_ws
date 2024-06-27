@@ -15,6 +15,10 @@
     <group name="kuka_green">
         <chain base_link="kuka_green_link_0" tip_link="kuka_green_link_ee"/>
     </group>
+    <group name="dual_arm">
+        <group name="kuka_blue"/>
+        <group name="kuka_green"/>
+    </group>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <disable_collisions link1="kuka_blue_link_0" link2="kuka_blue_link_1" reason="Adjacent"/>
     <disable_collisions link1="kuka_blue_link_0" link2="kuka_blue_link_2" reason="Never"/>
