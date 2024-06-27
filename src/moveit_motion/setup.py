@@ -28,6 +28,7 @@ setup(
             'mhubli_motion_follow_joint_traj_current_robot_position = moveit_motion.mhubli_motion_follow_joint_traj_current_robot_position:main',
             'test_joint_state_subscriber = moveit_motion.test_joint_state_subscriber:main',
             'test = moveit_motion.test:main',
+            'execute_on_real_robot = moveit_motion.execute_on_real_robot:main',
         ],
     },
 )

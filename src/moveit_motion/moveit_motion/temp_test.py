@@ -42,13 +42,8 @@ class MoveGroupActionClientNode(Node):
             raise RuntimeError(
                 f"Couldn't connect to service {self.ik_client.srv_name}."
             )
-        
-        #Follow Trajectory Client
-        # self.trajectory_client = ActionClient(self, FollowJointTrajectory, self.follow_joint_trajectory_for_move_group)
-        # if not self.trajectory_client.wait_for_server(timeout_sec=1):
-        #     raise RuntimeError(
-        #         f"Couldn't connect to Action Server {self.follow_joint_trajectory_for_move_group}."
-        #     )
+    
+
         
     def request_inverse_kinematics(self, pose: Pose) -> JointState:
         r"""Request inverse kinematics for a given pose."""
@@ -152,6 +147,36 @@ class MoveGroupActionClientNode(Node):
             _name_of_all_joints[i] = _new_joint_name
         robot_joint_state.header.frame_id = "world"
         return robot_joint_state
+    
+    def connect_2_real_robot(self):
+        _follow_joint_trajectory_for_move_group = f"/{self.move_group_name}/joint_trajectory_controller/follow_joint_trajectory"
+        self.trajectory_client = ActionClient(self, FollowJointTrajectory, _follow_joint_trajectory_for_move_group)
+        if not self.trajectory_client.wait_for_server(timeout_sec=3):
+            raise RuntimeError(
+                f"Couldn't connect to Action Server {_follow_joint_trajectory_for_move_group}."
+            )
+
+    def execute_trajectory_on_real_robot(self, joint_trajectory: JointTrajectory):
+        goal = FollowJointTrajectory.Goal()
+        goal.trajectory = joint_trajectory
+        goal_future = self.trajectory_client.send_goal_async(goal)
+        rclpy.spin_until_future_complete(self, goal_future)
+        goal_handle = goal_future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error("Trajectory goal rejected")
+            return
+
+        # Wait for result
+        self.get_logger().info("Trajectory goal accepted")
+        self.get_logger().info("Waiting for result...")
+        result_future = goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self, result_future)
+        ##TODO
+        # result = result_future.result()
+        # if result.error_code != FollowJointTrajectory.Result.SUCCESSFUL:
+        #     self.get_logger().error(f"Trajectory execution failed: {result.error_code}")
+        #     return
+        # self.get_logger().info("Trajectory execution succeeded")
 
         
 def main():
@@ -162,52 +187,63 @@ def main():
         node_name="move_group_action_client_node_sim_blue",
         move_group_to_run="kuka_blue"
     )
-
+    move_group_action_client_node_sim_blue.connect_2_real_robot()
     #kuka_green
     move_group_action_client_node_sim_green = MoveGroupActionClientNode(
         node_name="move_group_action_client_node_sim_green",
         move_group_to_run="kuka_green"
     )
-
+    move_group_action_client_node_sim_green.connect_2_real_robot()
     #dual_kuka
     move_group_action_client_node_sim_dual = MoveGroupActionClientNode(
         node_name="move_group_action_client_node_sim_dual",
         move_group_to_run="dual_arm"
     )
 
-    kuka_blue_current_joint_state = move_group_action_client_node_sim_blue.get_current_robot_joint_state()
-    move_group_action_client_node_sim_blue.modify_joint_state_for_sim_robot(kuka_blue_current_joint_state)
-    move_group_action_client_node_sim_blue.move_to_joint_pos(kuka_blue_current_joint_state)
 
-    #kuka_green
-    kuka_green_current_joint_state = move_group_action_client_node_sim_green.get_current_robot_joint_state()
-    move_group_action_client_node_sim_green.modify_joint_state_for_sim_robot(kuka_green_current_joint_state)
-    move_group_action_client_node_sim_green.move_to_joint_pos(kuka_green_current_joint_state)
+    # kuka_blue_current_joint_state = move_group_action_client_node_sim_blue.get_current_robot_joint_state()
+    # move_group_action_client_node_sim_blue.modify_joint_state_for_sim_robot(kuka_blue_current_joint_state)
+    # move_group_action_client_node_sim_blue.move_to_joint_pos(kuka_blue_current_joint_state)
+
+    # #kuka_green
+    # kuka_green_current_joint_state = move_group_action_client_node_sim_green.get_current_robot_joint_state()
+    # move_group_action_client_node_sim_green.modify_joint_state_for_sim_robot(kuka_green_current_joint_state)
+    # move_group_action_client_node_sim_green.move_to_joint_pos(kuka_green_current_joint_state)
 
 
-    poses_green = [
-        Pose(
-            position=Point(x=1.0782, y=0.97107, z=1.113),
-            orientation=Quaternion(x=0.00023184, y=0.00024208, z=0.00036548, w=1.0),
-        ),
-        Pose(
-            position=Point(x=1.0541, y=0.85627, z=1.0708),
-            orientation=Quaternion(x=0.00026886, y=0.00019192, z=0.00043846, w=1.0),
-        )
-    ]
+    # poses_green = [
+    #     Pose(
+    #         position=Point(x=1.0782, y=0.97107, z=1.113),
+    #         orientation=Quaternion(x=0.00023184, y=0.00024208, z=0.00036548, w=1.0),
+    #     ),
+    #     Pose(
+    #         position=Point(x=1.0541, y=0.85627, z=1.0708),
+    #         orientation=Quaternion(x=0.00026886, y=0.00019192, z=0.00043846, w=1.0),
+    #     )
+    # ]
+
+    # poses_blue = [
+    #     Pose(
+    #         position=Point(x=0.053813, y=-0.0006736, z=1.1839),
+    #         orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
+    #     ),
+    #     Pose(
+    #         position=Point(x=0.082387, y=-0.085811, z=1.0574),
+    #         orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
+    #     )
+    # ]
 
     poses_blue = [
         Pose(
             position=Point(x=0.053813, y=-0.0006736, z=1.1839),
             orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
-        ),
-        Pose(
-            position=Point(x=0.082387, y=-0.085811, z=1.0574),
-            orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
         )
     ]
 
-    poses = {"kuka_green": poses_green, "kuka_blue": poses_blue}
+    poses = {
+            # "kuka_green": poses_green, 
+             "kuka_blue": poses_blue
+             }
 
     green_traj_points = []
     blue_traj_points = []
@@ -248,8 +284,8 @@ def main():
             blue_waypoint.accelerations = point.accelerations[:robot_dof]
             green_waypoint.velocities = point.velocities[robot_dof:]
             blue_waypoint.velocities = point.velocities[:robot_dof]
-            green_waypoint.effort = point.effort[robot_dof:]
-            blue_waypoint.effort = point.effort[:robot_dof]
+            green_waypoint.effort = point.effort
+            blue_waypoint.effort = point.effort
             green_waypoint.time_from_start = point.time_from_start
             blue_waypoint.time_from_start = point.time_from_start
             green_traj_points.append(green_waypoint)
@@ -280,7 +316,8 @@ def main():
 
     save_trajectory(blue_joint_traj, "kuka_blue.dump")
     save_trajectory(green_joint_traj, "kuka_green.dump")
-
+    
+    # move_group_action_client_node_sim_blue.execute_trajectory_on_real_robot(blue_joint_traj)
 
     rclpy.shutdown()
 

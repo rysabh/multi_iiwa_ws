@@ -24,7 +24,8 @@
         <xacro:lbr_system_interface
             sim="${sim}"
             joint_limits="${joint_limits}"
-            system_parameters_path="${system_parameters_path}" />
+            system_parameters_path="${system_parameters_path}"
+            robot_name="${robot_name}"/>
 
         <link name="link_0">
             <inertial>

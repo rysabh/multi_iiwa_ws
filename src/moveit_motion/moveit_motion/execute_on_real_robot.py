@@ -36,7 +36,7 @@ class FollowJointActionClient(Node):
 def main(move_group_2_run) -> None:
     rclpy.init()
 
-    dir_path="/home/battery/multi_iiwa_ws/src/moveit_motion/moveit_motion/robot_trajectories"
+    dir_path="/home/cam/multi_iiwa_ws/src/moveit_motion/moveit_motion/robot_trajectories"
     full_path = os.path.join(dir_path, f"{move_group_2_run}.dump")
     with open(full_path, 'rb') as file:
         robot_joint_traj = pickle.load(file)
@@ -47,13 +47,7 @@ def main(move_group_2_run) -> None:
         move_group_to_run=move_group_2_run
     )
     
-
-    run_status = input(f"{follow_joint_traj_node.move_group_name}: do you want to execute y/n: ")
-    if str(run_status).strip().lower() == "y":
-        follow_joint_traj_node.execute_trajectory_on_real_robot(robot_joint_traj)
-    else: 
-        print("not executed")
-    
+    follow_joint_traj_node.execute_trajectory_on_real_robot(robot_joint_traj)
 
     rclpy.shutdown()
 
@@ -63,4 +57,10 @@ def main(move_group_2_run) -> None:
 if __name__ == "__main__":
     import pickle
     import os
-    main()
+    import sys
+    if len(sys.argv)==2: 
+        move_group_2_run = sys.argv[1]
+    else:
+        # move_group_2_run = "kuka_blue"
+        raise ValueError
+    main(move_group_2_run)
