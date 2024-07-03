@@ -32,6 +32,9 @@ bool App::open_udp_socket(const int &port_id, const char *const remote_host) {
   }
   if (!connection_ptr_->open(port_id, remote_host)) {
     RCLCPP_ERROR_STREAM(rclcpp::get_logger(LOGGER_NAME),
+      ColorScheme::ERROR << "Failed to open " << remote_host << " with port " << port_id << ColorScheme::ENDC
+    );
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger(LOGGER_NAME),
                         ColorScheme::ERROR << "Failed to open socket" << ColorScheme::ENDC);
     return false;
   }

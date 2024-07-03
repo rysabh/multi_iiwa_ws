@@ -29,6 +29,7 @@ setup(
             'test_joint_state_subscriber = moveit_motion.test_joint_state_subscriber:main',
             'test = moveit_motion.test:main',
             'execute_on_real_robot = moveit_motion.execute_on_real_robot:main',
+            'raj_modified_temp_test = moveit_motion.raj_modified_temp_test:main',
         ],
     },
 )
