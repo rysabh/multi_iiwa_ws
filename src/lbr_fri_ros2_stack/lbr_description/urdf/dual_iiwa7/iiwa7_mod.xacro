@@ -303,6 +303,31 @@
         </joint>
 
         <link name="${prefix}link_ee">
+            <inertial>
+                <origin rpy="0 0 0" xyz="0 0 0" />
+                <mass value="0.1" />
+                <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001" />
+            </inertial>
+            <visual>
+                <origin rpy="0 0 0" xyz="0.0 -0.022 0.035" />
+                <geometry>
+                    <mesh filename="package://lbr_description/meshes/iiwa7/visual/scooper_collision.dae" />
+                </geometry>
+            </visual>
+            <collision>
+                <origin rpy="0 0 0" xyz="0.0 -0.022 0.035" />
+                <geometry>
+                    <mesh filename="package://lbr_description/meshes/iiwa7/collision/compressed_mesh_scooper.stl" />
+                </geometry>
+            </collision>
+        </link>
+        <joint name="${prefix}joint_tcp" type="fixed">
+            <parent link="${prefix}link_ee" />
+            <child link="${prefix}link_tcp" />
+            <origin xyz="-0.0156 -0.0024 0.3386" rpy="0 0 0" />
+        </joint>
+
+        <link name="${prefix}link_tcp">
         </link>
     </xacro:macro>
 </robot>
