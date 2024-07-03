@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: lbr_description
+    relative_path: urdf/dual_iiwa7/dual_iiwa7_mod_fin.urdf
+  srdf:
+    relative_path: config/dual_iiwa7.srdf
+  package_settings:
+    author_name: cam
+    author_email: cam@usc.edu
+    generated_timestamp: 1719980370
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity

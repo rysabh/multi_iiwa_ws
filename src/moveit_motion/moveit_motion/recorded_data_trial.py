@@ -199,14 +199,14 @@ def main():
     )
 
 
-    # kuka_blue_current_joint_state = move_group_action_client_node_sim_blue.get_current_robot_joint_state()
-    # move_group_action_client_node_sim_blue.modify_joint_state_for_sim_robot(kuka_blue_current_joint_state)
-    # move_group_action_client_node_sim_blue.move_to_joint_pos(kuka_blue_current_joint_state)
+    kuka_blue_current_joint_state = move_group_action_client_node_sim_blue.get_current_robot_joint_state()
+    move_group_action_client_node_sim_blue.modify_joint_state_for_sim_robot(kuka_blue_current_joint_state)
+    move_group_action_client_node_sim_blue.move_to_joint_pos(kuka_blue_current_joint_state)
 
     # #kuka_green
-    # kuka_green_current_joint_state = move_group_action_client_node_sim_green.get_current_robot_joint_state()
-    # move_group_action_client_node_sim_green.modify_joint_state_for_sim_robot(kuka_green_current_joint_state)
-    # move_group_action_client_node_sim_green.move_to_joint_pos(kuka_green_current_joint_state)
+    kuka_green_current_joint_state = move_group_action_client_node_sim_green.get_current_robot_joint_state()
+    move_group_action_client_node_sim_green.modify_joint_state_for_sim_robot(kuka_green_current_joint_state)
+    move_group_action_client_node_sim_green.move_to_joint_pos(kuka_green_current_joint_state)
 
 
     # poses_green = [
