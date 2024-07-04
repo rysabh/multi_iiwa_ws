@@ -64,7 +64,6 @@ class MoveitActionClient(Node):
             self.get_logger().error("Basic Error: Execute action not available.")
             exit(1)
 
-        # self.total_trajectory = JointTrajectory() #TODO - REMOVE
 
     @filter_joints_for_move_group_name
     def get_robot_current_joint_state(self) -> JointState | None:
