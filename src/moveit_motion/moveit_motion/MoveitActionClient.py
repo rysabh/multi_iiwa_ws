@@ -171,10 +171,9 @@ class MoveitActionClient(Node):
                                                **kwargs
                                     ) -> JointTrajectory | None:
         '''
-        **kwargs {
-            planner_type = ["linear", None]
-            }
-        _THRESHOLD = 0.01 # threshold from start and target for robot to move
+        kwargs = {
+                    planner_type = "linear" | None,
+                   }
         ''' 
         ## Create start state using start_joint_state #TODO automate sim vs real
         # if start_joint_state is None:
@@ -185,7 +184,7 @@ class MoveitActionClient(Node):
         
         
         ## if start and target match exit the function
-        _THRESHOLD = 0.01
+        _THRESHOLD = 0.01 # threshold from start and target for robot to move
         if MSE_joint_states(target_joint_state, start_joint_state) <= _THRESHOLD:
             self.get_logger().info("Start and End goals match. ** NOT ** moving anything and Passing Empty Trajectory")
             return JointTrajectory()
@@ -279,11 +278,14 @@ class MoveitActionClient(Node):
         #3. Check difference between joint trajectory and multi_dof joint trajectory in ExecuteTrajectory.Goal().multidof_joint trajectory -> is it mor multiple robots ??
         #4. Create a spline trajectroy for multiple waypoints
         #5. add live visualization using robot_state topic and then run that in paralle to real execution or at least run sim execution in paralle to real execution
+        #6. I would say, dont bother. Split the code into MoveitInterface and RobotInterface classes. Then have same named functions in both for execution
+        #7. Think about adding RobotName and MoveGroupname separately
+        #8. Visualize yellow line path in moveit
 
         goal = FollowJointTrajectory.Goal()
         
 
-        #6. TODO - This is different from old code I wrote. There it was  goal.trajectory = joint_trajectory
+        #9. TODO - This is different from old code I wrote. There it was  goal.trajectory = joint_trajectory
         goal.trajectory.joint_trajectory = trajectory
         goal_future = self.execute_client_.send_goal_async(goal)
         rclpy.spin_until_future_complete(self, goal_future)

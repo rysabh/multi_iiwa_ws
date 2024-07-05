@@ -31,7 +31,7 @@ def MSE_joint_states(joint_state_1: JointState, joint_state_2: JointState) -> fl
 
     # Sanity check: Ensure the keys (joint names) match between the two joint states
     if set(joint_positions_1.keys()) != set(joint_positions_2.keys()):
-        raise ValueError("Joint names for calculating MSE Error, do not match between the two joint states")
+        raise ValueError("Joint names for calculating MSE Error, do not match")
     
     # Extract common joint names
     _common_joint_names = joint_positions_1.keys()
