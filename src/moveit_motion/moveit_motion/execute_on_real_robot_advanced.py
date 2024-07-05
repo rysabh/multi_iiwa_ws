@@ -25,28 +25,16 @@ from sensor_msgs.msg import JointState
 
 from submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states, filter_joints_for_move_group_name
 
-from MoveitActionClient import MoveitActionClient
+from MoveitInterface import MoveitInterface
 
 def main():
     rclpy.init()
 
-    client_blue = MoveitActionClient(
-        node_name="client_blue",
-        move_group_name="kuka_blue",
-        sim=True
-    )
+    client_blue = MoveitInterface(node_name="client_blue", move_group_name="kuka_blue")
 
-    client_green = MoveitActionClient(
-        node_name="client_green",
-        move_group_name="kuka_green",
-        sim=True
-    )
+    client_green = MoveitInterface(node_name="client_green", move_group_name="kuka_green")
 
-    client_dual = MoveitActionClient(
-        node_name="client_dual",
-        move_group_name="dual_arm",
-        sim=True
-    )
+    client_dual = MoveitInterface(node_name="client_dual", move_group_name="dual_arm")
 
     poses = [
         Pose(
@@ -83,7 +71,7 @@ def main():
         dual_inverse_list.position = inverse_blue.position + inverse_green.position
         dual_inverse_list.velocity = inverse_blue.velocity + inverse_blue.velocity
 
-        planned_joint_trajectory = client_dual.get_joint_space_motion_plan(target_joint_state=dual_inverse_list)
+        planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=dual_inverse_list)
 
         if planned_joint_trajectory is None:
             print("no planned trajectory")
@@ -91,7 +79,7 @@ def main():
         
         dual_spline_trajectory.append(planned_joint_trajectory)
 
-        client_dual.execute_joint_traj_sim(planned_joint_trajectory)
+        client_dual.execute_joint_traj(planned_joint_trajectory)
     
 
     rclpy.shutdown()

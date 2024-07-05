@@ -27,7 +27,7 @@ import numpy as np
 from submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states, filter_joints_for_move_group_name
 
 
-class MoveitActionClient(Node):
+class RobotInterface(Node):
     ik_client_name_ = "compute_ik"
     fk_srv_name_ = "compute_fk"
     plan_srv_name_ = "plan_kinematic_path"
@@ -278,7 +278,7 @@ class MoveitActionClient(Node):
         #3. Check difference between joint trajectory and multi_dof joint trajectory in ExecuteTrajectory.Goal().multidof_joint trajectory -> is it mor multiple robots ??
         #4. Create a spline trajectroy for multiple waypoints
         #5. add live visualization using robot_state topic and then run that in paralle to real execution or at least run sim execution in paralle to real execution
-        #6. I would say, dont bother. Split the code into MoveitInterface and RobotInterface classes. Then have same named functions in both for execution
+        #6. I would say, dont bother. Split the code into RobotInterface and RobotInterface classes. Then have same named functions in both for execution
         #7. Think about adding RobotName and MoveGroupname separately
         #8. Visualize yellow line path in moveit
 
@@ -321,17 +321,17 @@ class MoveitActionClient(Node):
 def main():
     rclpy.init()
 
-    client_blue = MoveitActionClient(
+    client_blue = RobotInterface(
         node_name="client_blue",
         move_group_name="kuka_blue"
     )
 
-    client_green = MoveitActionClient(
+    client_green = RobotInterface(
         node_name="client_green",
         move_group_name="kuka_green"
     )
 
-    client_dual = MoveitActionClient(
+    client_dual = RobotInterface(
         node_name="client_dual",
         move_group_name="dual_arm"
     )
