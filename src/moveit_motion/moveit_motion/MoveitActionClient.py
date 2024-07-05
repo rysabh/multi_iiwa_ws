@@ -32,60 +32,59 @@ class MoveitActionClient(Node):
     fk_srv_name_ = "compute_fk"
     plan_srv_name_ = "plan_kinematic_path"
     execute_action_name_ = "execute_trajectory"
+    # action_server_ = "move_action" 
 
     def __init__(self, node_name, move_group_name="arm"):
         super().__init__(node_name)
-        # self.action_server_ = "move_action" # Used for controlling using move group action
-        
         self.timeout_sec_ = 3.0
         self.move_group_name_ = move_group_name
 
         self.base_ = f"{self.move_group_name_}_link_0"
         self.end_effector_ = f"{self.move_group_name_}_link_ee"
-        
-        
+
         self.ik_client_ = self.create_client(GetPositionIK, self.ik_client_name_)
         if not self.ik_client_.wait_for_service(timeout_sec=self.timeout_sec_):
-            self.get_logger().error(f"Basic Error: Couldn't connect to service {self.ik_client_.srv_name}.")
+            self.get_logger().error(f"*** Basic Error: IK service not available -> {self.ik_client_.srv_name}.")
             exit(1)
 
         self.fk_client_ = self.create_client(GetPositionFK, self.fk_srv_name_)
         if not self.fk_client_.wait_for_service(timeout_sec=self.timeout_sec_):
-            self.get_logger().error("Basic Error: FK service not available.")
+            self.get_logger().error(f"*** Basic Error: FK service not available -> {self.fk_client_.srv_name}.")
             exit(1)
         
         self.plan_client_ = self.create_client(GetMotionPlan, self.plan_srv_name_)
         if not self.plan_client_.wait_for_service(timeout_sec=self.timeout_sec_):
-            self.get_logger().error(f"Basic Error: Plan service not available -> {self.plan_client_.srv_name}.")
+            self.get_logger().error(f"*** Basic Error: GetMotionPlan service not available -> {self.plan_client_.srv_name}.")
             exit(1)
         
         self.execute_client_ = ActionClient(self, ExecuteTrajectory, self.execute_action_name_)
         if not self.execute_client_.wait_for_server(timeout_sec=self.timeout_sec_):
-            self.get_logger().error("Basic Error: Execute action not available.")
+            self.get_logger().error(f"*** Basic Error: ExecuteActionClient-Sim action not available -> {self.execute_client_._action_name}")
+            exit(1)
+        
+        # Execute Client for Real Robot
+        self.execute_client_real_ = None
+        
+    def add_real_execution_client(self):
+        execute_action_name_real_ =  f"/{self.move_group_name_}/joint_trajectory_controller/follow_joint_trajectory"
+        self.execute_client_real_ = ActionClient(self, FollowJointTrajectory, execute_action_name_real_)
+        if not self.execute_client_real_.wait_for_server(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: ExecuteActionClient-REAL action not available -> {self.execute_client_real_._action_name}")
             exit(1)
 
 
+
     @filter_joints_for_move_group_name
-    def get_robot_current_joint_state(self) -> JointState | None:
-        '''
-        Joint State for the real robot
-        '''
-        _MSG_RECEIVED_BOOL, current_joint_state = wait_for_message(
-            JointState, self, f"/{self.move_group_name_}/joint_states", time_to_wait=self.timeout_sec_
-        )
-        if not _MSG_RECEIVED_BOOL:
-            self.get_logger().error("Failed to get current joint state")
-            return None
-        
-        return current_joint_state
-    
-    @filter_joints_for_move_group_name
-    def get_move_group_current_joint_state(self): # use descriptors for filtering
+    def get_current_joint_state(self): # use descriptors for filtering
         '''
         Joint State for the moveit move group
         '''
+        _JOINT_STATE_TOPIC = "/joint_states"
+        if self.sim_ == False:
+            _JOINT_STATE_TOPIC = f"/{self.move_group_name_}/joint_states"
+
         _MSG_RECEIVED_BOOL, _current_joint_state = wait_for_message(
-            JointState, self, f"/joint_states", time_to_wait=self.timeout_sec_
+            JointState, self, _JOINT_STATE_TOPIC, time_to_wait=self.timeout_sec_
         )
         if not _MSG_RECEIVED_BOOL:
             self.get_logger().error("Failed to get current joint state")
@@ -143,8 +142,7 @@ class MoveitActionClient(Node):
         return  ik_solution
     
     def get_best_ik(self, target_pose: Pose, attempts: int = 100) -> JointState | None:
-        # current_joint_state = self.get_robot_current_joint_state()
-        current_joint_state = self.get_move_group_current_joint_state()
+        current_joint_state = self.get_current_joint_state()
         best_cost = np.inf
         best_joint_state = None
 
@@ -183,7 +181,7 @@ class MoveitActionClient(Node):
         #     start_joint_state = self.get_robot_current_joint_state()
 
         if start_joint_state is None:
-            start_joint_state = self.get_move_group_current_joint_state()
+            start_joint_state = self.get_current_joint_state()
         
         
         ## if start and target match exit the function
@@ -270,6 +268,40 @@ class MoveitActionClient(Node):
         
         self.get_logger().info("Trajectory executed")
         return
+
+    def execute_joint_traj_real(self, trajectory: JointTrajectory):
+        if not self.execute_client_real_:
+            self.add_real_execution_client()
+
+        #TODO
+        #1. Modify trajectory for real robot
+        #2. Add a check if starting point does not match for real robot current joint state and trajectory -> raise RuntimeError
+        #3. Check difference between joint trajectory and multi_dof joint trajectory in ExecuteTrajectory.Goal().multidof_joint trajectory -> is it mor multiple robots ??
+        #4. Create a spline trajectroy for multiple waypoints
+        #5. add live visualization using robot_state topic and then run that in paralle to real execution or at least run sim execution in paralle to real execution
+
+        goal = FollowJointTrajectory.Goal()
+        
+
+        #6. TODO - This is different from old code I wrote. There it was  goal.trajectory = joint_trajectory
+        goal.trajectory.joint_trajectory = trajectory
+        goal_future = self.execute_client_.send_goal_async(goal)
+        rclpy.spin_until_future_complete(self, goal_future)
+        goal_handle = goal_future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error("Failed to execute trajectory")
+            return None
+        self.get_logger().info("Trajectory accepted, moving the robot...")
+        result_future = goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self, result_future)
+        if not result_future.done():
+            self.get_logger().info("!!! Trajectory NOT executed")
+            raise RuntimeError
+        
+        self.get_logger().info("Trajectory executed")
+        return
+
+
 
     @staticmethod
     def convert_joint_position_2_state(joint_positions: list, tmp) -> JointState: #TODO get rid of tmp

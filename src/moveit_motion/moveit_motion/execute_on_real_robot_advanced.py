@@ -32,17 +32,20 @@ def main():
 
     client_blue = MoveitActionClient(
         node_name="client_blue",
-        move_group_name="kuka_blue"
+        move_group_name="kuka_blue",
+        sim=True
     )
 
     client_green = MoveitActionClient(
         node_name="client_green",
-        move_group_name="kuka_green"
+        move_group_name="kuka_green",
+        sim=True
     )
 
     client_dual = MoveitActionClient(
         node_name="client_dual",
-        move_group_name="dual_arm"
+        move_group_name="dual_arm",
+        sim=True
     )
 
     poses = [
