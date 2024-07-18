@@ -55,36 +55,48 @@ def main():
 
 
     dual_spline_trajectory = []
+    
+    cjs_dual = client_dual.get_current_joint_state() #current joint state for dual arm
+    cjs_green = client_green.get_current_joint_state()
+    cjs_blue = client_blue.get_current_joint_state()
 
-    for pose in poses:
-        inverse_blue = client_blue.get_best_ik(pose)
-        inverse_green = client_green.get_best_ik(pose)
+    for _index, pose in enumerate(poses):
+        if _index == 2:
+            break
+
+        tjs_blue = client_blue.get_best_ik(target_pose=pose, current_joint_state=cjs_blue)
+        tjs_green = client_green.get_best_ik(target_pose=pose, current_joint_state=cjs_green)
         
-        # if inverse_blue is None or inverse_green is None:
+        # if tjs_blue is None or tjs_green is None:
         #     print("IK not Found for current pose : exiting the main function")
         #     return
 
-        dual_inverse_list = JointState()
-        dual_inverse_list.effort = inverse_blue.effort + inverse_green.effort
-        dual_inverse_list.header = inverse_blue.header
-        dual_inverse_list.name = inverse_blue.name + inverse_green.name
-        dual_inverse_list.position = inverse_blue.position + inverse_green.position
-        dual_inverse_list.velocity = inverse_blue.velocity + inverse_blue.velocity
+        tjs_dual = JointState() #target joint state for dual arm
+        tjs_dual.effort = tjs_blue.effort + tjs_green.effort
+        tjs_dual.header = tjs_blue.header
+        tjs_dual.name = tjs_blue.name + tjs_green.name
+        tjs_dual.position = tjs_blue.position + tjs_green.position
+        tjs_dual.velocity = tjs_blue.velocity + tjs_blue.velocity
 
-        planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=dual_inverse_list)
+        planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=tjs_dual, 
+                                                              start_joint_state=cjs_dual)
 
         if planned_joint_trajectory is None:
             print("no planned trajectory")
             return
         
         dual_spline_trajectory.append(planned_joint_trajectory)
+        cjs_blue = tjs_blue
+        cjs_green = tjs_green
+        cjs_dual = tjs_dual
+    
+    combined_trajectory = client_dual.combine_trajectories(*dual_spline_trajectory)
 
-        client_dual.execute_joint_traj(planned_joint_trajectory)
+    client_dual.execute_joint_traj(combined_trajectory)
     
 
     rclpy.shutdown()
     
-
 
 
 if __name__ == '__main__':

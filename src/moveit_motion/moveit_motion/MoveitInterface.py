@@ -25,6 +25,7 @@ import numpy as np
 
 from submodules.RS_submodules import MSE_joint_states, filter_joints_for_move_group_name
 
+from builtin_interfaces.msg import Duration
 
 class MoveitInterface(Node):
     ik_client_name_ = "compute_ik"
@@ -127,8 +128,11 @@ class MoveitInterface(Node):
         ik_solution = response.solution.joint_state
         return  ik_solution
     
-    def get_best_ik(self, target_pose: Pose, attempts: int = 100) -> JointState | None:
-        current_joint_state = self.get_current_joint_state()
+    def get_best_ik(self, current_joint_state:JointState, target_pose: Pose, attempts: int = 100) -> JointState | None:
+        # if not current_pose:
+        #     current_joint_state = self.get_current_joint_state()
+
+
         best_cost = np.inf
         best_joint_state = None
 
@@ -148,7 +152,8 @@ class MoveitInterface(Node):
         return best_joint_state
 
 
-    def get_joint_traj(self, target_joint_state: JointState, start_joint_state: JointState | None = None, 
+    def get_joint_traj(self, target_joint_state: JointState,
+                             start_joint_state: JointState, 
                        attempts: int = 10, **kwargs) -> RobotTrajectory | None:
         '''
         kwargs = {planner_type = "linear" | None,}
@@ -157,8 +162,8 @@ class MoveitInterface(Node):
         # if start_joint_state is None:
         #     start_joint_state = self.get_robot_current_joint_state()
 
-        if start_joint_state is None:
-            start_joint_state = self.get_current_joint_state()
+        # if start_joint_state is None:
+        #     start_joint_state = self.get_current_joint_state()
         
         
         ## if start and target match exit the function
@@ -248,3 +253,37 @@ class MoveitInterface(Node):
         
         self.get_logger().info("Trajectory executed")
         return
+        
+    @staticmethod
+    def combine_trajectories(robot_traj_1: RobotTrajectory, robot_traj_2: RobotTrajectory) -> RobotTrajectory:
+        print("Combining Trajectories")
+        # Calculate the duration of the first trajectory
+        joint_traj_1 = robot_traj_1.joint_trajectory
+        joint_traj_2 = robot_traj_2.joint_trajectory
+
+        if joint_traj_1.points:
+            t1 = joint_traj_1.points[-1].time_from_start
+        else:
+            t1 = Duration(sec=0, nanosec=0)
+        
+        # Adjust the time_from_start for joint_traj_2
+        for point in joint_traj_2.points:
+            point.time_from_start.sec += t1.sec
+            point.time_from_start.nanosec += t1.nanosec
+            # Normalize nanoseconds if necessary
+            if point.time_from_start.nanosec >= 1e9:
+                point.time_from_start.sec += 1
+                point.time_from_start.nanosec -= int(1e9)
+        
+        # Combine the points from both trajectories
+        combined_points = joint_traj_1.points + joint_traj_2.points
+        
+        # Create a new JointTrajectory message
+        combined_joint_trajectory = JointTrajectory()
+        combined_joint_trajectory.header = joint_traj_1.header
+        combined_joint_trajectory.joint_names = joint_traj_1.joint_names
+        combined_joint_trajectory.points = combined_points
+        combined_robot_trajectory = RobotTrajectory()
+        combined_robot_trajectory.joint_trajectory = combined_joint_trajectory
+        print("Trajectories Combined")
+        return combined_robot_trajectory
