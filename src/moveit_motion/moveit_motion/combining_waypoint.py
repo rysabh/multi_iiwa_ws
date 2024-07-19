@@ -60,10 +60,7 @@ def main():
     cjs_green = client_green.get_current_joint_state()
     cjs_blue = client_blue.get_current_joint_state()
 
-    for _index, pose in enumerate(poses):
-        if _index == 2:
-            break
-
+    for pose in poses:
         tjs_blue = client_blue.get_best_ik(target_pose=pose, current_joint_state=cjs_blue)
         tjs_green = client_green.get_best_ik(target_pose=pose, current_joint_state=cjs_green)
         
@@ -90,7 +87,7 @@ def main():
         cjs_green = tjs_green
         cjs_dual = tjs_dual
     
-    combined_trajectory = client_dual.combine_trajectories(*dual_spline_trajectory)
+    combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
 
     client_dual.execute_joint_traj(combined_trajectory)
     
