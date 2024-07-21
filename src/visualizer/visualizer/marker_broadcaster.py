@@ -13,10 +13,10 @@ class RvizLink(Node):
         super().__init__('waypoint_follower')
         
         # self.data = pd.read_csv('src/test.csv')
-        self.data = pd.read_csv('/home/battery/diffusion_policy_cam/input_trajectory.csv')
+        self.data = pd.read_csv('src/moveit_motion/moveit_motion/diffusion_policy_cam/diffusion_pipline/data_chisel_task/cleaned_traj/cap_010_cleaned.csv')
         self.index = 0
         self.br = TransformBroadcaster(self)
-        self.marker_pub = self.create_publisher(Marker, 'visualization_marker', 10)
+        self.marker_pub = self.create_publisher(Marker, 'visualization_marker', 100)
         self.timer = self.create_timer(1/10, self.timer_callback)  # Set timer interval to 1/30 seconds
 
     def timer_callback(self) -> None:

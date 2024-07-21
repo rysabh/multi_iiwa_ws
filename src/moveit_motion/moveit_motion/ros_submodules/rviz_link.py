@@ -38,9 +38,8 @@ class RvizLink(Node):
         self.get_logger().info(f'Publishing marker: {marker}')
         self.marker_pub.publish(marker)
     
-    def pub_markers(self, markers: list[list], 
-                    frame_id: str, marker_type=Marker.SPHERE, scale=(0.01,0.01,0.01), color=(1.0, 0.0, 0.0, 1.0)
-                    ) -> None:
+    def pub_markers(self, markers: list[list], frame_id: str, 
+                    marker_type=Marker.SPHERE, scale=(0.01,0.01,0.01), color=(1.0, 0.0, 0.0, 1.0)) -> None:
         
         for index, TxyzQwxyz in enumerate(markers):
             Txyz = TxyzQwxyz[0:3]

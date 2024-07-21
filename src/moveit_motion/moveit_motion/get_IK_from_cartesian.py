@@ -9,7 +9,7 @@ from ros_submodules.MoveitInterface import MoveitInterface
 
 from diffusion_policy_cam.submodules import cleaned_file_parser as cfp, robomath_addon as rma, robomath as rm
 # from diffusion_policy_cam.submodules import cleaned_file_parser as cfp, robomath_addon as rma, robomath as rm
-
+from ros_submodules.ros_math import robodk_2_ros
 import pandas as pd
 
 def create_pose(x: float, y: float, z: float, qx: float, qy: float, qz: float, qw: float) -> Pose:
@@ -22,9 +22,6 @@ def create_pose(x: float, y: float, z: float, qx: float, qy: float, qz: float, q
     pose.orientation.z = qz
     pose.orientation.w = qw
     return pose
-
-def robodk_2_ros(TxyzQwxyz: list) -> list:
-    return [TxyzQwxyz[0], TxyzQwxyz[1], TxyzQwxyz[2], TxyzQwxyz[6], TxyzQwxyz[3], TxyzQwxyz[4], TxyzQwxyz[5]]
 
 def main():
     rclpy.init()
