@@ -9,7 +9,7 @@ from moveit_msgs.srv import GetPositionIK, GetMotionPlan
 from sensor_msgs.msg import JointState
 from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from submodules.wait_for_message import wait_for_message
+from ros_submodules.wait_for_message import wait_for_message
 import pickle
 import numpy as np
 import csv

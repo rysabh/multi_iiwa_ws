@@ -19,7 +19,7 @@ from moveit_msgs.msg import (
 from moveit_msgs.srv import GetPositionIK, GetMotionPlan, GetPositionFK
 from moveit_msgs.action import ExecuteTrajectory
 
-from submodules.wait_for_message import wait_for_message
+from ros_submodules.wait_for_message import wait_for_message
 
 
 class RobotInterfaceNode(Node):

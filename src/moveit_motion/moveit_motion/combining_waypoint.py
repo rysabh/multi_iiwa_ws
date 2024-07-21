@@ -23,7 +23,7 @@ from sensor_msgs.msg import JointState
 # from submodules.wait_for_message import wait_for_message
 
 
-from submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states, filter_joints_for_move_group_name
+from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states, filter_joints_for_move_group_name
 
 from MoveitInterface import MoveitInterface
 
