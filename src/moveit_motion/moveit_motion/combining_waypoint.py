@@ -25,7 +25,7 @@ from sensor_msgs.msg import JointState
 
 from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states, filter_joints_for_move_group_name
 
-from MoveitInterface import MoveitInterface
+from moveit_motion.moveit_motion.ros_submodules.MoveitInterface import MoveitInterface
 
 def main():
     rclpy.init()
