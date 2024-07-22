@@ -79,22 +79,28 @@ def main():
         tjs_dual.position = tjs_blue.position + tjs_green.position
         tjs_dual.velocity = tjs_blue.velocity + tjs_blue.velocity
 
-        planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=tjs_dual, 
-                                                              start_joint_state=cjs_dual,
-                                                              planner_type="pilz")
-
-        if planned_joint_trajectory is None:
-            print("no planned trajectory")
-            return
+        # planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=tjs_dual, 
+        #                                                       start_joint_state=cjs_dual,
+        #                                                       planner_type="pilz")        
+        # if planned_joint_trajectory is None:
+        #     print("no planned trajectory")
+        #     return
+        # dual_spline_trajectory.append(planned_joint_trajectory)
         
-        dual_spline_trajectory.append(planned_joint_trajectory)
+        plan_green = client_green.get_joint_traj(target_joint_state=tjs_green, 
+                                                  start_joint_state=cjs_green,
+                                                  planner_type="pilz")
+
+        
+        
+        
         cjs_blue = tjs_blue
         cjs_green = tjs_green
         cjs_dual = tjs_dual
     
-    combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
+    # combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
 
-    client_dual.execute_joint_traj(combined_trajectory)
+    # client_dual.execute_joint_traj(combined_trajectory)
     
 
     rclpy.shutdown()
