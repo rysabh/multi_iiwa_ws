@@ -1,6 +1,7 @@
-[submodule "src/moveit_motion/moveit_motion/diffusion_policy"]
-	path = src/moveit_motion/moveit_motion/diffusion_policy
-	url = git@github.com:RROS-Lab/diffusion_policy_cam.git
 [submodule "src/moveit_motion/moveit_motion/diffusion_policy_cam"]
 	path = src/moveit_motion/moveit_motion/diffusion_policy_cam
 	url = git@github.com:RROS-Lab/diffusion_policy_cam.git
+	
+[submodule "src/bio_ik"]
+	path = src/bio_ik
+	url = git@github.com:TAMS-Group/bio_ik.git
