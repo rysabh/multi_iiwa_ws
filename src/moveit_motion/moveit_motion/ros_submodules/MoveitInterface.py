@@ -202,7 +202,7 @@ class MoveitInterface(Node):
         planner_type = kwargs.get("planner_type")
         PLANNER_CONIFIG = {
             None  : "APSConfigDefault",
-            "ompl": "APSConfigDefault",
+            "ompl": "RRTstar",
             "pilz": "pilz_industrial_motion_planner",
         }
 
@@ -212,7 +212,7 @@ class MoveitInterface(Node):
 
         request.motion_plan_request.pipeline_id = planner_type
         request.motion_plan_request.planner_id = PLANNER_CONIFIG[planner_type]
-        self.get_logger().info(f"Using {planner_type} Planner")
+        self.get_logger().info(f"Using {planner_type} Planner -> {PLANNER_CONIFIG[planner_type]}")
 
         ## plan for n attempts until succesful
         for _ in range(attempts):
