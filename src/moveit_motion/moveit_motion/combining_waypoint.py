@@ -81,7 +81,7 @@ def main():
 
         planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=tjs_dual, 
                                                               start_joint_state=cjs_dual,
-                                                              planner_type="ompl")
+                                                              planner_type="pilz")
 
         if planned_joint_trajectory is None:
             print("no planned trajectory")
