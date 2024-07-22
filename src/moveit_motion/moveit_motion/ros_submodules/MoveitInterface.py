@@ -200,12 +200,19 @@ class MoveitInterface(Node):
         
         ### set motion planner type
         planner_type = kwargs.get("planner_type")
-        if planner_type == "linear":
-            request.motion_plan_request.pipeline_id = "pilz_industrial_motion_planner"
-            request.motion_plan_request.planner_id = "LIN"
-        else:
-            request.motion_plan_request.pipeline_id = "ompl"
-            request.motion_plan_request.planner_id = "APSConfigDefault"
+        PLANNER_CONIFIG = {
+            None  : "APSConfigDefault",
+            "ompl": "APSConfigDefault",
+            "pilz": "pilz_industrial_motion_planner",
+        }
+
+        if planner_type not in PLANNER_CONIFIG.keys():
+            self.get_logger().error(f"Invalid Planner Type: {planner_type}.\nValid options are:\n{PLANNER_CONIFIG}")
+            exit(1)
+
+        request.motion_plan_request.pipeline_id = planner_type
+        request.motion_plan_request.planner_id = PLANNER_CONIFIG[planner_type]
+        self.get_logger().info(f"Using {planner_type} Planner")
 
         ## plan for n attempts until succesful
         for _ in range(attempts):

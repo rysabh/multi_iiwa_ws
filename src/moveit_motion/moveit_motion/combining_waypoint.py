@@ -25,7 +25,7 @@ from sensor_msgs.msg import JointState
 
 from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states, filter_joints_for_move_group_name
 
-from moveit_motion.moveit_motion.ros_submodules.MoveitInterface import MoveitInterface
+from ros_submodules.MoveitInterface import MoveitInterface
 
 def main():
     rclpy.init()
@@ -80,7 +80,8 @@ def main():
         tjs_dual.velocity = tjs_blue.velocity + tjs_blue.velocity
 
         planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=tjs_dual, 
-                                                              start_joint_state=cjs_dual)
+                                                              start_joint_state=cjs_dual,
+                                                              planner_type="ompl")
 
         if planned_joint_trajectory is None:
             print("no planned trajectory")
