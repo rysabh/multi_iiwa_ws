@@ -45,12 +45,11 @@ def MSE_poses():
     pass
 
 
-def filter_joints_for_move_group_name(func):
+def filter_for_prefix(func):
     def wrapper(self, *args, **kwargs):
         joint_state = func(self, *args, **kwargs)
-        _prefix = self.move_group_name_
-        if _prefix == "dual_arm": _prefix = "" # prefix for dual arm
-
+        _prefix = self.prefix_
+        
         if joint_state.name:
             indices = [i for i, name in enumerate(joint_state.name) if name.startswith(_prefix)]
             joint_state.name = [joint_state.name[i] for i in indices]

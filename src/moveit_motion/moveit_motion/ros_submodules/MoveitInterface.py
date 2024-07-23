@@ -23,27 +23,43 @@ from ros_submodules.wait_for_message import wait_for_message
 
 import numpy as np
 
-from ros_submodules.RS_submodules import MSE_joint_states, filter_joints_for_move_group_name
+from ros_submodules.RS_submodules import MSE_joint_states, filter_for_prefix
 
 from builtin_interfaces.msg import Duration
-
+import os
 
 class MoveitInterface(Node):
-    ik_client_name_ = "compute_ik"
-    fk_srv_name_ = "compute_fk"
-    plan_srv_name_ = "plan_kinematic_path"
-    execute_action_name_ = "execute_trajectory"
-    # action_server_ = "move_action" 
-
-    def __init__(self, node_name, move_group_name="arm"):
+    '''
+    MoveitInterface(
+        node_name="client_blue",      # lbr / kuka_blue -> required for FK service
+        move_group_name="kuka_blue",  # arm / kuka_blue -> required for motion planning
+        remapping_name="",            # lbr / ""        -> required for service and action remapping
+        prefix="kuka_blue",           # ""  / kuka_blue -> required for filtering joint states and links
+        frame_header=""               # lbr / ""        -> required for setting the frame header for the robot for IK
+    ) 
+    '''
+    def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix="", frame_header="lbr"):
         super().__init__(node_name)
+        self.node_name_ = node_name
         self.timeout_sec_ = 3.0
         self.move_group_name_ = move_group_name
+        self.remapping_name_ = remapping_name
+        self.prefix_ = prefix
+        
+        self.joint_states_topic_ = f"{remapping_name}/joint_states" if remapping_name else "joint_states"
+        self.ik_srv_name_ = f"{remapping_name}/compute_ik" if remapping_name else "compute_ik"
+        self.fk_srv_name_ = f"{remapping_name}/compute_fk" if remapping_name else "compute_fk"
+        self.plan_srv_name_ = f"{remapping_name}/plan_kinematic_path" if remapping_name else "plan_kinematic_path"
+        self.execute_action_name_ = f"{remapping_name}/execute_trajectory" if remapping_name else "execute_trajectory"
+        # self.action_server_ = f"{remapping_name}/move_action" if remapping_name else "move_action"
 
-        self.base_ = f"{self.move_group_name_}_link_0"
-        self.end_effector_ = f"{self.move_group_name_}_link_ee"
+        
+        self.base_ = f"{prefix}_link_0" if prefix else "link_0"
+        self.end_effector_ = f"{prefix}_link_ee" if prefix else "link_ee"
+        self.frame_header_ = frame_header #for frame_id in FK request
 
-        self.ik_client_ = self.create_client(GetPositionIK, self.ik_client_name_)
+
+        self.ik_client_ = self.create_client(GetPositionIK, self.ik_srv_name_)
         if not self.ik_client_.wait_for_service(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: IK service not available -> {self.ik_client_.srv_name}.")
             exit(1)
@@ -64,12 +80,12 @@ class MoveitInterface(Node):
             exit(1)
 
 
-    @filter_joints_for_move_group_name
+    @filter_for_prefix
     def get_current_joint_state(self) -> Union[JointState, None]: # use descriptors for filtering
         '''
         Joint State for the moveit move group
         '''
-        _JOINT_STATE_TOPIC = "/joint_states"
+        _JOINT_STATE_TOPIC = self.joint_states_topic_
 
         _MSG_RECEIVED_BOOL, _current_joint_state = wait_for_message(
             JointState, self, _JOINT_STATE_TOPIC, time_to_wait=self.timeout_sec_
@@ -89,7 +105,7 @@ class MoveitInterface(Node):
         _current_robot_state.joint_state = _current_joint_state
 
         _request = GetPositionFK.Request()
-        _request.header.frame_id = f"{self.move_group_name_}/{self.base_}"  # TODO this has to be robot_name in the future
+        _request.header.frame_id = f"{self.frame_header_}/{self.base_}" if self.frame_header_ else self.base_
         _request.header.stamp = self.get_clock().now().to_msg()
         _request.fk_link_names.append(self.end_effector_)
         _request.robot_state = _current_robot_state
@@ -109,7 +125,7 @@ class MoveitInterface(Node):
         
         return response.pose_stamped[0].pose
 
-    @filter_joints_for_move_group_name
+    @filter_for_prefix
     def request_ik(self, pose: Pose) -> Union[JointState, None]:
         request = GetPositionIK.Request()
         request.ik_request.group_name = self.move_group_name_
