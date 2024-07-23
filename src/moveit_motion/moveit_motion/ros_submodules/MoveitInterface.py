@@ -52,9 +52,9 @@ class MoveitInterface(Node):
         self.execute_action_name_ = f"{remapping_name}/execute_trajectory" if remapping_name else "execute_trajectory"
         # self.action_server_ = f"{remapping_name}/move_action" if remapping_name else "move_action"
 
-        #link names
-        self.base_ = f"{prefix}_link_0" if prefix else f"{remapping_name}/link_0"
-        self.end_effector_ = f"{prefix}_link_ee" if prefix else f"{remapping_name}/link_ee"
+        #link names 
+        self.base_ = f"{prefix}_link_0" if prefix else f"{remapping_name}/link_0" # for FK and IK
+        self.end_effector_ = f"{prefix}_link_ee" if prefix else 'link_ee'    # for FK
         
 
         self.ik_client_ = self.create_client(GetPositionIK, self.ik_srv_name_)
@@ -104,7 +104,9 @@ class MoveitInterface(Node):
 
         _request = GetPositionFK.Request()
         _request.header.frame_id = self.base_
+        # _request.header.frame_id = 'lbr/link_0' #kuka_blue_link_0
         _request.header.stamp = self.get_clock().now().to_msg()
+        # _request.fk_link_names.append('link_ee')
         _request.fk_link_names.append(self.end_effector_)
         _request.robot_state = _current_robot_state
 
@@ -215,8 +217,8 @@ class MoveitInterface(Node):
         ### set motion planner type
         planner_type = kwargs.get("planner_type")
         PLANNER_CONIFIG = {
-            None  : "APSConfigDefault",
-            "ompl": "RRTstar",
+            "default"  : "APSConfigDefault",
+            "ompl": "APSConfigDefault",
             "pilz": "pilz_industrial_motion_planner",
         }
 
