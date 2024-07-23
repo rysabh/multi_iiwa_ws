@@ -35,10 +35,9 @@ class MoveitInterface(Node):
         move_group_name="kuka_blue",  # arm / kuka_blue -> required for motion planning
         remapping_name="",            # lbr / ""        -> required for service and action remapping
         prefix="kuka_blue",           # ""  / kuka_blue -> required for filtering joint states and links
-        frame_header=""               # lbr / ""        -> required for setting the frame header for the robot for IK
     ) 
     '''
-    def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix="", frame_header="lbr"):
+    def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
         self.node_name_ = node_name
         self.timeout_sec_ = 3.0
@@ -53,11 +52,10 @@ class MoveitInterface(Node):
         self.execute_action_name_ = f"{remapping_name}/execute_trajectory" if remapping_name else "execute_trajectory"
         # self.action_server_ = f"{remapping_name}/move_action" if remapping_name else "move_action"
 
+        #link names
+        self.base_ = f"{prefix}_link_0" if prefix else f"{remapping_name}/link_0"
+        self.end_effector_ = f"{prefix}_link_ee" if prefix else f"{remapping_name}/link_ee"
         
-        self.base_ = f"{prefix}_link_0" if prefix else "link_0"
-        self.end_effector_ = f"{prefix}_link_ee" if prefix else "link_ee"
-        self.frame_header_ = frame_header #for frame_id in FK request
-
 
         self.ik_client_ = self.create_client(GetPositionIK, self.ik_srv_name_)
         if not self.ik_client_.wait_for_service(timeout_sec=self.timeout_sec_):
@@ -105,7 +103,7 @@ class MoveitInterface(Node):
         _current_robot_state.joint_state = _current_joint_state
 
         _request = GetPositionFK.Request()
-        _request.header.frame_id = f"{self.frame_header_}/{self.base_}" if self.frame_header_ else self.base_
+        _request.header.frame_id = self.base_
         _request.header.stamp = self.get_clock().now().to_msg()
         _request.fk_link_names.append(self.end_effector_)
         _request.robot_state = _current_robot_state

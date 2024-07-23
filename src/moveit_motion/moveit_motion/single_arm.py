@@ -10,12 +10,16 @@ from ros_submodules.MoveitInterface import MoveitInterface
 
 def main():
     rclpy.init()
-
-    client_blue = MoveitInterface(node_name="client_blue",     # lbr # kuka_blue   #-> requied for FK service
-                                  move_group_name="kuka_blue", # arm # kuka_blue   #-> required for motion planning
-                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
-                                  prefix="kuka_blue",          # ""  # kuka_blue   #-> required for filtering joint states and links
-                                  frame_header="")             # lbr # ""          #-> required for setting the frame header for the robot for IK
+    # client_blue = MoveitInterface(node_name="client_blue",     
+    #                               move_group_name="kuka_blue", # arm # kuka_blue   #-> required for motion planning
+    #                               remapping_name="",           # lbr # ""          #-> required for service and action remapping
+    #                               prefix="kuka_blue",          # ""  # kuka_blue   #-> required for filtering joint states and links
+    #                              )
+    
+    client_blue = MoveitInterface(node_name="client_blue",     
+                                  move_group_name="arm", 
+                                  remapping_name="lbr", 
+                                  prefix="")
     poses = [
         Pose(
                 position=Point(x=0.6, y=0.0, z=0.6),
