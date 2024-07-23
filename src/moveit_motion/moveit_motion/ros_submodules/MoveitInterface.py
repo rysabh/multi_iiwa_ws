@@ -37,6 +37,11 @@ class MoveitInterface(Node):
         prefix="kuka_blue",           # ""  / kuka_blue -> required for filtering joint states and links
     ) 
     '''
+    PLANNER_CONIFIG = {
+        "ompl": ["ompl", "APSConfigDefault"],
+        "pilz": ["pilz_industrial_motion_planner", "LIN"]
+        }
+    
     def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
         self.node_name_ = node_name
@@ -171,7 +176,7 @@ class MoveitInterface(Node):
 
     def get_joint_traj(self, target_joint_state: JointState,
                              start_joint_state: JointState, 
-                       attempts: int = 10, **kwargs) -> Union[RobotTrajectory, None]:
+                             attempts: int = 10, **kwargs) -> Union[RobotTrajectory, None]:
         '''
         kwargs = {planner_type = "linear" | None,}
         ''' 
@@ -216,19 +221,15 @@ class MoveitInterface(Node):
         
         ### set motion planner type
         planner_type = kwargs.get("planner_type")
-        PLANNER_CONIFIG = {
-            "default"  : "APSConfigDefault",
-            "ompl": "APSConfigDefault",
-            "pilz": "pilz_industrial_motion_planner",
-        }
+        
 
-        if planner_type not in PLANNER_CONIFIG.keys():
-            self.get_logger().error(f"Invalid Planner Type: {planner_type}.\nValid options are:\n{PLANNER_CONIFIG}")
+        if planner_type not in self.PLANNER_CONIFIG.keys():
+            self.get_logger().error(f"Invalid Planner Type: {planner_type}.\nValid options are:\n{self.PLANNER_CONIFIG}")
             exit(1)
 
-        request.motion_plan_request.pipeline_id = planner_type
-        request.motion_plan_request.planner_id = PLANNER_CONIFIG[planner_type]
-        self.get_logger().info(f"Using {planner_type} Planner -> {PLANNER_CONIFIG[planner_type]}")
+        request.motion_plan_request.pipeline_id = self.PLANNER_CONIFIG[planner_type][0]
+        request.motion_plan_request.planner_id = self.PLANNER_CONIFIG[planner_type][1]
+        self.get_logger().info(f"Using {planner_type} Planner -> {self.PLANNER_CONIFIG[planner_type]}")
 
         ## plan for n attempts until succesful
         for _ in range(attempts):

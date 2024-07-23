@@ -10,16 +10,16 @@ from ros_submodules.MoveitInterface import MoveitInterface
 
 def main():
     rclpy.init()
-    # client_blue = MoveitInterface(node_name="client_blue",     
-    #                               move_group_name="kuka_blue", # arm # kuka_blue   #-> required for motion planning
-    #                               remapping_name="",           # lbr # ""          #-> required for service and action remapping
-    #                               prefix="kuka_blue",          # ""  # kuka_blue   #-> required for filtering joint states and links
-    #                              )
+    client = MoveitInterface(node_name="client",     
+                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="kuka_green",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
     
-    client_blue = MoveitInterface(node_name="client_blue",     
-                                  move_group_name="arm", 
-                                  remapping_name="lbr", 
-                                  prefix="")
+    # client = MoveitInterface(node_name="client",     
+    #                               move_group_name="arm", 
+    #                               remapping_name="lbr", 
+    #                               prefix="")
     poses = [
         Pose(
                 position=Point(x=0.6, y=0.0, z=0.6),
@@ -37,19 +37,19 @@ def main():
 
     dual_spline_trajectory = []
     
-    cjs_blue = client_blue.get_current_joint_state()
-    print(cjs_blue)
-    cjs_blue_pose = client_blue.get_current_robot_pose()
-    print(cjs_blue_pose)
+    cjs = client.get_current_joint_state()
+    print(cjs)
+    cjs_pose = client.get_current_robot_pose()
+    print(cjs_pose)
     for pose in poses:
-        tjs_blue = client_blue.get_best_ik(target_pose=pose, current_joint_state=cjs_blue, attempts=300)
+        tjs = client.get_best_ik(target_pose=pose, current_joint_state=cjs, attempts=300)
         
-        print(tjs_blue)
-        plan_blue = client_blue.get_joint_traj(target_joint_state=tjs_blue, 
-                                                  start_joint_state=cjs_blue,
-                                                  planner_type="ompl")
+        print(tjs)
+        plan = client.get_joint_traj(target_joint_state=tjs, 
+                                                  start_joint_state=cjs,
+                                                  planner_type="pilz")
         
-        cjs_blue = tjs_blue
+        cjs = tjs
     
     # combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
 
