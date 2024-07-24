@@ -37,7 +37,8 @@ class MoveitInterface(Node):
         prefix="kuka_blue",           # ""  / kuka_blue -> required for filtering joint states and links
     ) 
     '''
-    PLANNER_CONIFIG = {
+    PLANNER_CONFIG = {
+        "default": ["ompl", "APSConfigDefault"],
         "ompl": ["ompl", "APSConfigDefault"],
         "pilz": ["pilz_industrial_motion_planner", "LIN"]
         }
@@ -174,37 +175,90 @@ class MoveitInterface(Node):
         return best_joint_state
 
 
-    def get_joint_traj(self, target_joint_state: JointState,
-                             start_joint_state: JointState, 
-                             attempts: int = 10, **kwargs) -> Union[RobotTrajectory, None]:
-        '''
-        kwargs = {planner_type = "linear" | None,}
-        ''' 
-        ## Create start state using start_joint_state #TODO automate sim vs real
-        # if start_joint_state is None:
-        #     start_joint_state = self.get_robot_current_joint_state()
-
-        # if start_joint_state is None: #TODO -> check if this is necessary
-        #     start_joint_state = self.get_current_joint_state()
-        
-        
-        ## if start and target match exit the function
+    def get_joint_plan(self, target_joint_state: JointState, start_joint_state: JointState, attempts: int = 10, **kwargs) -> Union[RobotTrajectory, None]:
         _THRESHOLD = 0.01 # threshold from start and target for robot to move
         if MSE_joint_states(target_joint_state, start_joint_state) <= _THRESHOLD:
             self.get_logger().info("Start and End goals match. ** NOT ** moving anything and Passing Empty Trajectory")
             return RobotTrajectory()
         
         ##Create target using target_joint_state
-        target_constraint = Constraints()
-        for i in range(len(target_joint_state.name)):
-            joint_constraint = JointConstraint()
-            joint_constraint.joint_name = target_joint_state.name[i]
-            joint_constraint.position = target_joint_state.position[i]
-            joint_constraint.tolerance_above = 0.001
-            joint_constraint.tolerance_below = 0.001
-            joint_constraint.weight = 1.0
-            target_constraint.joint_constraints.append(joint_constraint)
+        _constraints = Constraints()
+        _constraints.joint_constraints = list(map(self._create_joint_constraint, target_joint_state.name, target_joint_state.position))
+
         
+        ## convert start_joint_state to robot_state to get motion plan
+        _start_robot_state = RobotState()
+        _start_robot_state.joint_state = start_joint_state
+
+        ### set motion planner type
+        planner_type = kwargs.get("planner_type", "default")
+        pipeline_id, planner_id = self._get_planner_config(planner_type)
+        
+        ## Request Motion Plan
+        request = self._create_motion_plan_request(self.move_group_name_, _start_robot_state, _constraints, attempts=attempts,
+                                         pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
+
+        ## plan for n attempts until succesful
+        return self._request_plan_for_attempts(request, attempts)
+
+    @staticmethod
+    def _create_joint_constraint(name, position):
+        joint_constraint = JointConstraint()
+        joint_constraint.joint_name = name
+        joint_constraint.position = position
+        joint_constraint.tolerance_above = 0.001
+        joint_constraint.tolerance_below = 0.001
+        joint_constraint.weight = 1.0
+        return joint_constraint
+    
+    def _get_planner_config(self, planner_type: str) -> tuple:
+        if planner_type not in self.PLANNER_CONFIG.keys():
+            self.get_logger().error(f"Invalid Planner Type: {planner_type}.\nValid options are: {list(self.PLANNER_CONFIG.keys())}")
+            exit(1)
+        self.get_logger().info(f"Using {planner_type} Planner -> {self.PLANNER_CONFIG[planner_type]}")
+        return self.PLANNER_CONFIG[planner_type]
+    
+    @staticmethod
+    def _create_motion_plan_request(move_group_name: str, start_state: RobotState, goal_constraints: Constraints, **kwargs) -> GetMotionPlan.Request:
+        request = GetMotionPlan.Request()
+        request.motion_plan_request.group_name = move_group_name
+        request.motion_plan_request.start_state = start_state
+        request.motion_plan_request.goal_constraints.append(goal_constraints)
+        request.motion_plan_request.num_planning_attempts = kwargs.get("attempts", 10) #TODO -> earlier it was 10 -> how is this different from "attempts"
+        request.motion_plan_request.allowed_planning_time = kwargs.get("allowed_planning_time", 5.0)
+        request.motion_plan_request.max_velocity_scaling_factor = kwargs.get("max_velocity_scaling_factor", 0.05)
+        request.motion_plan_request.max_acceleration_scaling_factor = kwargs.get("max_acceleration_scaling_factor", 0.1)
+        request.motion_plan_request.pipeline_id = kwargs.get("pipeline_id", "ompl")
+        request.motion_plan_request.planner_id = kwargs.get("planner_id", "APSConfigDefault")
+        return request
+    
+    def _request_plan_for_attempts(self, request: GetMotionPlan.Request, attempts: int) -> Union[RobotTrajectory, None]:
+        for _ in range(attempts):
+            plan_future = self.plan_client_.call_async(request)
+            rclpy.spin_until_future_complete(self, plan_future)
+            if plan_future.result() is None:
+                self.get_logger().error("Failed to get motion plan")
+                continue
+            response = plan_future.result()
+            if response.motion_plan_response.error_code.val != MoveItErrorCodes.SUCCESS:
+                self.get_logger().error(f"Failed to get motion plan: {response.motion_plan_response.error_code.val}")
+            else:
+                #response.motion_plan_response.trajectory -> RobotTrajectory
+                #response.motion_plan_response.trajectory.joint_trajectory -> JointTrajectory
+                # However execute_joint_traj needs RobotTrajectory anyways (for both sim -> ExecuteTrajectory.Goal()   and real -> FollowJointTrajectory.Goal() )
+                return response.motion_plan_response.trajectory
+        return None
+    
+    
+    def get_joint_spline(self, waypoints: list[JointState], attempts: int = 10, **kwargs) -> Union[RobotTrajectory, None]:
+        _THRESHOLD = 0.01 # threshold from start and target for robot to move
+        start_joint_state = waypoints[0]
+        
+        ##Create target using target_joint_state
+        _constraints = Constraints()
+        for waypoint in waypoints[1:]:
+            _waypoint_joint_constraint = list(map(self._create_joint_constraint, waypoint.name, waypoint.position))
+            _constraints.joint_constraints.extend(_waypoint_joint_constraint)
         ## convert start_joint_state to robot_state to get motion plan
         _start_robot_state = RobotState()
         _start_robot_state.joint_state = start_joint_state
@@ -213,7 +267,7 @@ class MoveitInterface(Node):
         request = GetMotionPlan.Request()
         request.motion_plan_request.group_name = self.move_group_name_
         request.motion_plan_request.start_state = _start_robot_state
-        request.motion_plan_request.goal_constraints.append(target_constraint)
+        request.motion_plan_request.goal_constraints.append(_constraints)
         request.motion_plan_request.num_planning_attempts = 10  #TODO -> earlier it was 10 -> how is this different from "attempts"
         request.motion_plan_request.allowed_planning_time = 5.0
         request.motion_plan_request.max_velocity_scaling_factor = 0.05
@@ -278,6 +332,7 @@ class MoveitInterface(Node):
         
         self.get_logger().info("Trajectory executed")
         return
+    
         
     @staticmethod
     def combine_trajectories(trajectories: list[RobotTrajectory]) -> RobotTrajectory:
@@ -321,3 +376,10 @@ class MoveitInterface(Node):
         
         print("Trajectories Combined")
         return combined_robot_trajectory
+    
+    
+    def get_cartesian_spline(self, waypoints: list[list[float]], **kwargs):
+        pass
+    
+    def get_cartesian_plan(self, target_pose: Pose, start_pose: Pose, attempts: int = 10, **kwargs):
+        pass
