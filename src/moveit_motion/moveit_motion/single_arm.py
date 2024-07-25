@@ -13,10 +13,10 @@ from ros_submodules.wait_for_message import wait_for_message
 class FollowJointAction(Node):
     def __init__(self, node: str, move_group_name:str = "arm"):
         super().__init__(node)
-
+        self.move_group_name = move_group_name
         self.follow_joint_traj = f"/{move_group_name}/joint_trajectory_controller/follow_joint_trajectory"
         self.trajectory_client = ActionClient(self, FollowJointTrajectory, self.follow_joint_traj)
-        if not self.trajectory_client.wait_for_server(timeout_sec=1):
+        if not self.trajectory_client.wait_for_server(timeout_sec=3):
             raise RuntimeError(f"Couldn't connect to Action Server {self.follow_joint_traj}.")
 
     def execute_traj_on_robot(self, joint_traj):
@@ -75,7 +75,9 @@ def main():
     ]
 
     robot_state = follow_traj_client.get_current_robot_joint_state()
-    cjs = client.get_current_robot_pose()
+    print(f"RS = {robot_state}")
+    cjs = client.get_current_joint_state()
+    print(f"CS = {cjs}")
     plan = client.get_joint_traj(target_joint_state=robot_state, 
                                                   start_joint_state=cjs,
                                                   planner_type="ompl")
