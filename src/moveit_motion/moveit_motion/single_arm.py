@@ -10,8 +10,10 @@ from ros_submodules.MoveitInterface import MoveitInterface
 from control_msgs.action import FollowJointTrajectory
 from ros_submodules.wait_for_message import wait_for_message
 from moveit_msgs.msg import RobotTrajectory
+from trajectory_msgs.msg import JointTrajectory
 
 class FollowJointAction(Node):
+    """Functions for RobotInterface"""
     def __init__(self, node: str, move_group_name:str = "arm"):
         super().__init__(node)
         self.move_group_name = move_group_name
@@ -45,25 +47,25 @@ class FollowJointAction(Node):
             return None
         return current_joint_state
     
-    def modify_joint_state_for_sim_robot(self, robot_joint_state):
-        _prefix_to_add = f"{self.move_group_name}"
-        _name_of_all_joints = robot_joint_state.name
-        for i in range(len(_name_of_all_joints)):
-            _current_joint_name = _name_of_all_joints[i]
-            _new_joint_name = f"{_prefix_to_add}_{_current_joint_name}"
-            _name_of_all_joints[i] = _new_joint_name
-        robot_joint_state.header.frame_id = "world"
-        return robot_joint_state
+    def add_prefix_for_sim(self, joint_state: JointState)-> JointState:
+        prefix = f"{self.move_group_name}"
+        joint_names = joint_state.name
+        for i in range(len(joint_names)):
+            current_joint_name = joint_names[i]
+            new_joint_name = f"{prefix}_{current_joint_name}"
+            joint_names[i] = new_joint_name
+        joint_state.header.frame_id = "world"
+        return joint_state
     
-    def modify_joint_state_for_real_robot(self, trajectory: RobotTrajectory)->RobotTrajectory:
-        _prefix_to_remove = f"{self.move_group_name}"
-        _name_of_all_joints = trajectory.joint_trajectory.joint_names
-        for i in range(len(_name_of_all_joints)):
-            _current_joint_name = _name_of_all_joints[i]
-            _new_joint_name = _current_joint_name[len(_prefix_to_remove)+1 :]
-            _name_of_all_joints[i] = _new_joint_name
+    def remove_prefix_for_real(self, trajectory: RobotTrajectory)->JointTrajectory:
+        prefix = f"{self.move_group_name}"
+        joint_names = trajectory.joint_trajectory.joint_names
+        for i in range(len(joint_names)):
+            current_joint_name = joint_names[i]
+            new_joint_name = current_joint_name[len(prefix) + 1 :]
+            joint_names[i] = new_joint_name
         trajectory.joint_trajectory.header.frame_id = ""
-        return trajectory
+        return trajectory.joint_trajectory
 
 def main():
     rclpy.init()
@@ -75,11 +77,7 @@ def main():
     follow_traj_client = FollowJointAction(node="follow_traj",
                                            move_group_name="kuka_green")
 
-    
-    # client = MoveitInterface(node_name="client",     
-    #                               move_group_name="arm", 
-    #                               remapping_name="lbr", 
-    #                               prefix="")
+
     poses = [
         Pose(
                 position=Point(x=0.6, y=0.0, z=0.6),
@@ -97,7 +95,7 @@ def main():
 
     robot_state = follow_traj_client.get_current_robot_joint_state()
     print(f"RS_before = {robot_state}")
-    robot_state = follow_traj_client.modify_joint_state_for_sim_robot(robot_state)
+    robot_state = follow_traj_client.add_prefix_for_sim(robot_state)
     print(f"RS_after = {robot_state}")
     cjs = client.get_current_joint_state()
     print(f"CS = {cjs}")
@@ -122,22 +120,18 @@ def main():
         total_trajectory.append(plan)
         cjs = tjs
     
-    # combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
-    fixed_trajectory = client.combine_trajectories(total_trajectory)
-    client.execute_joint_traj(fixed_trajectory)
+    corrected_trajectory = client.combine_trajectories(total_trajectory)
+    client.execute_joint_traj(corrected_trajectory)
 
-    fixed_trajectory = follow_traj_client.modify_joint_state_for_real_robot(fixed_trajectory)
-    print(f"traj = {fixed_trajectory}")
+    corrected_trajectory = follow_traj_client.remove_prefix_for_real(corrected_trajectory)
+    print(f"traj = {corrected_trajectory}")
 
     execution = input("Do you want to execute? y/n\n")
     if execution.lower() == "y":
-        follow_traj_client.execute_traj_on_robot(fixed_trajectory.joint_trajectory)
-    # client_dual.execute_joint_traj(combined_trajectory)
+        follow_traj_client.execute_traj_on_robot(corrected_trajectory)
     
 
     rclpy.shutdown()
     
-
-
 if __name__ == '__main__':
     main()
