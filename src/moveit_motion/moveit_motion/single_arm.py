@@ -9,6 +9,7 @@ from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv
 from ros_submodules.MoveitInterface import MoveitInterface
 from control_msgs.action import FollowJointTrajectory
 from ros_submodules.wait_for_message import wait_for_message
+from moveit_msgs.msg import RobotTrajectory
 
 class FollowJointAction(Node):
     def __init__(self, node: str, move_group_name:str = "arm"):
@@ -43,6 +44,26 @@ class FollowJointAction(Node):
             self.get_logger().error("Failed to get current joint state")
             return None
         return current_joint_state
+    
+    def modify_joint_state_for_sim_robot(self, robot_joint_state):
+        _prefix_to_add = f"{self.move_group_name}"
+        _name_of_all_joints = robot_joint_state.name
+        for i in range(len(_name_of_all_joints)):
+            _current_joint_name = _name_of_all_joints[i]
+            _new_joint_name = f"{_prefix_to_add}_{_current_joint_name}"
+            _name_of_all_joints[i] = _new_joint_name
+        robot_joint_state.header.frame_id = "world"
+        return robot_joint_state
+    
+    def modify_joint_state_for_real_robot(self, trajectory: RobotTrajectory)->RobotTrajectory:
+        _prefix_to_remove = f"{self.move_group_name}"
+        _name_of_all_joints = trajectory.joint_trajectory.joint_names
+        for i in range(len(_name_of_all_joints)):
+            _current_joint_name = _name_of_all_joints[i]
+            _new_joint_name = _current_joint_name[len(_prefix_to_remove)+1 :]
+            _name_of_all_joints[i] = _new_joint_name
+        trajectory.joint_trajectory.header.frame_id = ""
+        return trajectory
 
 def main():
     rclpy.init()
@@ -75,13 +96,15 @@ def main():
     ]
 
     robot_state = follow_traj_client.get_current_robot_joint_state()
-    print(f"RS = {robot_state}")
+    print(f"RS_before = {robot_state}")
+    robot_state = follow_traj_client.modify_joint_state_for_sim_robot(robot_state)
+    print(f"RS_after = {robot_state}")
     cjs = client.get_current_joint_state()
     print(f"CS = {cjs}")
     plan = client.get_joint_traj(target_joint_state=robot_state, 
                                                   start_joint_state=cjs,
                                                   planner_type="ompl")
-    client.execute_joint_traj(fixed_trajectory)
+    client.execute_joint_traj(plan)
 
     total_trajectory = []
     
@@ -102,9 +125,13 @@ def main():
     # combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
     fixed_trajectory = client.combine_trajectories(total_trajectory)
     client.execute_joint_traj(fixed_trajectory)
-    execution = input("Do you want to execute? y/n")
+
+    fixed_trajectory = follow_traj_client.modify_joint_state_for_real_robot(fixed_trajectory)
+    print(f"traj = {fixed_trajectory}")
+
+    execution = input("Do you want to execute? y/n\n")
     if execution.lower() == "y":
-        follow_traj_client.execute_traj_on_robot(fixed_trajectory)
+        follow_traj_client.execute_traj_on_robot(fixed_trajectory.joint_trajectory)
     # client_dual.execute_joint_traj(combined_trajectory)
     
 
