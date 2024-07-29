@@ -47,7 +47,7 @@ def main():
         print(tjs)
         plan = client.get_joint_plan(target_joint_state=tjs, 
                                                   start_joint_state=cjs,
-                                                  planner_type="ompl")
+                                                  planner_type="pilz")
         
         cjs = tjs
     

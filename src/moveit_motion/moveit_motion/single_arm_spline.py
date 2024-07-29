@@ -8,6 +8,7 @@ from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv
 
 from ros_submodules.MoveitInterface import MoveitInterface
 
+import numpy as np
 def main():
     rclpy.init()
     client = MoveitInterface(node_name="client",     
@@ -34,9 +35,8 @@ def main():
                 orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
             )
     ]
-
-    dual_spline_trajectory = []
     
+
     cjs = client.get_current_joint_state()
     # print(cjs)
     # cjs_pose = client.get_current_robot_pose()
