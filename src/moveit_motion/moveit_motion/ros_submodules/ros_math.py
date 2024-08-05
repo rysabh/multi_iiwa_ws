@@ -7,7 +7,7 @@ from moveit_msgs.msg import (
     Constraints,
     JointConstraint,
 )
-
+from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
 from builtin_interfaces.msg import Duration
 from trajectory_msgs.msg import JointTrajectory
 
@@ -54,6 +54,16 @@ def joint_states_2_constraints(*joint_states : JointState) -> Constraints:
         constraints.joint_constraints.extend(_joint_constraints)
     return constraints
 
+def TxyzQwxyz_2_Pose(TxyzQxyzw: list) -> Pose:
+    pose = Pose()
+    pose.position.x = TxyzQxyzw[0]
+    pose.position.y = TxyzQxyzw[1]
+    pose.position.z = TxyzQxyzw[2]
+    pose.orientation.x = TxyzQxyzw[3]
+    pose.orientation.y = TxyzQxyzw[4]
+    pose.orientation.z = TxyzQxyzw[5]
+    pose.orientation.w = TxyzQxyzw[6]
+    return pose
     
 def combine_trajectories(trajectories: list[RobotTrajectory]) -> RobotTrajectory:
     print("Combining Trajectories")

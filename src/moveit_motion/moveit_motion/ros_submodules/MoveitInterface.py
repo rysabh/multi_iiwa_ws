@@ -207,21 +207,18 @@ class MoveitInterface(Node):
         # self.get_logger().info(f"requesting plan for -> \n{np.round(start_state.joint_state.position,2)} -> {np.round(goal_constraints.joint_constraints[-1].joint_state.position,2)}\n")
         return request
     
-    def _request_for_attempts(self, request, client, attempts: int) -> Union[RobotTrajectory, None]:
+    
+    def _request_for_attempts(self, request, client, response_handler, attempts: int) -> Union[RobotTrajectory, None]:
         for _ in range(attempts):
-            plan_future = self.plan_client_.call_async(request)
+            plan_future = client.call_async(request)
             rclpy.spin_until_future_complete(self, plan_future)
             if plan_future.result() is None:
-                self.get_logger().error("Failed to get motion plan")
+                self.get_logger().error("Failed to get response from service")
                 continue
             response = plan_future.result()
-            if response.motion_plan_response.error_code.val != MoveItErrorCodes.SUCCESS:
-                self.get_logger().error(f"Failed to get motion plan: {response.motion_plan_response.error_code.val}")
-            else:
-                #response.motion_plan_response.trajectory -> RobotTrajectory
-                #response.motion_plan_response.trajectory.joint_trajectory -> JointTrajectory
-                # However execute_joint_traj needs RobotTrajectory anyways (for both sim -> ExecuteTrajectory.Goal()   and real -> FollowJointTrajectory.Goal() )
-                return response.motion_plan_response.trajectory
+            trajectory = response_handler(response)
+            if trajectory:
+                return trajectory
         return None
     
 
@@ -254,29 +251,37 @@ class MoveitInterface(Node):
         request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
                                          pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
 
-        ## plan for n attempts until succesful
-        return self._request_plan_for_attempts(request, attempts)
-    
-    
-    def get_joint_spline(self, waypoints: list[JointState], attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
-        waypoints = self._filter_waypoints_threshold(waypoints)
-        if len(waypoints) < 2:
-            self.get_logger().info("Not enough waypoints to move. ** NOT ** moving anything and Passing Empty Trajectory")
-            return RobotTrajectory()
+        def handle_joint_response(response):
+            if response.motion_plan_response.error_code.val != MoveItErrorCodes.SUCCESS:
+                self.get_logger().error(f"Failed to get motion plan: {response.motion_plan_response.error_code.val}")
+                return None
+            return response.motion_plan_response.trajectory
         
-        _start_joint_state = waypoints[0]
-        _start_robot_state = rosm.joint_2_robot_state(_start_joint_state)
+        ## plan for n attempts until succesful
+        client = self.plan_client_
+
+        return self._request_for_attempts(request, client, handle_joint_response, attempts)
+    
+    
+    # def get_joint_spline(self, waypoints: list[JointState], attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
+    #     waypoints = self._filter_waypoints_threshold(waypoints)
+    #     if len(waypoints) < 2:
+    #         self.get_logger().info("Not enough waypoints to move. ** NOT ** moving anything and Passing Empty Trajectory")
+    #         return RobotTrajectory()
+        
+    #     _start_joint_state = waypoints[0]
+    #     _start_robot_state = rosm.joint_2_robot_state(_start_joint_state)
           
-        _constraints = rosm.joint_states_2_constraints(*waypoints[1:])
+    #     _constraints = rosm.joint_states_2_constraints(*waypoints[1:])
         
 
-        planner_type = kwargs.get("planner_type", "default")
-        pipeline_id, planner_id = self._get_planner_config(planner_type)
+    #     planner_type = kwargs.get("planner_type", "default")
+    #     pipeline_id, planner_id = self._get_planner_config(planner_type)
 
-        request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
-                                         pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
-        ## plan for n attempts until succesful
-        return self._request_plan_for_attempts(request, attempts)
+    #     request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
+    #                                      pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
+    #     ## plan for n attempts until succesful
+    #     return self._request_plan_for_attempts(request, attempts)
     
         
     def execute_joint_traj(self, trajectory: RobotTrajectory):
@@ -310,7 +315,7 @@ class MoveitInterface(Node):
         return
 
 
-    def get_cartesian_spline(self, waypoints: list[Pose], eef_step: float = 0.01, jump_threshold: float = 0.0, avoid_collisions: bool = True) -> Union[RobotTrajectory, None]:
+    def get_cartesian_path(self, waypoints: list[Pose], attempts:int = 100, eef_step: float = 0.01, jump_threshold: float = 0.0, avoid_collisions: bool = False) -> Union[RobotTrajectory, None]:
         '''
         Plan a Cartesian path (spline) through the given waypoints.
         
@@ -326,18 +331,21 @@ class MoveitInterface(Node):
         request.header.stamp = self.get_clock().now().to_msg()
         request.group_name = self.move_group_name_
         request.link_name = self.end_effector_
-        request.waypoints = [PoseStamped(header=request.header, pose=wp) for wp in waypoints]
+        # request.waypoints = [PoseStamped(header=request.header, pose=wp) for wp in waypoints]
+        request.waypoints = waypoints
         request.max_step = eef_step
         request.jump_threshold = jump_threshold
         request.avoid_collisions = avoid_collisions
 
+        def handle_cartesian_response(response):
+            if response.error_code.val != MoveItErrorCodes.SUCCESS:
+                self.get_logger().error(f"Failed to compute Cartesian path: {response.error_code.val}")
+                return None
+            if response.fraction < 1.0:
+                self.get_logger().error(f"===== Fraction achieved ====== {response.fraction}")
+                return None
+            return response.solution
+
         # Call the service and wait for response
-        future = self.create_client(GetCartesianPath, f"{self.remapping_name}/compute_cartesian_path").call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-        
-        response = future.result()
-        if not response or response.error_code.val != MoveItErrorCodes.SUCCESS:
-            self.get_logger().error(f"Failed to compute Cartesian path: {response.error_code.val if response else 'No response'}")
-            return None
-        
-        return response.solution
+        client = self.cartesian_client_
+        return self._request_for_attempts(request, client, handle_cartesian_response, attempts=attempts)

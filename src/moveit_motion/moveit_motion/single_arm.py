@@ -44,10 +44,10 @@ def main():
     for pose in poses:
         tjs = client.get_best_ik(target_pose=pose, current_joint_state=cjs, attempts=300)
         
-        print(tjs)
+        # print(tjs)
         plan = client.get_joint_plan(target_joint_state=tjs, 
                                                   start_joint_state=cjs,
-                                                  planner_type="pilz")
+                                                  planner_type="ompl")
         
         cjs = tjs
     
