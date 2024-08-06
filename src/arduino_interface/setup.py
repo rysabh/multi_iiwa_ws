@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'relay_controller = relay_controller:main',
+            'relay_controller = arduino_interface.relay_controller:main',
         ],
     },
 )
