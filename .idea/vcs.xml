@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/src/bio_ik" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/src/moveit_motion/moveit_motion/diffusion_policy_cam" vcs="Git" />
+  </component>
+</project>
