@@ -18,7 +18,9 @@ def main():
             distance_mm = input("Enter distance in mm (or 'exit' to quit): ")
 
             if distance_mm.lower() == 'exit':
-                print("Exiting program.")
+                print("Moving to 0 position and Exiting program.")
+                ser.write("0\n".encode('utf-8'))
+                time.sleep(1)
                 break
 
             try:
