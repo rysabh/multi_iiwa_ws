@@ -7,34 +7,9 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-
-
-
-#add packages required below
 find_package(rclcpp REQUIRED)
 find_package(moveit_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED) 
-
-
-
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
-
-
-
-#added this following block to add the executable
-include_directories(include)
-add_executable(motion_seq_planner src/motion_seq_planner.cpp)
-
-
-
-#modified block below
-ament_target_dependencies(motion_seq_planner
-  rclcpp
-  moveit_msgs
-  geometry_msgs
-)
+find_package(moveit_core REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -48,12 +23,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+include_directories(include)
+add_executable(motion_sequence_planner src/motion_sequence_planner.cpp)
+ament_target_dependencies(motion_sequence_planner rclcpp moveit_msgs moveit_core)
 
-
-
-#modify to add install below
 install(TARGETS
-  motion_seq_planner
+  motion_sequence_planner
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -8,10 +8,12 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-<!-- added dependencies below -->
+
   <depend>rclcpp</depend>
-  <depend>moveit_msgs</depend>
-  <depend>geometry_msgs</depend>
+  <build_depend>moveit_msgs</build_depend>
+  <build_depend>moveit_core</build_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>moveit_core</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

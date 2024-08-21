@@ -14,6 +14,7 @@ public:
 
         // Create MoveGroupSequence action client
         using MoveGroupSequence = moveit_msgs::action::MoveGroupSequence;
+        using GoalHandleMoveGroupSequence = rclcpp_action::ClientGoalHandle<MoveGroupSequence>;
         auto client = rclcpp_action::create_client<MoveGroupSequence>(this, "/sequence_move_group");
 
         // Wait for the MoveGroupSequence action server
@@ -61,7 +62,9 @@ public:
 
         // Define callbacks for the action client
         auto send_goal_options = rclcpp_action::Client<MoveGroupSequence>::SendGoalOptions();
-        send_goal_options.goal_response_callback = [this](std::shared_ptr<typename MoveGroupSequence::ClientGoalHandle::SharedPtr> goal_handle) {
+        
+        // Corrected goal response callback
+        send_goal_options.goal_response_callback = [this](std::shared_ptr<GoalHandleMoveGroupSequence> goal_handle) {
             if (!goal_handle) {
                 RCLCPP_ERROR(this->get_logger(), "Goal was rejected by server");
             } else {
@@ -69,7 +72,7 @@ public:
             }
         };
 
-        send_goal_options.result_callback = [this](const rclcpp_action::ClientGoalHandle<MoveGroupSequence>::WrappedResult & result) {
+        send_goal_options.result_callback = [this](const GoalHandleMoveGroupSequence::WrappedResult & result) {
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
                 RCLCPP_INFO(this->get_logger(), "Action succeeded!");
             } else {

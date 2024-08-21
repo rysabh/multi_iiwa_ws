@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'pybullet'
+package_name = 'python_sequence_planner'
 
 setup(
     name=package_name,
@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "python_sequence_planner = python_sequence_planner.python_sequence_planner:main",
         ],
     },
 )
