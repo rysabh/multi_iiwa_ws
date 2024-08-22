@@ -1,0 +1,24 @@
+digraph G {
+"world" -> "kuka_blue_link_0"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"world" -> "kuka_green_link_0"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"kuka_blue_link_0" -> "kuka_blue_link_1"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_blue_link_1" -> "kuka_blue_link_2"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_blue_link_2" -> "kuka_blue_link_3"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_blue_link_3" -> "kuka_blue_link_4"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_blue_link_4" -> "kuka_blue_link_5"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_blue_link_5" -> "kuka_blue_link_6"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_blue_link_6" -> "kuka_blue_link_7"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_green_link_0" -> "kuka_green_link_1"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_green_link_1" -> "kuka_green_link_2"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_green_link_2" -> "kuka_green_link_3"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_green_link_3" -> "kuka_green_link_4"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_green_link_4" -> "kuka_green_link_5"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_green_link_5" -> "kuka_green_link_6"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_green_link_6" -> "kuka_green_link_7"[label=" Broadcaster: default_authority\nAverage rate: 18.288\nBuffer length: 2.57\nMost recent transform: 1724363410.794899\nOldest transform: 1724363408.224906\n"];
+"kuka_blue_link_7" -> "kuka_blue_link_ee"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"kuka_green_link_7" -> "kuka_green_link_ee"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1724363410.8086772"[ shape=plaintext ] ;
+}->"world";
+}
