@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'python_sequence_planner = python_sequence_planner.python_sequence_planner:main'
+            'python_sequence_planner = python_sequence_planner.python_sequence_planner:main',
+            'dual_sequence_planner_test = python_sequence_planner.dual_sequence_planner_test:main',
         ],
     },
 )

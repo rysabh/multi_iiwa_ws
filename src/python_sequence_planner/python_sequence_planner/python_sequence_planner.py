@@ -18,7 +18,7 @@ from std_msgs.msg import Header
 from rclpy.serialization import serialize_message
 
 class SequenceMotion(Node):
-    def __init__(self):
+    def __init__(self, move_group: str = "kuka_green"):
         super().__init__("sequence_motion")
         self._action_client = ActionClient(self, MoveGroupSequence, "/sequence_move_group")
 
@@ -26,8 +26,8 @@ class SequenceMotion(Node):
             self.get_logger().info(f"Waiting for {self._action_client._action_name}...")
 
         self._base = "world"
-        self._end_effector = "kuka_blue_link_ee"
-        self._move_group_name = "kuka_blue"
+        self._end_effector = "kuka_green_link_ee"
+        self._move_group_name = move_group
 
     def motion_plan_request(self, target_pose: Pose) -> MotionPlanRequest:
         req = MotionPlanRequest()
@@ -72,13 +72,14 @@ class SequenceMotion(Node):
         for target_pose in target_poses:
             goal.request.items.append(
                 MotionSequenceItem(
-                    blend_radius = 0.1,
+                    blend_radius = 0.01,
                     req = self.motion_plan_request(target_pose=target_pose),
                 )
             )
         goal.request.items[-1].blend_radius = 0.0
         future = self._action_client.send_goal_async(goal)
         rclpy.spin_until_future_complete(self, future)
+        print()
     #     future.add_done_callback(self.goal_response_callback)
 
     # def goal_response_callback(self, future):
@@ -101,17 +102,18 @@ class SequenceMotion(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    sequence_motion = SequenceMotion()
+    sequence_motion_green = SequenceMotion(move_group="kuka_green")
     target_poses = [
-        # Pose(position = Point(x = 1.0, y = 1.0, z = 1.266), orientation = Quaternion(w = 1.0)),
-        Pose(position = Point(x = 0.0, y = 0.0, z = 1.0), orientation = Quaternion(w = 1.0)),
-        Pose(position = Point(x = 0.2, y = 0.2, z = 0.8), orientation = Quaternion(w = 1.0)),
-        Pose(position = Point(x = -0.06, y = -0.32, z = 1.0), orientation = Quaternion(w = 1.0)),
-        Pose(position = Point(x = 0.38, y = -0.33, z = 1.0), orientation = Quaternion(w = 1.0)),
-        # Pose(position = Point(x = 0.35, y = 0.26, z = 1.018), orientation = Quaternion(x = -0.62, y = 0.0, z=0.0, w = 0.78)),
-        # Pose(position = Point(x = 0.42, y = 0.24, z = 0.90), orientation = Quaternion(x = -0.62, y = 0.0, z=0.0, w = 0.71)),
+        # Pose(position = Point(x = 0.0, y = 0.0, z = 1.0), orientation = Quaternion(w = 1.0)),
+        # Pose(position = Point(x = 0.2, y = 0.2, z = 0.8), orientation = Quaternion(w = 1.0)),
+        # Pose(position = Point(x = -0.06, y = -0.32, z = 1.0), orientation = Quaternion(w = 1.0)),
+        # Pose(position = Point(x = 0.38, y = -0.33, z = 1.0), orientation = Quaternion(w = 1.0)),
+
+        Pose(position = Point(x = 1.18, y = 1.08, z = 1.08), orientation = Quaternion(w = 1.0)),
+        Pose(position = Point(x = 1.24, y = 1.11, z = 1.02), orientation = Quaternion(w = 1.0)),
+        Pose(position = Point(x = 1.29, y = 1.14, z = 0.97), orientation = Quaternion(w = 1.0)),
     ]
-    sequence_motion.execute_sequence_motion(target_poses=target_poses)
+    sequence_motion_green.execute_sequence_motion(target_poses=target_poses)
     rclpy.shutdown()
 
 if __name__ == "__main__":
