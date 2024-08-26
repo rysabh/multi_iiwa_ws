@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'python_sequence_planner = python_sequence_planner.python_sequence_planner:main',
             'dual_sequence_planner_test = python_sequence_planner.dual_sequence_planner_test:main',
+            'find_fk = python_sequence_planner.find_fk:main',
         ],
     },
 )
