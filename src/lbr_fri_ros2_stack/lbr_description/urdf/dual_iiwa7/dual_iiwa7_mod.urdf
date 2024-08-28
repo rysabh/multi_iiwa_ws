@@ -10,7 +10,7 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </link>
   <joint name="world_kuka_blue_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <origin rpy="0 0 0" xyz="0.7 -0.3 0"/>
     <parent link="world"/>
     <child link="kuka_blue_link_0"/>
   </joint>
@@ -230,7 +230,7 @@
   <link name="kuka_blue_link_ee">
         </link>
   <joint name="world_kuka_green_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="1 1 0"/>
+    <origin rpy="0 0 0" xyz="0.75 0.9 0"/>
     <parent link="world"/>
     <child link="kuka_green_link_0"/>
   </joint>

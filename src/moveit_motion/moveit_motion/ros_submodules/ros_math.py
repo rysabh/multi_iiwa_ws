@@ -12,7 +12,7 @@ from builtin_interfaces.msg import Duration
 from trajectory_msgs.msg import JointTrajectory
 
 def robodk_2_ros(TxyzQwxyz: list) -> list:
-    return [TxyzQwxyz[0], TxyzQwxyz[1], TxyzQwxyz[2], TxyzQwxyz[6], TxyzQwxyz[3], TxyzQwxyz[4], TxyzQwxyz[5]]
+    return [TxyzQwxyz[0], TxyzQwxyz[1], TxyzQwxyz[2], TxyzQwxyz[4], TxyzQwxyz[5], TxyzQwxyz[6], TxyzQwxyz[3]]
 
 def joint_list_2_state(joint_positions: list, joint_names: list) -> JointState:
     joint_state = JointState()

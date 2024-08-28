@@ -6,4 +6,4 @@ install/
 log/
 **/.DS_Stores
 **/__pycache__
-no-sync/*
+# src/no-sync/*
