@@ -30,18 +30,6 @@ class SequenceMotion(Node):
         }
         print(self._end_effectors)
 
-# def read_data(path: str, fps: int = 120) -> List:
-#     path = path
-#     data = cfp.DataParser.from_euler_file(file_path = path, target_fps= fps, filter=False, window_size=5, polyorder=3)
-
-#     rigid = data.get_rigid_TxyzRxyz()['chisel']
-
-#     kuka_blue = []
-#     print(len(rigid))
-#     for _ in range(len(rigid)):
-#         ros_frame = rm.robodk_2_ros(rigid['gripper'][_])
-#         kuka_blue.append(ros_frame)
-#     return kuka_blue
 
     @staticmethod
     def data_2_pose(data: List) -> List[Pose]:
