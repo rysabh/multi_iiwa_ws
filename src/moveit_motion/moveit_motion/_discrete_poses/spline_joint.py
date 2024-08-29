@@ -1,3 +1,4 @@
+#NOT WORKING
 import os
 import rclpy
 from rclpy.action import ActionClient
@@ -8,6 +9,7 @@ from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv
 
 from ros_submodules.MoveitInterface import MoveitInterface
 
+import numpy as np
 def main():
     rclpy.init()
     client = MoveitInterface(node_name="client",     
@@ -34,26 +36,19 @@ def main():
                 orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
             )
     ]
-
-    dual_spline_trajectory = []
     
+
     cjs = client.get_current_joint_state()
     # print(cjs)
     # cjs_pose = client.get_current_robot_pose()
     # print(cjs_pose)
+    waypoints = [cjs]
     for pose in poses:
         tjs = client.get_best_ik(target_pose=pose, current_joint_state=cjs, attempts=300)
-        
-        # print(tjs)
-        plan = client.get_joint_plan(target_joint_state=tjs, 
-                                                  start_joint_state=cjs,
-                                                  planner_type="ompl")
-        
+        waypoints.append(tjs)
         cjs = tjs
     
-    # combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
-
-    # client_dual.execute_joint_traj(combined_trajectory)
+    plan = client.get_joint_spline(waypoints=waypoints, planner_type="pilz")
     
 
     rclpy.shutdown()

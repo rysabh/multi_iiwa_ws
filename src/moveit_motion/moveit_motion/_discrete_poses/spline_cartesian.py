@@ -1,13 +1,15 @@
+#NOT WORKING
+
 import os
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from geometry_msgs.msg import Point, Pose, Quaternion
 from sensor_msgs.msg import JointState
-from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states
+from moveit_motion.ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states
 
-from ros_submodules.MoveitInterface import MoveitInterface
-import ros_submodules.ros_math as rosm
+from moveit_motion.ros_submodules.MoveitInterface import MoveitInterface
+import moveit_motion.ros_submodules.ros_math as rosm
 
 import numpy as np
 def main():
