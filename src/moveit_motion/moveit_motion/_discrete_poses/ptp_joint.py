@@ -27,14 +27,14 @@ def main():
                 position=Point(x=0.6, y=0.0, z=0.6),
                 orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
             ),
-        Pose(
-                position=Point(x=0.5, y=0.1, z=0.4),
-                orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
-            ),
-        Pose(
-                position=Point(x=0.0, y=0.0, z=1.266),
-                orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
-            )
+        # Pose(
+        #         position=Point(x=0.5, y=0.1, z=0.4),
+        #         orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
+        #     ),
+        # Pose(
+        #         position=Point(x=0.0, y=0.0, z=1.266),
+        #         orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
+        #     )
     ]
 
     dual_spline_trajectory = []
@@ -47,9 +47,9 @@ def main():
         tjs = client.get_best_ik(target_pose=pose, current_joint_state=cjs, attempts=300)
         
         # print(tjs)
-        plan = client.get_joint_plan(target_joint_state=tjs, 
+        plan = client.get_joint_ptp_plan(target_joint_state=tjs, 
                                                   start_joint_state=cjs,
-                                                  planner_type="ompl")
+                                                  planner_type="pilz")
         
         cjs = tjs
     

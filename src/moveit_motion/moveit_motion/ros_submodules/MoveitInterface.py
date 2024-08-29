@@ -44,7 +44,7 @@ class MoveitInterface(Node):
         "pilz": ["pilz_industrial_motion_planner", "LIN"]
         }
     
-    THRESHOLD_2_MOVE = 0.0005 
+    THRESHOLD_2_MOVE = 0.0005 # 0.0005 
     
     def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
