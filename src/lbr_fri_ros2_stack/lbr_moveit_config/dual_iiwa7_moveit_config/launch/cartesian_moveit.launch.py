@@ -36,6 +36,28 @@ def generate_launch_description():
             move_group_capabilities,
         ],
     )
+   
+    run_move_group_blue_node = Node(
+        package="moveit_ros_move_group",
+        executable="move_group",
+        output = "screen",
+        namespace="kuka_blue",
+        parameters=[
+            moveit_config.to_dict(),
+            move_group_capabilities,
+        ],
+    )
+
+    run_move_group_green_node = Node(
+        package="moveit_ros_move_group",
+        executable="move_group",
+        output = "screen",
+        namespace="kuka_green",
+        parameters=[
+            moveit_config.to_dict(),
+            move_group_capabilities,
+        ],
+    )
 
     # rviz_config_file = (
     #     "config/moveit.rviz"
@@ -118,6 +140,8 @@ def generate_launch_description():
             # static_tf_green,
             robot_state_publisher,
             run_move_group_node,
+            run_move_group_blue_node,
+            run_move_group_green_node,
             ros2_control_node,
         ]
         + load_controllers

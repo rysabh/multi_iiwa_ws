@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: lbr_description
+    relative_path: urdf/dual_iiwa7/dual_iiwa7_mod_chisel_gripper.urdf
+  srdf:
+    relative_path: config/dual_iiwa7.srdf
+  package_settings:
+    author_name: Samrudh Moode
+    author_email: moode@usc.edu
+    generated_timestamp: 1724974577

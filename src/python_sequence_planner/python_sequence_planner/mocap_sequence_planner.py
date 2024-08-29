@@ -18,9 +18,9 @@ import moveit_motion.diffusion_policy_cam.submodules.cleaned_file_parser as cfp
 import moveit_motion.ros_submodules.ros_math as rm
 
 class SequenceMotion(Node):
-    def __init__(self, move_groups: List[str]):
+    def __init__(self, name_space, move_groups: List[str]):
         super().__init__("sequence_motion")
-        self._action_client = ActionClient(self, MoveGroupSequence, "/sequence_move_group")
+        self._action_client = ActionClient(self, MoveGroupSequence, f"/sequence_move_group")
 
         while not self._action_client.wait_for_server(timeout_sec=1.0):
             self.get_logger().info(f"Waiting for {self._action_client._action_name}...")
@@ -139,12 +139,12 @@ class SequenceMotion(Node):
 def main(_robot_name):
     rclpy.init()
     move_groups = ["kuka_blue", "kuka_green"]
-    sequence_motion = SequenceMotion(move_groups = move_groups)
+    sequence_motion = SequenceMotion(name_space=_robot_name, move_groups = move_groups)
     path = 'src/no-sync/edge_3/ft_011_edge_3_step_2.csv'
     FPS = 15
     data = cfp.DataParser.from_euler_file(file_path = path, target_fps= FPS, filter=False, window_size=5, polyorder=3)
 
-    gripper_data = data.get_rigid_TxyzRxyz()['gripper']
+    gripper_data = data.get_rigid_TxyzRxyz()['gripper'][8:]
     chisel_data = data.get_rigid_TxyzRxyz()['chisel']
 
     kuka_blue = []
@@ -191,5 +191,9 @@ def main(_robot_name):
 
 if __name__ == "__main__":
     import sys
-    _robot_name = sys.argv[1]
+    _robot_name = "kuka_blue"
+
+    if len(sys.argv) > 1:
+        _robot_name = sys.argv[1]
+        
     main(_robot_name)
