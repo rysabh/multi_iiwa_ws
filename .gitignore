@@ -7,3 +7,4 @@ log/
 **/.DS_Stores
 **/__pycache__
 src/no-sync/*
+**/no-sync/*
