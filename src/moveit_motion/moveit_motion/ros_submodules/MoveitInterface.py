@@ -19,12 +19,12 @@ from sensor_msgs.msg import JointState
 
 from trajectory_msgs.msg import JointTrajectory
 
-from ros_submodules.wait_for_message import wait_for_message
+from moveit_motion.ros_submodules.wait_for_message import wait_for_message
 
 import numpy as np
 
-from ros_submodules.RS_submodules import MSE_joint_states, filter_for_prefix
-import ros_submodules.ros_math as rosm
+from moveit_motion.ros_submodules.RS_submodules import MSE_joint_states, filter_for_prefix
+import moveit_motion.ros_submodules.ros_math as rosm
 
 
 import os
@@ -44,7 +44,7 @@ class MoveitInterface(Node):
         "pilz": ["pilz_industrial_motion_planner", "LIN"]
         }
     
-    THRESHOLD_2_MOVE = 0.0005 
+    THRESHOLD_2_MOVE = 0.0005 # 0.0005 
     
     def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
@@ -228,9 +228,48 @@ class MoveitInterface(Node):
             if MSE_joint_states(waypoints[i], waypoints[i-1]) > self.THRESHOLD_2_MOVE:
                 filtered_waypoints.append(waypoints[i])
         return filtered_waypoints
-        
 
-    def get_joint_plan(self, start_joint_state: JointState, target_joint_state: JointState, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
+    #===================================================================
+    ###################### MOVEIT EXECUTION ############################
+    #===================================================================
+     
+    def execute_joint_traj(self, trajectory: RobotTrajectory):
+        goal = ExecuteTrajectory.Goal()
+        goal.trajectory = trajectory
+        goal_future = self.execute_client_.send_goal_async(goal)
+        rclpy.spin_until_future_complete(self, goal_future)
+        
+        goal_handle = goal_future.result()
+        
+        if not goal_handle.accepted:
+            self.get_logger().error("Failed to execute trajectory")
+            return None
+        
+        self.get_logger().info("Trajectory accepted, moving the robot...")
+        result_future = goal_handle.get_result_async()
+
+        rclpy.spin_until_future_complete(self, result_future)
+        #Hantao's Code
+        # expect_duration = traj.joint_trajectory.points[-1].time_from_start
+        # expect_time = time.time() + 2 * expect_duration.sec 
+        # while not result_future.done() and time.time() < expect_time:
+        #     time.sleep(0.01)
+
+        # robot_interface_node.get_logger().info("Trajectory executed")
+        if not result_future.done():
+            self.get_logger().info("!!! Trajectory NOT executed")
+            raise RuntimeError
+        
+        self.get_logger().info("Trajectory executed")
+        return
+    #================== End of Moveit Execution ========================
+
+    #===================================================================
+    ###################### MOVEIT PLANNING ############################
+    #===================================================================
+
+    ###---------------------- Joint Space Planning -----------------------
+    def get_joint_ptp_plan(self, start_joint_state: JointState, target_joint_state: JointState, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
         if MSE_joint_states(target_joint_state, start_joint_state) <= self.THRESHOLD_2_MOVE:
             self.get_logger().info("Start and End goals match. ** NOT ** moving anything and Passing Empty Trajectory")
             return RobotTrajectory()
@@ -263,59 +302,31 @@ class MoveitInterface(Node):
         return self._request_for_attempts(request, client, handle_joint_response, attempts)
     
     
-    # def get_joint_spline(self, waypoints: list[JointState], attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
-    #     waypoints = self._filter_waypoints_threshold(waypoints)
-    #     if len(waypoints) < 2:
-    #         self.get_logger().info("Not enough waypoints to move. ** NOT ** moving anything and Passing Empty Trajectory")
-    #         return RobotTrajectory()
+    def get_joint_spline_plan(self, waypoints: list[JointState], attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
+        waypoints = self._filter_waypoints_threshold(waypoints)
+        if len(waypoints) < 2:
+            self.get_logger().info("Not enough waypoints to move. ** NOT ** moving anything and Passing Empty Trajectory")
+            return RobotTrajectory()
         
-    #     _start_joint_state = waypoints[0]
-    #     _start_robot_state = rosm.joint_2_robot_state(_start_joint_state)
+        _start_joint_state = waypoints[0]
+        _start_robot_state = rosm.joint_2_robot_state(_start_joint_state)
           
-    #     _constraints = rosm.joint_states_2_constraints(*waypoints[1:])
+        _constraints = rosm.joint_states_2_constraints(*waypoints[1:])
         
 
-    #     planner_type = kwargs.get("planner_type", "default")
-    #     pipeline_id, planner_id = self._get_planner_config(planner_type)
+        planner_type = kwargs.get("planner_type", "default")
+        pipeline_id, planner_id = self._get_planner_config(planner_type)
 
-    #     request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
-    #                                      pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
-    #     ## plan for n attempts until succesful
-    #     return self._request_plan_for_attempts(request, attempts)
+        request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
+                                         pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
+        ## plan for n attempts until succesful
+        return self._request_plan_for_attempts(request, attempts)
     
-        
-    def execute_joint_traj(self, trajectory: RobotTrajectory):
-        goal = ExecuteTrajectory.Goal()
-        goal.trajectory = trajectory
-        goal_future = self.execute_client_.send_goal_async(goal)
-        rclpy.spin_until_future_complete(self, goal_future)
-        
-        goal_handle = goal_future.result()
-        
-        if not goal_handle.accepted:
-            self.get_logger().error("Failed to execute trajectory")
-            return None
-        
-        self.get_logger().info("Trajectory accepted, moving the robot...")
-        result_future = goal_handle.get_result_async()
+    ###---------------------- Cartesian Space Planning -----------------------
+    def get_cartesian_ptp_plan():
+        pass
 
-        rclpy.spin_until_future_complete(self, result_future)
-        #Hantao's Code
-        # expect_duration = traj.joint_trajectory.points[-1].time_from_start
-        # expect_time = time.time() + 2 * expect_duration.sec 
-        # while not result_future.done() and time.time() < expect_time:
-        #     time.sleep(0.01)
-
-        # robot_interface_node.get_logger().info("Trajectory executed")
-        if not result_future.done():
-            self.get_logger().info("!!! Trajectory NOT executed")
-            raise RuntimeError
-        
-        self.get_logger().info("Trajectory executed")
-        return
-
-
-    def get_cartesian_path(self, waypoints: list[Pose], attempts:int = 100, eef_step: float = 0.01, jump_threshold: float = 0.0, avoid_collisions: bool = False) -> Union[RobotTrajectory, None]:
+    def get_cartesian_spline_plan(self, waypoints: list[Pose], attempts:int = 100, eef_step: float = 0.01, jump_threshold: float = 0.0, avoid_collisions: bool = False) -> Union[RobotTrajectory, None]:
         '''
         Plan a Cartesian path (spline) through the given waypoints.
         
@@ -349,3 +360,6 @@ class MoveitInterface(Node):
         # Call the service and wait for response
         client = self.cartesian_client_
         return self._request_for_attempts(request, client, handle_cartesian_response, attempts=attempts)
+    
+
+    #================== End of Moveit Planning ========================

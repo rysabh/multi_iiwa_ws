@@ -9,7 +9,10 @@ from moveit_msgs.msg import (
 )
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
 from builtin_interfaces.msg import Duration
-from trajectory_msgs.msg import JointTrajectory
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+import numpy as np
+from typing import Union
 
 def robodk_2_ros(TxyzQwxyz: list) -> list:
     return [TxyzQwxyz[0], TxyzQwxyz[1], TxyzQwxyz[2], TxyzQwxyz[4], TxyzQwxyz[5], TxyzQwxyz[6], TxyzQwxyz[3]]
@@ -32,6 +35,7 @@ def joint_2_robot_state(joint_state: JointState) -> RobotState:
 
 def robot_2_joint_state(robot_state: RobotState) -> JointState:
     return robot_state.joint_state
+
 
 
 def _joint_state_2_constraints(joint_state: JointState) -> list:
@@ -106,3 +110,37 @@ def combine_trajectories(trajectories: list[RobotTrajectory]) -> RobotTrajectory
     
     print("Trajectories Combined")
     return combined_robot_trajectory
+
+
+def joint_points_2_trajectory(points: Union[np.ndarray, list], 
+                              times: Union[np.ndarray, list], 
+                              header_frame_id: str, 
+                              joint_names: list, 
+                              **kwargs) -> RobotTrajectory:
+    
+    # Initialize a RobotTrajectory message
+    trajectory_msg = RobotTrajectory()
+    trajectory_msg.joint_trajectory.header.frame_id = header_frame_id
+    trajectory_msg.joint_trajectory.joint_names = joint_names
+
+    # Check if times are provided, if not generate them
+    if not times:
+        sampling_rate = float(kwargs.get("sampling_rate", 1))
+        times = [i / sampling_rate for i in range(len(points))]
+
+    # Iterate over the points and times to create JointTrajectoryPoints
+    for i in range(len(points)):
+        # Create a JointTrajectoryPoint
+        trajectory_point = JointTrajectoryPoint()
+        
+        # Assign joint positions
+        trajectory_point.positions = list(points[i])
+
+        # Set the time_from_start
+        trajectory_point.time_from_start = Duration(sec=int(times[i]), nanosec=int((times[i] % 1) * 1e9))
+
+        # Append the point to the trajectory message
+        trajectory_msg.joint_trajectory.points.append(trajectory_point)
+
+    return trajectory_msg
+
