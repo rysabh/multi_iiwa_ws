@@ -23,18 +23,18 @@ def main():
     #                               remapping_name="lbr", 
     #                               prefix="")
     poses = [
-        Pose(
-                position=Point(x=0.6, y=0.0, z=0.6),
-                orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
-            ),
         # Pose(
-        #         position=Point(x=0.5, y=0.1, z=0.4),
+        #         position=Point(x=0.6, y=0.0, z=0.6),
         #         orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
         #     ),
-        # Pose(
-        #         position=Point(x=0.0, y=0.0, z=1.266),
-        #         orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
-        #     )
+        Pose(
+                position=Point(x=0.5, y=0.1, z=0.4),
+                orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
+            ),
+        Pose(
+                position=Point(x=0.0, y=0.0, z=1.266),
+                orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0),
+            )
     ]
 
     dual_spline_trajectory = []
@@ -52,6 +52,7 @@ def main():
                                                   planner_type="pilz")
         
         cjs = tjs
+        client.execute_joint_traj(plan)
     
     # combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
 

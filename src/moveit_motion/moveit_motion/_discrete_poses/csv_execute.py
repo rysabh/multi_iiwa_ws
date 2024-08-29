@@ -45,7 +45,7 @@ def main():
 
     joint_robot_traj = rosm.joint_points_2_trajectory(points = data,
                                                 times= None,
-                                                header_frame_id= f"{client.move_group_name_}_link_0",
+                                                header_frame_id= "world",
                                                 joint_names= cjs.name,
                                                 sampling_rate= 5.0)
 

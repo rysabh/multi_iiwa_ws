@@ -23,18 +23,30 @@ from sensor_msgs.msg import JointState
 # from submodules.wait_for_message import wait_for_message
 
 
-from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states
+from moveit_motion.ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states
 
-from ros_submodules.MoveitInterface import MoveitInterface
+from moveit_motion.ros_submodules.MoveitInterface import MoveitInterface
 
 def main():
     rclpy.init()
 
-    client_blue = MoveitInterface(node_name="client_blue", move_group_name="kuka_blue")
+    client_blue =  MoveitInterface(node_name="client_blue",     
+                                  move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="kuka_blue",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
 
-    client_green = MoveitInterface(node_name="client_green", move_group_name="kuka_green")
+    client_green =  MoveitInterface(node_name="client_green",     
+                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="kuka_green",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
 
-    client_dual = MoveitInterface(node_name="client_dual", move_group_name="dual_arm")
+    client_dual =  MoveitInterface(node_name="client_dual",     
+                                  move_group_name="dual_arm", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
 
     poses = [
         Pose(
@@ -79,7 +91,7 @@ def main():
         tjs_dual.position = tjs_blue.position + tjs_green.position
         tjs_dual.velocity = tjs_blue.velocity + tjs_blue.velocity
 
-        # planned_joint_trajectory = client_dual.get_joint_traj(target_joint_state=tjs_dual, 
+        # planned_joint_trajectory = client_dual.get_joint_ptp_plan(target_joint_state=tjs_dual, 
         #                                                       start_joint_state=cjs_dual,
         #                                                       planner_type="pilz")        
         # if planned_joint_trajectory is None:
@@ -87,7 +99,7 @@ def main():
         #     return
         # dual_spline_trajectory.append(planned_joint_trajectory)
         
-        plan_green = client_green.get_joint_traj(target_joint_state=tjs_green, 
+        plan_green = client_green.get_joint_ptp_plan(target_joint_state=tjs_green, 
                                                   start_joint_state=cjs_green,
                                                   planner_type="pilz")
 
