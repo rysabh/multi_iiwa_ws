@@ -45,7 +45,9 @@ class MoveitInterface(Node):
         "cartesian": []
         }
     
-    THRESHOLD_2_MOVE = 0.0005 # 0.0005 
+    THRESHOLD_2_MOVE = 0.0005 # 0.0005
+
+    CARTESIAN_ACTION_CLIENT_FLAG = False
     
     def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
@@ -60,7 +62,7 @@ class MoveitInterface(Node):
         self.fk_srv_name_ = f"{remapping_name}/compute_fk" if remapping_name else "compute_fk"
         self.plan_srv_name_ = f"{remapping_name}/plan_kinematic_path" if remapping_name else "plan_kinematic_path"
         self.execute_action_name_ = f"{remapping_name}/execute_trajectory" if remapping_name else "execute_trajectory"
-        self.cartesian_srv_name_ = f"{remapping_name}/compute_cartesian_path" if remapping_name else "compute_cartesian_path"
+        
         # self.action_server_ = f"{remapping_name}/move_action" if remapping_name else "move_action"
 
         #link names 
@@ -83,12 +85,6 @@ class MoveitInterface(Node):
         if not self.plan_client_.wait_for_service(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: GetMotionPlan service not available -> {self.plan_client_.srv_name}.")
             exit(1)
-            
-        self.cartesian_client_ = self.create_client(GetCartesianPath, self.cartesian_srv_name_)
-        if not self.cartesian_client_.wait_for_service(timeout_sec=self.timeout_sec_):
-            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.cartesian_client_.srv_name}.")
-            exit(1)
-            
         
         self.execute_client_ = ActionClient(self, ExecuteTrajectory, self.execute_action_name_)
         if not self.execute_client_.wait_for_server(timeout_sec=self.timeout_sec_):
@@ -112,20 +108,18 @@ class MoveitInterface(Node):
         
         return _current_joint_state
 
-    def get_current_robot_pose(self) -> Union[Pose , None]:
+    def get_fk(self, joint_state: JointState) -> Union[Pose, None]:
         '''
         Pose for the real robot
         '''
-        _current_joint_state = self.get_current_joint_state()
-        _current_robot_state = rosm.joint_2_robot_state(_current_joint_state)
-
+        _robot_state = rosm.joint_2_robot_state(joint_state)
         _request = GetPositionFK.Request()
         _request.header.frame_id = self.base_
         # _request.header.frame_id = 'lbr/link_0' #kuka_blue_link_0
         _request.header.stamp = self.get_clock().now().to_msg()
         # _request.fk_link_names.append('link_ee')
         _request.fk_link_names.append(self.end_effector_)
-        _request.robot_state = _current_robot_state
+        _request.robot_state = _robot_state
 
         future = self.fk_client_.call_async(_request)
         rclpy.spin_until_future_complete(self, future)
@@ -142,8 +136,17 @@ class MoveitInterface(Node):
         
         return response.pose_stamped[0].pose
 
+    def get_current_robot_pose(self) -> Union[Pose , None]:
+        '''
+        Current Pose for the real robot
+        '''
+        _current_joint_state = self.get_current_joint_state()
+        if not _current_joint_state:
+            return None
+        return self.get_fk(_current_joint_state)
+
     @filter_for_prefix
-    def request_ik(self, pose: Pose) -> Union[JointState, None]:
+    def get_ik(self, pose: Pose) -> Union[JointState, None]:
         request = GetPositionIK.Request()
         request.ik_request.group_name = self.move_group_name_
         request.ik_request.pose_stamped.header.frame_id = self.base_
@@ -171,7 +174,7 @@ class MoveitInterface(Node):
         best_joint_state = None
 
         for _ in range(attempts):
-            target_joint_state = self.request_ik(target_pose)
+            target_joint_state = self.get_ik(target_pose)
             if target_joint_state is None:
                 continue
             cost = MSE_joint_states(current_joint_state, target_joint_state)
@@ -333,6 +336,15 @@ class MoveitInterface(Node):
         return self._request_for_attempts(request, attempts)
     
     ###---------------------- Cartesian Space Planning -----------------------
+    def _set_cartesian_action_client(self, action_name: str = "compute_cartesian_path") -> None:
+        self.cartesian_srv_name_ = f"{self.remapping_name_}/{action_name}" if self.remapping_name_ else action_name    
+        self.cartesian_client_ = self.create_client(GetCartesianPath, self.cartesian_srv_name_)
+        if not self.cartesian_client_.wait_for_service(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.cartesian_client_.srv_name}.")
+            exit(1)
+        self.CARTESIAN_ACTION_CLIENT_FLAG = True
+    
+    
     def get_cartesian_ptp_plan(self, start_pose: Pose, target_pose: Pose, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
         current_joint_state = self.get_current_joint_state()
         start_joint_state = self.get_best_ik(current_joint_state = current_joint_state, target_pose=start_pose, attempts=attempts)
@@ -362,6 +374,10 @@ class MoveitInterface(Node):
         **kwargs -> pilz planner specific arguments:
         max_velocity_scaling_factor: float = 0.1, max_acceleration_scaling_factor: float = 0.1
         '''
+
+        if not self.CARTESIAN_ACTION_CLIENT_FLAG:
+            self._set_cartesian_action_client()
+
         ADD_TIMES_FLAG = len(time_stamps) == len(waypoints)
         if len(time_stamps) > 0 and not ADD_TIMES_FLAG:
             self.get_logger().error("Invalid time_stamps provided")
