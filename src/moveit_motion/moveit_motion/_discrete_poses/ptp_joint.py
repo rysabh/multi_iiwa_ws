@@ -1,12 +1,14 @@
+#WORKS
+
 import os
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from geometry_msgs.msg import Point, Pose, Quaternion
 from sensor_msgs.msg import JointState
-from ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states
+from moveit_motion.ros_submodules.RS_submodules import save_trajectory, save_trajectory_to_csv, MSE_joint_states
 
-from ros_submodules.MoveitInterface import MoveitInterface
+from moveit_motion.ros_submodules.MoveitInterface import MoveitInterface
 
 def main():
     rclpy.init()
@@ -21,10 +23,10 @@ def main():
     #                               remapping_name="lbr", 
     #                               prefix="")
     poses = [
-        Pose(
-                position=Point(x=0.6, y=0.0, z=0.6),
-                orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
-            ),
+        # Pose(
+        #         position=Point(x=0.6, y=0.0, z=0.6),
+        #         orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
+        #     ),
         Pose(
                 position=Point(x=0.5, y=0.1, z=0.4),
                 orientation=Quaternion(x=0.0, y=-1.0, z=0.0, w=0.0),
@@ -45,11 +47,12 @@ def main():
         tjs = client.get_best_ik(target_pose=pose, current_joint_state=cjs, attempts=300)
         
         # print(tjs)
-        plan = client.get_joint_plan(target_joint_state=tjs, 
+        plan = client.get_joint_ptp_plan(target_joint_state=tjs, 
                                                   start_joint_state=cjs,
-                                                  planner_type="ompl")
+                                                  planner_type="pilz")
         
         cjs = tjs
+        client.execute_joint_traj(plan)
     
     # combined_trajectory = client_dual.combine_trajectories(dual_spline_trajectory)
 
