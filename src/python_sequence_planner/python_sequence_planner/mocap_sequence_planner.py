@@ -130,10 +130,10 @@ def main(_robot_name):
     sequence_motion = SequenceMotion(move_groups = move_groups)
     path = 'src/no-sync/edge_3/ft_011_edge_3_step_2.csv'
     FPS = 15
-    data = cfp.DataParser.from_euler_file(file_path = path, target_fps= FPS, filter=False, window_size=5, polyorder=3)
+    data = cfp.DataParser.from_quat_file(file_path = path, target_fps= FPS, filter=False, window_size=5, polyorder=3)
 
-    gripper_data = data.get_rigid_TxyzRxyz()['gripper']
-    chisel_data = data.get_rigid_TxyzRxyz()['chisel']
+    gripper_data = data.get_rigid_TxyzQwxyz()['gripper']
+    chisel_data = data.get_rigid_TxyzQwxyz()['chisel']
 
     kuka_blue = []
 
