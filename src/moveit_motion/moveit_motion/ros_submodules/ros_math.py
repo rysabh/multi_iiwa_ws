@@ -6,11 +6,15 @@ from moveit_msgs.msg import (
     MoveItErrorCodes,
     Constraints,
     JointConstraint,
+    BoundingVolume,
+    OrientationConstraint,
+    PositionConstraint,
 )
+from shape_msgs.msg import SolidPrimitive
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
 from builtin_interfaces.msg import Duration
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-
+from std_msgs.msg import Header
 import numpy as np
 from typing import Union
 
@@ -59,6 +63,45 @@ def joint_states_2_constraints(*joint_states : JointState) -> Constraints:
         _joint_constraints = _joint_state_2_constraints(joint_state)
         constraints.joint_constraints.extend(_joint_constraints)
     return constraints
+
+
+def _pose_to_constraints(target_pose: Pose, frame_id: str, link_name: str) -> Constraints:
+    """Generate Constraints from a Pose."""
+    constraints = Constraints(
+        position_constraints=[
+            PositionConstraint(
+                header=Header(frame_id=frame_id),
+                link_name=link_name,
+                constraint_region=BoundingVolume(
+                    primitives=[SolidPrimitive(type=SolidPrimitive.SPHERE, dimensions=[0.0001])],
+                    primitive_poses=[Pose(position=target_pose.position)],
+                ),
+                weight=1.0,
+            )
+        ],
+        orientation_constraints=[
+            OrientationConstraint(
+                header=Header(frame_id=frame_id),
+                link_name=link_name,
+                orientation=target_pose.orientation,
+                absolute_x_axis_tolerance=0.001,
+                absolute_y_axis_tolerance=0.001,
+                absolute_z_axis_tolerance=0.001,
+                weight=1.0,
+            )
+        ],
+    )
+    return constraints
+
+def poses_to_constraints(poses: list[Pose], frame_id: str, link_name: str) -> Constraints:
+    """Generate Constraints from multiple Poses."""
+    constraints = Constraints()
+    for pose in poses:
+        pose_constraints = _pose_to_constraints(pose, frame_id, link_name)
+        constraints.position_constraints.extend(pose_constraints.position_constraints)
+        constraints.orientation_constraints.extend(pose_constraints.orientation_constraints)
+    return constraints
+
 
 def TxyzQxyzw_2_Pose(TxyzQxyzw: list) -> Pose:
     pose = Pose()

@@ -12,7 +12,16 @@ from moveit_msgs.msg import (
     MoveItErrorCodes,
     Constraints,
     JointConstraint,
+
+    BoundingVolume,
+    MotionPlanRequest,
+    MotionSequenceItem,
+    MotionSequenceRequest,
+    OrientationConstraint,
+    PositionConstraint,
 )
+
+from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.srv import GetPositionIK, GetMotionPlan, GetPositionFK, GetCartesianPath
 
 from sensor_msgs.msg import JointState
@@ -47,7 +56,8 @@ class MoveitInterface(Node):
     
     THRESHOLD_2_MOVE = 0.0005 # 0.0005
 
-    CARTESIAN_ACTION_CLIENT_FLAG = False
+    CARTESIAN_SERVICE_CLIENT_FLAG = False
+    EXECUTE_ACTION_CLIENT_FLAG = False
     
     def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
@@ -61,7 +71,6 @@ class MoveitInterface(Node):
         self.ik_srv_name_ = f"{remapping_name}/compute_ik" if remapping_name else "compute_ik"
         self.fk_srv_name_ = f"{remapping_name}/compute_fk" if remapping_name else "compute_fk"
         self.plan_srv_name_ = f"{remapping_name}/plan_kinematic_path" if remapping_name else "plan_kinematic_path"
-        self.execute_action_name_ = f"{remapping_name}/execute_trajectory" if remapping_name else "execute_trajectory"
         
         # self.action_server_ = f"{remapping_name}/move_action" if remapping_name else "move_action"
 
@@ -86,11 +95,6 @@ class MoveitInterface(Node):
             self.get_logger().error(f"*** Basic Error: GetMotionPlan service not available -> {self.plan_client_.srv_name}.")
             exit(1)
         
-        self.execute_client_ = ActionClient(self, ExecuteTrajectory, self.execute_action_name_)
-        if not self.execute_client_.wait_for_server(timeout_sec=self.timeout_sec_):
-            self.get_logger().error(f"*** Basic Error: ExecuteActionClient-Sim action not available -> {self.execute_client_._action_name}")
-            exit(1)
-
 
     @filter_for_prefix
     def get_current_joint_state(self) -> Union[JointState, None]: # use descriptors for filtering
@@ -197,21 +201,6 @@ class MoveitInterface(Node):
         self.get_logger().info(f"Using {planner_type} Planner -> {self.PLANNER_CONFIG[planner_type]}")
         return self.PLANNER_CONFIG[planner_type]
     
-
-    def _create_motion_plan_request(self, start_state: RobotState, goal_constraints: Constraints, **kwargs) -> GetMotionPlan.Request:
-        request = GetMotionPlan.Request()
-        request.motion_plan_request.group_name = self.move_group_name_
-        request.motion_plan_request.start_state = start_state
-        request.motion_plan_request.goal_constraints.append(goal_constraints)
-        request.motion_plan_request.num_planning_attempts = kwargs.get("attempts", 10) #TODO -> earlier it was 10 -> how is this different from "attempts"
-        request.motion_plan_request.allowed_planning_time = kwargs.get("allowed_planning_time", 5.0)
-        request.motion_plan_request.max_velocity_scaling_factor = kwargs.get("max_velocity_scaling_factor", 0.05)
-        request.motion_plan_request.max_acceleration_scaling_factor = kwargs.get("max_acceleration_scaling_factor", 0.1)
-        request.motion_plan_request.pipeline_id = kwargs.get("pipeline_id", "ompl")
-        request.motion_plan_request.planner_id = kwargs.get("planner_id", "APSConfigDefault")
-        # self.get_logger().info(f"requesting plan for -> \n{np.round(start_state.joint_state.position,2)} -> {np.round(goal_constraints.joint_constraints[-1].joint_state.position,2)}\n")
-        return request
-    
     
     def _request_for_attempts(self, request, client, response_handler, attempts: int) -> Union[RobotTrajectory, None]:
         for _ in range(attempts):
@@ -239,7 +228,14 @@ class MoveitInterface(Node):
     #===================================================================
     ###################### MOVEIT EXECUTION ############################
     #===================================================================
-     
+    def _set_execute_action_client(self, action_name: str = "execute_trajectory") -> None:
+        self.execute_action_name_ = f"{self.remapping_name}/{action_name}" if self.remapping_name else action_name
+        self.execute_client_ = ActionClient(self, ExecuteTrajectory, self.execute_action_name_)
+        if not self.execute_client_.wait_for_server(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: ExecuteActionClient-Sim action not available -> {self.execute_client_._action_name}")
+            exit(1)
+        self.EXECUTE_ACTION_CLIENT_FLAG = True
+
     def execute_joint_traj(self, trajectory: RobotTrajectory):
         goal = ExecuteTrajectory.Goal()
         goal.trajectory = trajectory
@@ -276,6 +272,32 @@ class MoveitInterface(Node):
     #===================================================================
 
     ###---------------------- Joint Space Planning -----------------------
+    def _create_motion_plan_request(self, start_state: RobotState, goal_constraints: Constraints, **kwargs) -> GetMotionPlan.Request:
+        request = GetMotionPlan.Request()
+        request.motion_plan_request.group_name = self.move_group_name_
+        request.motion_plan_request.start_state = start_state
+        request.motion_plan_request.goal_constraints.append(goal_constraints)
+        request.motion_plan_request.num_planning_attempts = kwargs.get("attempts", 10) #TODO -> earlier it was 10 -> how is this different from "attempts"
+        request.motion_plan_request.allowed_planning_time = kwargs.get("allowed_planning_time", 5.0)
+        request.motion_plan_request.max_velocity_scaling_factor = kwargs.get("max_velocity_scaling_factor", 0.05)
+        request.motion_plan_request.max_acceleration_scaling_factor = kwargs.get("max_acceleration_scaling_factor", 0.1)
+        request.motion_plan_request.pipeline_id = kwargs.get("pipeline_id", "ompl")
+        request.motion_plan_request.planner_id = kwargs.get("planner_id", "APSConfigDefault")
+        # self.get_logger().info(f"requesting plan for -> \n{np.round(start_state.joint_state.position,2)} -> {np.round(goal_constraints.joint_constraints[-1].joint_state.position,2)}\n")
+        return request
+    
+    def _motion_plan_response_handler(self, response):
+        _response_handle = {'trajectory': None, 'stop_flag': False}
+
+        if response.motion_plan_response.error_code.val != MoveItErrorCodes.SUCCESS:
+            self.get_logger().error(f"Failed to get motion plan: {response.motion_plan_response.error_code.val}")
+            return _response_handle
+        
+        _response_handle['trajectory'] = response.motion_plan_response.trajectory
+        _response_handle['stop_flag'] = True
+        return _response_handle
+
+    
     def get_joint_ptp_plan(self, start_joint_state: JointState, target_joint_state: JointState, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
         if MSE_joint_states(target_joint_state, start_joint_state) <= self.THRESHOLD_2_MOVE:
             self.get_logger().info("Start and End goals match. ** NOT ** moving anything and Passing Empty Trajectory")
@@ -297,24 +319,11 @@ class MoveitInterface(Node):
         request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
                                          pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
 
-        def handle_joint_response(response):
-            _response_handle = {'trajectory': None, 'stop_flag': False}
-
-            if response.motion_plan_response.error_code.val != MoveItErrorCodes.SUCCESS:
-                self.get_logger().error(f"Failed to get motion plan: {response.motion_plan_response.error_code.val}")
-                return _response_handle
-            
-            _response_handle['trajectory'] = response.motion_plan_response.trajectory,
-            _response_handle['stop_flag'] = False
-            return _response_handle
-        
         ## plan for n attempts until succesful
-        client = self.plan_client_
-
-        return self._request_for_attempts(request, client, handle_joint_response, attempts)
+        return self._request_for_attempts(request, self.plan_client_, self._motion_plan_response_handler, attempts)
     
     
-    #TODO
+    #TODO - Later
     def get_joint_spline_plan(self, waypoints: list[JointState], attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
         waypoints = self._filter_waypoints_threshold(waypoints)
         if len(waypoints) < 2:
@@ -335,27 +344,17 @@ class MoveitInterface(Node):
         ## plan for n attempts until succesful
         return self._request_for_attempts(request, attempts)
     
-    ###---------------------- Cartesian Space Planning -----------------------
-    def _set_cartesian_action_client(self, action_name: str = "compute_cartesian_path") -> None:
-        self.cartesian_srv_name_ = f"{self.remapping_name_}/{action_name}" if self.remapping_name_ else action_name    
-        self.cartesian_client_ = self.create_client(GetCartesianPath, self.cartesian_srv_name_)
-        if not self.cartesian_client_.wait_for_service(timeout_sec=self.timeout_sec_):
-            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.cartesian_client_.srv_name}.")
-            exit(1)
-        self.CARTESIAN_ACTION_CLIENT_FLAG = True
-    
-    
+    ### ---------------------- Cartesian Space Planning -----------------------
     def get_cartesian_ptp_plan(self, start_pose: Pose, target_pose: Pose, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
         current_joint_state = self.get_current_joint_state()
         start_joint_state = self.get_best_ik(current_joint_state = current_joint_state, target_pose=start_pose, attempts=attempts)
         target_joint_state = self.get_best_ik(current_joint_state = start_joint_state, target_pose=target_pose, attempts=attempts)
         return self.get_joint_ptp_plan(start_joint_state, target_joint_state, attempts=attempts, **kwargs)
-        
 
+    
     def get_cartesian_spline_plan(self,
                                   waypoints: list[Pose], 
                                   planning_frame: str,
-                                  time_stamps: list[float] = [],
                                   attempts:int = 100, 
                                   **kwargs) -> Union[RobotTrajectory, None]:
         '''
@@ -375,51 +374,143 @@ class MoveitInterface(Node):
         max_velocity_scaling_factor: float = 0.1, max_acceleration_scaling_factor: float = 0.1
         '''
 
-        if not self.CARTESIAN_ACTION_CLIENT_FLAG:
-            self._set_cartesian_action_client()
+        if not self.CARTESIAN_SERVICE_CLIENT_FLAG:
+            self._set_cartesian_interpolator_service_client(service_name="compute_cartesian_path")
 
-        ADD_TIMES_FLAG = len(time_stamps) == len(waypoints)
-        if len(time_stamps) > 0 and not ADD_TIMES_FLAG:
-            self.get_logger().error("Invalid time_stamps provided")
-            return None
             
         # Create request for Cartesian path
-        request = GetCartesianPath.Request(
+        request = self._create_cartesian_interpolator_motion_plan_request(waypoints, planning_frame, **kwargs)
+
+        # Call the service and wait for response
+        client = self.cartesian_client_
+        return self._request_for_attempts(request, client, self._cartesian_interpolator_response_handler, attempts=attempts)
+    
+
+    ### TODO - Doing (Read chatGPT)
+    def _set_cartesian_interpolator_service_client(self, service_name: str = "compute_cartesian_path") -> None:
+        self.cartesian_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
+        self.cartesian_client_ = self.create_client(GetCartesianPath, self.cartesian_srv_name_)
+        if not self.cartesian_client_.wait_for_service(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.cartesian_client_.srv_name}.")
+            exit(1)
+        self.CARTESIAN_SERVICE_CLIENT_FLAG = True
+
+    def _create_cartesian_interpolator_motion_plan_request(self, waypoints: list[Pose], 
+                                                           planning_frame: str,
+                                                           **kwargs) -> GetCartesianPath.Request:
+        '''
+        **kwargs -> cartesian planner specific arguments:
+        max_step: float = 0.01, jump_threshold: float = 0.0, avoid_collisions: bool = False
+        '''
+        _request = GetCartesianPath.Request(
             header=Header(frame_id=planning_frame, stamp=self.get_clock().now().to_msg()),
             group_name=self.move_group_name_,
             link_name=self.end_effector_,
             waypoints=waypoints,
-            **kwargs
+            max_step = kwargs.get("max_step", 0.01),
+            jump_threshold = kwargs.get("jump_threshold", 0.0),
+            avoid_collisions = kwargs.get("avoid_collisions", False)
         )
+        return _request
+    
+    def _cartesian_interpolator_response_handler(self, response):
+        _response_handle = {'trajectory': None, 'stop_flag': False, 'fraction': None}
 
-        def handle_cartesian_response(response):
-            _response_handle = {'trajectory': None, 'stop_flag': False, 'fraction': None}
-
-            if response.error_code.val != MoveItErrorCodes.SUCCESS:
-                self.get_logger().error(f"Failed to compute Cartesian path: {response.error_code.val}")
-                return _response_handle
-
-            _trajectory =  response.solution
-            _fraction = response.fraction
-            
-            _response_handle['trajectory'] = _trajectory
-            _response_handle['fraction'] = _fraction
-            _response_handle['stop_flag'] = True
-            if _fraction > 0.99:
-                # _response_handle['stop_flag'] = True
-                self.get_logger().info(f"===== Fraction achieved ====== {_fraction}")
-            else:
-                self.get_logger().error(f"===== Fraction achieved ====== {_fraction}")
-
-            if ADD_TIMES_FLAG and _response_handle['stop_flag']:
-                _completed_time_steps = int(len(time_stamps) * _fraction) 
-                _trajectory = rosm.interpolate_trajectory_timestamps(_trajectory, time_stamps[:_completed_time_steps], scaling_factor=0.5)
-
+        if response.error_code.val != MoveItErrorCodes.SUCCESS:
+            self.get_logger().error(f"Failed to compute Cartesian path: {response.error_code.val}")
             return _response_handle
 
-        # Call the service and wait for response
-        client = self.cartesian_client_
-        return self._request_for_attempts(request, client, handle_cartesian_response, attempts=attempts)
-    
+        _trajectory =  response.solution
+        _fraction = response.fraction
 
+        _response_handle['trajectory'] = _trajectory
+        _response_handle['fraction'] = _fraction
+        _response_handle['stop_flag'] = True
+        if _fraction > 0.99:
+            # _response_handle['stop_flag'] = True
+            self.get_logger().info(f"===== Fraction achieved ====== {_fraction}")
+        else:
+            self.get_logger().error(f"===== Fraction achieved ====== {_fraction}")
+        return _response_handle
+
+    def _create_cartesian_sequence_service_client(self, service_name: str = "/plan_sequence_path") -> None:
+        self.sequence_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
+        self.sequence_client_ = self.create_client(GetCartesianPath, self.sequence_srv_name_)
+        if not self.sequence_client_.wait_for_service(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.sequence_client_.srv_name}.")
+            exit(1)
+        self.SEQUENCE_SERVICE_CLIENT_FLAG = True
+    
+    def _create_motion_sequence_request(self, waypoints: list[Pose], 
+                                        planning_frame: str,
+                                        **kwargs) -> MotionSequenceRequest:
+        """
+        Create a MotionSequenceRequest for the Pilz planner, using the provided poses and motion type.
+
+        :param waypoints: List of Pose objects defining the Cartesian waypoints for the sequence.
+        :param move_group: The name of the move group to plan for.
+        :param motion_type: Type of motion ('PTP', 'LIN', 'CIRC'). Defaults to 'LIN'.
+        :param blend_radius: Blending radius for transitions between sequence items. Defaults to 0.00001
+        :param kwargs: Additional parameters for velocity and acceleration scaling factors.
+            - max_velocity_scaling_factor: float = 0.1
+            - max_acceleration_scaling_factor: float = 0.1
+        :return: A populated MotionSequenceRequest.
+        """
+        
+        sequence_request = MotionSequenceRequest()
+
+        # Loop through waypoints to create motion requests for the sequence
+        for waypoint in waypoints:
+            motion_request = MotionPlanRequest(
+                pipeline_id="pilz_industrial_motion_planner",
+                planner_id="LIN",
+                allowed_planning_time=10.0,
+                group_name=self.move_group_name_,
+                max_acceleration_scaling_factor=kwargs.get('max_acceleration_scaling_factor', 0.1),
+                max_velocity_scaling_factor=kwargs.get('max_velocity_scaling_factor', 0.1),
+                num_planning_attempts=kwargs.get('num_planning_attempts', 1000),
+            )
+            
+            # Generate constraints for the motion request
+            motion_request.goal_constraints.append(
+                rosm._pose_to_constraints(waypoint, planning_frame, self._end_effector_)
+            )
+
+            # Add the motion request to the sequence with the specified blending radius
+            sequence_item = MotionSequenceItem(
+                req=motion_request,
+                blend_radius=kwargs.get('blend_radius', 0.00001)
+            )
+            sequence_request.items.append(sequence_item)
+
+        return sequence_request
+
+    def _motion_sequence_response_handler(self, response):
+        """
+        Handle the response from a MotionSequenceRequest.
+
+        :param response: The response from the motion planning service.
+        :return: A dictionary containing the trajectory, fraction of the path planned, and stop flag.
+        """
+        response_handle = {'trajectory': None, 'stop_flag': False, 'fraction': None}
+
+        if response.error_code.val != MoveItErrorCodes.SUCCESS:
+            self.get_logger().error(f"Failed to compute motion sequence: {response.error_code.val}")
+            return response_handle
+
+        trajectory = response.trajectory
+        fraction = response.fraction
+
+        response_handle['trajectory'] = trajectory
+        response_handle['fraction'] = fraction
+
+        if fraction > 0.99:
+            response_handle['stop_flag'] = True
+            self.get_logger().info(f"Motion sequence planned successfully with fraction: {fraction}")
+        else:
+            self.get_logger().warn(f"Motion sequence planned with insufficient fraction: {fraction}")
+
+        return response_handle
+
+                                           
     #================== End of Moveit Planning ========================

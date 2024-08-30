@@ -88,6 +88,14 @@ def main(_robot_name):
     stop_flag = _cartesian_plan_handle['stop_flag']
     print(f"Stop flag: {stop_flag}")
 
+    # ADD_TIMES_FLAG = len(time_stamps) == len(waypoints)
+    # if len(time_stamps) > 0 and not ADD_TIMES_FLAG:
+    #     self.get_logger().error("Invalid time_stamps provided")
+    #     return None
+    # if ADD_TIMES_FLAG and _response_handle['stop_flag']:
+    #     _completed_time_steps = int(len(time_stamps) * _fraction) 
+    #     _trajectory = rosm.interpolate_trajectory_timestamps(_trajectory, time_stamps[:_completed_time_steps], scaling_factor=0.5)
+
     client.execute_joint_traj(_cartesian_plan)
     print(f"Fraction of path executed: {_fraction}")
 
