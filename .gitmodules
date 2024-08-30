@@ -5,3 +5,7 @@
 [submodule "src/bio_ik"]
 	path = src/bio_ik
 	url = git@github.com:TAMS-Group/bio_ik.git
+
+[submodule "src/serial"]
+	path = src/serial
+	url = git@github.com:tylerjw/serial.git

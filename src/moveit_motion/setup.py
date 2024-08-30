@@ -30,6 +30,7 @@ setup(
             'test = moveit_motion.test:main',
             'execute_on_real_robot = moveit_motion.execute_on_real_robot:main',
             'raj_motion_plan = moveit_motion.raj_motion_plan:main',
+            'moveit_joint_traj_interface = moveit_motion.moveit_joint_traj_interface:main',
         ],
     },
 )

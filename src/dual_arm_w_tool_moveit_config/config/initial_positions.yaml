@@ -1,0 +1,17 @@
+# Default initial positions for dual_iiwa7's ros2_control fake system
+
+initial_positions:
+  kuka_blue_A1: 0
+  kuka_blue_A2: 0
+  kuka_blue_A3: 0
+  kuka_blue_A4: 0
+  kuka_blue_A5: 0
+  kuka_blue_A6: 0
+  kuka_blue_A7: 0
+  kuka_green_A1: 0
+  kuka_green_A2: 0
+  kuka_green_A3: 0
+  kuka_green_A4: 0
+  kuka_green_A5: 0
+  kuka_green_A6: 0
+  kuka_green_A7: 0
