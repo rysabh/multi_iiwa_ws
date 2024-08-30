@@ -9,7 +9,12 @@ from moveit_msgs.msg import (
 )
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
 from builtin_interfaces.msg import Duration
-from trajectory_msgs.msg import JointTrajectory
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+import numpy as np
+from typing import Union
+
+
 
 def robodk_2_ros(TxyzQwxyz: list) -> list:
     return [TxyzQwxyz[0], TxyzQwxyz[1], TxyzQwxyz[2], TxyzQwxyz[4], TxyzQwxyz[5], TxyzQwxyz[6], TxyzQwxyz[3]]
@@ -34,6 +39,7 @@ def robot_2_joint_state(robot_state: RobotState) -> JointState:
     return robot_state.joint_state
 
 
+
 def _joint_state_2_constraints(joint_state: JointState) -> list:
     _joint_constraints = []
     for name, position in zip(joint_state.name, joint_state.position):
@@ -54,7 +60,7 @@ def joint_states_2_constraints(*joint_states : JointState) -> Constraints:
         constraints.joint_constraints.extend(_joint_constraints)
     return constraints
 
-def TxyzQwxyz_2_Pose(TxyzQxyzw: list) -> Pose:
+def TxyzQxyzw_2_Pose(TxyzQxyzw: list) -> Pose:
     pose = Pose()
     pose.position.x = TxyzQxyzw[0]
     pose.position.y = TxyzQxyzw[1]
@@ -106,3 +112,77 @@ def combine_trajectories(trajectories: list[RobotTrajectory]) -> RobotTrajectory
     
     print("Trajectories Combined")
     return combined_robot_trajectory
+
+
+def joint_points_2_trajectory(points: Union[np.ndarray, list], 
+                              times: Union[np.ndarray, list], 
+                              header_frame_id: str, 
+                              joint_names: list, 
+                              **kwargs) -> RobotTrajectory:
+    
+    # Initialize a RobotTrajectory message
+    trajectory_msg = RobotTrajectory()
+    trajectory_msg.joint_trajectory.header.frame_id = header_frame_id
+    trajectory_msg.joint_trajectory.joint_names = joint_names
+
+    # Check if times are provided, if not generate them
+    if not times:
+        sampling_rate = float(kwargs.get("sampling_rate", 1))
+        times = [i / sampling_rate for i in range(len(points))]
+
+    # Iterate over the points and times to create JointTrajectoryPoints
+    for i in range(len(points)):
+        # Create a JointTrajectoryPoint
+        trajectory_point = JointTrajectoryPoint()
+        
+        # Assign joint positions
+        trajectory_point.positions = list(points[i])
+
+        # Set the time_from_start
+        trajectory_point.time_from_start = Duration(sec=int(times[i]), nanosec=int((times[i] % 1) * 1e9))
+
+        # Append the point to the trajectory message
+        trajectory_msg.joint_trajectory.points.append(trajectory_point)
+
+    return trajectory_msg
+
+
+
+def interpolate_trajectory_timestamps(trajectory: RobotTrajectory,
+                                      timestamps: list[float]) -> RobotTrajectory:
+    # Interpolate times for each point in the trajectory
+    total_waypoints = len(timestamps)
+    total_points = len(trajectory.joint_trajectory.points)
+    
+    _start_time = timestamps[0]
+    # subtract the start time from all timestamps
+    timestamps = [_t - _start_time for _t in timestamps]
+
+    if total_waypoints < 2 or total_points < 2:
+        raise ValueError("There must be at least 2 waypoints and 2 trajectory points for interpolation.")
+    
+    interpolated_times = []
+
+    for i in range(total_points):
+        # Calculate the relative position of the current point within the total trajectory
+        relative_position = i / (total_points - 1) * (total_waypoints - 1)
+        segment_index = int(relative_position)
+        
+        if segment_index >= total_waypoints - 1:
+            segment_index = total_waypoints - 2
+        
+        t0 = timestamps[segment_index]
+        t1 = timestamps[segment_index + 1]
+        
+        # Interpolate time based on the relative position within the segment
+        alpha = relative_position - segment_index
+        interpolated_time = t0 + alpha * (t1 - t0)
+        interpolated_times.append(interpolated_time)
+
+    # Assign the interpolated times to each point in the trajectory
+    for i, trajectory_point in enumerate(trajectory.joint_trajectory.points):
+        sec = int(interpolated_times[i])
+        nanosec = int((interpolated_times[i] % 1) * 1e9)
+        trajectory_point.time_from_start = Duration(sec=sec, nanosec=nanosec)
+
+    return trajectory
