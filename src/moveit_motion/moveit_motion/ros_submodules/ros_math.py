@@ -149,7 +149,8 @@ def joint_points_2_trajectory(points: Union[np.ndarray, list],
 
 
 def interpolate_trajectory_timestamps(trajectory: RobotTrajectory,
-                                      timestamps: list[float]) -> RobotTrajectory:
+                                      timestamps: list[float],
+                                      scaling_factor:float = 1.0) -> RobotTrajectory:
     # Interpolate times for each point in the trajectory
     total_waypoints = len(timestamps)
     total_points = len(trajectory.joint_trajectory.points)
@@ -177,7 +178,7 @@ def interpolate_trajectory_timestamps(trajectory: RobotTrajectory,
         # Interpolate time based on the relative position within the segment
         alpha = relative_position - segment_index
         interpolated_time = t0 + alpha * (t1 - t0)
-        interpolated_times.append(interpolated_time)
+        interpolated_times.append(interpolated_time*scaling_factor)
 
     # Assign the interpolated times to each point in the trajectory
     for i, trajectory_point in enumerate(trajectory.joint_trajectory.points):

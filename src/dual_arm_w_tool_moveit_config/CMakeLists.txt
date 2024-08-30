@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(dual_robot_tool_moveit_config)
+project(dual_arm_w_tool_moveit_config)
 
 find_package(ament_cmake REQUIRED)
 

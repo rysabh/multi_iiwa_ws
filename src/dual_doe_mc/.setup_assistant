@@ -5,9 +5,9 @@ moveit_setup_assistant_config:
   srdf:
     relative_path: config/dual_iiwa7.srdf
   package_settings:
-    author_name: Samrudh Moode
-    author_email: moode@usc.edu
-    generated_timestamp: 1724979426
+    author_name: cam
+    author_email: cam@USC.EDU
+    generated_timestamp: 1724984101
   control_xacro:
     command:
       - position

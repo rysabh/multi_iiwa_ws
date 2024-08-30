@@ -3,5 +3,5 @@ from moveit_configs_utils.launches import generate_rsp_launch
 
 
 def generate_launch_description():
-    moveit_config = MoveItConfigsBuilder("dual_iiwa7", package_name="dual_robot_tool_moveit_config").to_moveit_configs()
+    moveit_config = MoveItConfigsBuilder("dual_iiwa7", package_name="dual_doe_mc").to_moveit_configs()
     return generate_rsp_launch(moveit_config)

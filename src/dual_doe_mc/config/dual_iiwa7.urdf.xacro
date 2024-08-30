@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="dual_iiwa7">
+    <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+
+    <!-- Import dual_iiwa7 urdf file -->
+    <xacro:include filename="$(find lbr_description)/urdf/dual_iiwa7/dual_iiwa7_mod_chisel_gripper.urdf" />
+
+    <!-- Import control_xacro -->
+    <xacro:include filename="dual_iiwa7.ros2_control.xacro" />
+
+
+    <xacro:dual_iiwa7_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+
+</robot>

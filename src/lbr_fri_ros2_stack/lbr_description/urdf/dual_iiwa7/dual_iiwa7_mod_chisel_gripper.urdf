@@ -503,7 +503,7 @@
       </geometry>
     </collision>
     <inertial>
-      <origin rpy="0 0 0" xyz="0.0 2.274e-05 0.03232288"/>
+      <origin rpy="0 0 1.57" xyz="0.0 2.274e-05 0.03232288"/>
       <mass value="6.6320197e-01"/>
       <inertia ixx="5.1617816e-04" ixy="2.936e-8" ixz="0.0" iyy="5.8802208e-04" iyz="-3.2296e-7" izz="3.9462776e-04"/>
     </inertial>
@@ -683,7 +683,7 @@
   <joint name="robotiq_85_base_joint" type="fixed">
     <parent link="kuka_blue_link_ee"/>
     <child link="robotiq_85_base_link"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <origin rpy="0 0 1.57" xyz="0 0 0"/>
   </joint>
   <joint name="robotiq_85_left_knuckle_joint" type="revolute">
     <parent link="robotiq_85_base_link"/>

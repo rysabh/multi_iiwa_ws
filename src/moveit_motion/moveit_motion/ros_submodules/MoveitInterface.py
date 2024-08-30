@@ -66,7 +66,7 @@ class MoveitInterface(Node):
         #link names 
         self.base_ = f"{prefix}_link_0" if prefix else f"{remapping_name}/link_0" # for FK and IK
         # self.end_effector_ = f"{prefix}_link_ee" if prefix else 'link_ee'    # for FK
-        self.end_effector_ = f"{prefix}_tcp_link" if prefix else 'link_ee'    # for FK
+        self.end_effector_ = f"{prefix}_link_tcp" if prefix else 'link_ee'    # for FK
         
 
         self.ik_client_ = self.create_client(GetPositionIK, self.ik_srv_name_)
@@ -397,7 +397,7 @@ class MoveitInterface(Node):
 
             if ADD_TIMES_FLAG and _response_handle['stop_flag']:
                 _completed_time_steps = int(len(time_stamps) * _fraction) 
-                _trajectory = rosm.interpolate_trajectory_timestamps(_trajectory, time_stamps[:_completed_time_steps])
+                _trajectory = rosm.interpolate_trajectory_timestamps(_trajectory, time_stamps[:_completed_time_steps], scaling_factor=0.5)
 
             return _response_handle
 

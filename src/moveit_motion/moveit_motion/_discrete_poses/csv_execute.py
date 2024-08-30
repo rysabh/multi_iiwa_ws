@@ -97,6 +97,9 @@ def main(_robot_name):
 
 if __name__ == '__main__':
     import sys
-    # _robot_name = sys.argv[1]
-    _robot_name = 'kuka_green'
+    if len(sys.argv)> 1:
+        _robot_name = sys.argv[1]
+    else:
+        _robot_name = 'kuka_green'
+    
     main(_robot_name)
