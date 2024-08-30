@@ -241,7 +241,7 @@
       </geometry>
     </visual>
     <collision>
-      <origin rpy="1.57 0 1.57" xyz="0.0 0.0 0.0" />
+      <origin rpy="1.57 0 1.57" xyz="0.0 0.0 0.005" />
       <geometry>
         <mesh filename="package://lbr_description/meshes/iiwa7/collision/chisel.stl" scale="0.01 0.01 0.01"/>
       </geometry>
@@ -508,7 +508,7 @@
     <origin rpy="0 0 0" xyz="0 0 0.15"/>
   </joint>
 
-  
+
   <link name="robotiq_85_base_link">
     <visual>
       <geometry>
