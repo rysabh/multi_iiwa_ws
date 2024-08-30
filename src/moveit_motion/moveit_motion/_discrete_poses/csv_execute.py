@@ -40,12 +40,12 @@ def main(_robot_name):
     #     for row in reader:
     #         data.append([float(i)*pi/180 for i in row])
     
-    path = 'no-sync/edge_3/ft_040_edge_3_step_2.csv'
+    path = 'no-sync/edge_3/ft_010_edge_3_step_3.csv'
     data = cfp.DataParser.from_quat_file(file_path = path, target_fps= 30, filter=False, window_size=5, polyorder=3)
     
     item_of_req = 'chisel' if _robot_name == 'kuka_green' else 'gripper'
 
-    _data_points = data.get_rigid_TxyzQwxyz()[item_of_req]
+    _data_points = data.get_rigid_TxyzQwxyz()[item_of_req][30:]
     print(f"Number of data points: {len(_data_points)}")
 
     _data_points = np.apply_along_axis(rm.robodk_2_ros, 1, _data_points)
@@ -80,7 +80,8 @@ def main(_robot_name):
     # client.execute_joint_traj(joint_robot_traj)
 
     _cartesian_plan_handle= client.get_cartesian_spline_plan(waypoints= _pose_waypoints, time_stamps=[], planning_frame='world',
-                                                       max_step = 0.01, jump_threshold = 0.0, avoid_collisions = False)
+                                                       max_step = 0.01, jump_threshold = 0.0, avoid_collisions = False, 
+                                                       attempts=5)
     _cartesian_plan = _cartesian_plan_handle['trajectory']
     _fraction = _cartesian_plan_handle['fraction']
     print(f"Fraction of path executed: {_fraction}")
