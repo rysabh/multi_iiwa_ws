@@ -17,7 +17,7 @@ import csv
 from math import pi
 
 
-def main(_robot_name):
+def main(_robot_name, _file_name):
 
     rclpy.init()
     
@@ -29,7 +29,11 @@ def main(_robot_name):
     
 
     cjs = client.get_current_joint_state()
+    
+    print(rosm.joint_state_2_list(cjs))
 
+
+    
     # path = 'no-sync/ik_results_1_degrees.csv'
     # path = 'no-sync/2024-08-28_15-33-26.csv'
     # with open(path, 'r') as f:
@@ -40,12 +44,12 @@ def main(_robot_name):
     #     for row in reader:
     #         data.append([float(i)*pi/180 for i in row])
     
-    path = 'no-sync/edge_3/ft_010_edge_3_step_3.csv'
+    path = f'no-sync/edge_3/{_file_name}'
     data = cfp.DataParser.from_quat_file(file_path = path, target_fps= 30, filter=False, window_size=5, polyorder=3)
     
     item_of_req = 'chisel' if _robot_name == 'kuka_green' else 'gripper'
 
-    _data_points = data.get_rigid_TxyzQwxyz()[item_of_req][30:]
+    _data_points = data.get_rigid_TxyzQwxyz()[item_of_req]
     print(f"Number of data points: {len(_data_points)}")
 
     _data_points = np.apply_along_axis(rm.robodk_2_ros, 1, _data_points)
@@ -81,7 +85,9 @@ def main(_robot_name):
 
     _cartesian_plan_handle= client.get_cartesian_spline_plan(waypoints= _pose_waypoints, time_stamps=[], planning_frame='world',
                                                        max_step = 0.01, jump_threshold = 0.0, avoid_collisions = False, 
-                                                       attempts=5)
+                                                       attempts=1)
+    # print(client.sequence_srv_name_)
+    # _cartesian_plan_handle = client.get
     _cartesian_plan = _cartesian_plan_handle['trajectory']
     _fraction = _cartesian_plan_handle['fraction']
     print(f"Fraction of path executed: {_fraction}")
@@ -96,7 +102,16 @@ def main(_robot_name):
     #     _completed_time_steps = int(len(time_stamps) * _fraction) 
     #     _trajectory = rosm.interpolate_trajectory_timestamps(_trajectory, time_stamps[:_completed_time_steps], scaling_factor=0.5)
 
-    client.execute_joint_traj(_cartesian_plan)
+    ############################################################
+    #----------- Trajectory Execution --------------------------
+    ############################################################
+    execute_flag = input("Execute trajectory? (y/n): ")
+    if execute_flag == 'y':
+        client.execute_joint_traj(_cartesian_plan)
+    else:
+        print("Trajectory not executed")
+    ############################################################
+
     print(f"Fraction of path executed: {_fraction}")
 
     rclpy.shutdown()
@@ -105,9 +120,10 @@ def main(_robot_name):
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv)> 1:
-        _robot_name = sys.argv[1]
-    else:
-        _robot_name = 'kuka_green'
-    
-    main(_robot_name)
+
+    _robot_name = sys.argv[1] if len(sys.argv) > 1 else "kuka_green"
+    _file_name = sys.argv[2] if len(sys.argv) > 2 else "ft_010.csv"
+
+    main(_robot_name, _file_name)
+
+

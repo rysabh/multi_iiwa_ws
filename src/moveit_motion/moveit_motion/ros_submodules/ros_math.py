@@ -30,7 +30,9 @@ def joint_list_2_state(joint_positions: list, joint_names: list) -> JointState:
     return joint_state
 
 def joint_state_2_list(joint_state: JointState) -> list:
-    return joint_state.position
+    # sort the joint_state.position based on the joint_state.name then return the sorted joint_state.position
+    return [pos for _, pos in sorted(zip(joint_state.name, joint_state.position))]
+
 
 
 def joint_2_robot_state(joint_state: JointState) -> RobotState:

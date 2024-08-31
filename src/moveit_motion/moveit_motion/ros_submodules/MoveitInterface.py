@@ -22,7 +22,13 @@ from moveit_msgs.msg import (
 )
 
 from shape_msgs.msg import SolidPrimitive
-from moveit_msgs.srv import GetPositionIK, GetMotionPlan, GetPositionFK, GetCartesianPath
+from moveit_msgs.srv import (
+    GetPositionIK, 
+    GetMotionPlan, 
+    GetPositionFK, 
+    GetCartesianPath, 
+    GetMotionSequence
+    )
 
 from sensor_msgs.msg import JointState
 
@@ -172,8 +178,6 @@ class MoveitInterface(Node):
     def get_best_ik(self, current_joint_state:JointState, target_pose: Pose, attempts: int = 100) -> Union[JointState, None]:
         # if not current_pose: #TODO -> check if this is necessary
         #     current_joint_state = self.get_current_joint_state() 
-
-
         best_cost = np.inf
         best_joint_state = None
 
@@ -229,7 +233,7 @@ class MoveitInterface(Node):
     ###################### MOVEIT EXECUTION ############################
     #===================================================================
     def _set_execute_action_client(self, action_name: str = "execute_trajectory") -> None:
-        self.execute_action_name_ = f"{self.remapping_name}/{action_name}" if self.remapping_name else action_name
+        self.execute_action_name_ = f"{self.remapping_name_}/{action_name}" if self.remapping_name_ else action_name
         self.execute_client_ = ActionClient(self, ExecuteTrajectory, self.execute_action_name_)
         if not self.execute_client_.wait_for_server(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: ExecuteActionClient-Sim action not available -> {self.execute_client_._action_name}")
@@ -237,6 +241,7 @@ class MoveitInterface(Node):
         self.EXECUTE_ACTION_CLIENT_FLAG = True
 
     def execute_joint_traj(self, trajectory: RobotTrajectory):
+        self._set_execute_action_client()
         goal = ExecuteTrajectory.Goal()
         goal.trajectory = trajectory
         goal_future = self.execute_client_.send_goal_async(goal)
@@ -375,15 +380,17 @@ class MoveitInterface(Node):
         '''
 
         if not self.CARTESIAN_SERVICE_CLIENT_FLAG:
-            self._set_cartesian_interpolator_service_client(service_name="compute_cartesian_path")
+            self._set_cartesian_interpolator_service_client()
+            # self._set_cartesian_sequence_service_client()
 
-            
+
         # Create request for Cartesian path
         request = self._create_cartesian_interpolator_motion_plan_request(waypoints, planning_frame, **kwargs)
+        # request = self._create_motion_sequence_request(waypoints, planning_frame, **kwargs)
 
         # Call the service and wait for response
-        client = self.cartesian_client_
-        return self._request_for_attempts(request, client, self._cartesian_interpolator_response_handler, attempts=attempts)
+        return self._request_for_attempts(request, self.cartesian_client_, self._cartesian_interpolator_response_handler, attempts=attempts)
+        # return self._request_for_attempts(request, self.sequence_client_, self._motion_sequence_response_handler, attempts=attempts)
     
 
     ### TODO - Doing (Read chatGPT)
@@ -433,9 +440,9 @@ class MoveitInterface(Node):
             self.get_logger().error(f"===== Fraction achieved ====== {_fraction}")
         return _response_handle
 
-    def _create_cartesian_sequence_service_client(self, service_name: str = "/plan_sequence_path") -> None:
+    def _set_cartesian_sequence_service_client(self, service_name: str = "plan_sequence_path") -> None:
         self.sequence_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
-        self.sequence_client_ = self.create_client(GetCartesianPath, self.sequence_srv_name_)
+        self.sequence_client_ = self.create_client(GetMotionSequence, self.sequence_srv_name_)        
         if not self.sequence_client_.wait_for_service(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.sequence_client_.srv_name}.")
             exit(1)
@@ -457,7 +464,8 @@ class MoveitInterface(Node):
         :return: A populated MotionSequenceRequest.
         """
         
-        sequence_request = MotionSequenceRequest()
+        sequence_request = GetMotionSequence.Request()
+        
 
         # Loop through waypoints to create motion requests for the sequence
         for waypoint in waypoints:
@@ -473,7 +481,7 @@ class MoveitInterface(Node):
             
             # Generate constraints for the motion request
             motion_request.goal_constraints.append(
-                rosm._pose_to_constraints(waypoint, planning_frame, self._end_effector_)
+                rosm._pose_to_constraints(waypoint, planning_frame, self.end_effector_)
             )
 
             # Add the motion request to the sequence with the specified blending radius
@@ -481,8 +489,10 @@ class MoveitInterface(Node):
                 req=motion_request,
                 blend_radius=kwargs.get('blend_radius', 0.00001)
             )
-            sequence_request.items.append(sequence_item)
+            sequence_request.request.items.append(sequence_item)
 
+        if sequence_request.request.items:
+            sequence_request.request.items[-1].blend_radius = 0.0
         return sequence_request
 
     def _motion_sequence_response_handler(self, response):
@@ -494,21 +504,16 @@ class MoveitInterface(Node):
         """
         response_handle = {'trajectory': None, 'stop_flag': False, 'fraction': None}
 
-        if response.error_code.val != MoveItErrorCodes.SUCCESS:
-            self.get_logger().error(f"Failed to compute motion sequence: {response.error_code.val}")
+        if response.response.error_code.val != MoveItErrorCodes.SUCCESS:
+            self.get_logger().error(f"Failed to compute motion sequence: {response.response.error_code.val}")
             return response_handle
 
-        trajectory = response.trajectory
-        fraction = response.fraction
+        trajectory = response.response.planned_trajectories
+        # fraction = response.fraction
 
         response_handle['trajectory'] = trajectory
-        response_handle['fraction'] = fraction
-
-        if fraction > 0.99:
-            response_handle['stop_flag'] = True
-            self.get_logger().info(f"Motion sequence planned successfully with fraction: {fraction}")
-        else:
-            self.get_logger().warn(f"Motion sequence planned with insufficient fraction: {fraction}")
+        # response_handle['fraction'] = fraction
+        response_handle['stop_flag'] = True
 
         return response_handle
 

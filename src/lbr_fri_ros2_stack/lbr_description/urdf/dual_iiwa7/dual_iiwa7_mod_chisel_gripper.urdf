@@ -11,7 +11,7 @@
   </link>
 
   <joint name="world_kuka_green_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0.75 1.1 0"/>
+    <origin rpy="0 0 3.14" xyz="0.8 0.9 -0.15"/>
     <parent link="world"/>
     <child link="kuka_green_link_0"/>
   </joint>
@@ -226,7 +226,7 @@
   <joint name="kuka_green_joint_ee" type="fixed">
     <parent link="kuka_green_link_7"/>
     <child link="kuka_green_link_ee"/>
-    <origin rpy="0 0 0" xyz="0 0 0.035"/>
+    <origin rpy="0 0 3.14" xyz="0 0 0.035"/>
   </joint>
   <link name="kuka_green_link_ee">
     <inertial>

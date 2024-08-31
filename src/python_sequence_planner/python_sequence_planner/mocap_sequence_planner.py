@@ -26,7 +26,7 @@ class SequenceMotion(Node):
             self.get_logger().info(f"Waiting for {self._action_client._action_name}...")
         self._base = "world"
         self._end_effectors = {
-            move_group : f"{move_group}_link_ee" for move_group in move_groups
+            move_group : f"{move_group}_link_tcp" for move_group in move_groups
         }
         print(self._end_effectors)
 
@@ -128,7 +128,7 @@ def main(_robot_name):
     rclpy.init()
     move_groups = ["kuka_blue", "kuka_green"]
     sequence_motion = SequenceMotion(name_space=_robot_name, move_groups = move_groups)
-    path = 'src/no-sync/edge_3/ft_011_edge_3_step_2.csv'
+    path = 'no-sync/edge_3/ft_011.csv'
     FPS = 15
     data = cfp.DataParser.from_quat_file(file_path = path, target_fps= FPS, filter=False, window_size=5, polyorder=3)
 
@@ -161,25 +161,25 @@ def main(_robot_name):
         sequence_motion.execute_sequence_motion(target_poses_dict = {"kuka_green": poses_green})
 
 
-    # ----------- dual ---------------
-    kuka_blue = []
-    kuka_green = []
+    # # ----------- dual ---------------
+    # kuka_blue = []
+    # kuka_green = []
 
-    for _ in range(len(gripper_data)):
-        chisel_ros_frame = rm.robodk_2_ros(gripper_data[_])
-        kuka_blue.append(chisel_ros_frame)
-        gripper_ros_frame = rm.robodk_2_ros(chisel_data[_])
-        kuka_green.append(gripper_ros_frame)
-    kuka_blue_poses = sequence_motion.data_2_pose(kuka_blue)
-    kuka_green_poses = sequence_motion.data_2_pose(kuka_green)
+    # for _ in range(len(gripper_data)):
+    #     chisel_ros_frame = rm.robodk_2_ros(gripper_data[_])
+    #     kuka_blue.append(chisel_ros_frame)
+    #     gripper_ros_frame = rm.robodk_2_ros(chisel_data[_])
+    #     kuka_green.append(gripper_ros_frame)
+    # kuka_blue_poses = sequence_motion.data_2_pose(kuka_blue)
+    # kuka_green_poses = sequence_motion.data_2_pose(kuka_green)
 
-    if _robot_name == "dual":
-        sequence_motion.execute_sequence_motion(target_poses_dict = {"kuka_blue": kuka_blue_poses, "kuka_green": kuka_green_poses})
+    # if _robot_name == "dual":
+    #     sequence_motion.execute_sequence_motion(target_poses_dict = {"kuka_blue": kuka_blue_poses, "kuka_green": kuka_green_poses})
 
 
 if __name__ == "__main__":
     import sys
-    _robot_name = "kuka_blue"
+    _robot_name = "kuka_green"
 
     if len(sys.argv) > 1:
         _robot_name = sys.argv[1]
