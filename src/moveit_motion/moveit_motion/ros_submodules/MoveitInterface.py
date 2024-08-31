@@ -360,7 +360,8 @@ class MoveitInterface(Node):
     def get_cartesian_spline_plan(self,
                                   waypoints: list[Pose], 
                                   planning_frame: str,
-                                  attempts:int = 100, 
+                                  attempts:int = 100,
+                                  _planner_type = "cartesian_interpolator",
                                   **kwargs) -> Union[RobotTrajectory, None]:
         '''
         Plan a Cartesian path (spline) through the given waypoints.
@@ -378,27 +379,36 @@ class MoveitInterface(Node):
         **kwargs -> pilz planner specific arguments:
         max_velocity_scaling_factor: float = 0.1, max_acceleration_scaling_factor: float = 0.1
         '''
+        _CHOICES = {
+            'cartesian_interpolator': {
+                'create_client': self._set_cartesian_interpolator_service_client,
+                'create_request': self._create_cartesian_interpolator_motion_plan_request,
+                'response_handler': self._cartesian_interpolator_response_handler
+            },
+            'cartesian_sequence': {
+                'create_client': self._set_cartesian_sequence_service_client,
+                'create_request': self._create_motion_sequence_request,
+                'response_handler': self._motion_sequence_response_handler
+            }
+        }
 
+        if _planner_type not in _CHOICES.keys():
+            self.get_logger().error(f"Invalid Planner Type: {_planner_type}.\nValid options are: {list(_CHOICES.keys())}")
+            exit(1)
+            
         if not self.CARTESIAN_SERVICE_CLIENT_FLAG:
-            self._set_cartesian_interpolator_service_client()
-            # self._set_cartesian_sequence_service_client()
+            _CHOICES[_planner_type]['create_client']()
 
-
-        # Create request for Cartesian path
-        request = self._create_cartesian_interpolator_motion_plan_request(waypoints, planning_frame, **kwargs)
-        # request = self._create_motion_sequence_request(waypoints, planning_frame, **kwargs)
-
-        # Call the service and wait for response
-        return self._request_for_attempts(request, self.cartesian_client_, self._cartesian_interpolator_response_handler, attempts=attempts)
-        # return self._request_for_attempts(request, self.sequence_client_, self._motion_sequence_response_handler, attempts=attempts)
-    
+        _request = _CHOICES[_planner_type]['create_request'](waypoints, planning_frame, **kwargs)
+        _response_handle = self._request_for_attempts(_request, self.spline_client_, _CHOICES[_planner_type]['response_handler'], attempts=attempts)
+        return _response_handle
 
     ### TODO - Doing (Read chatGPT)
     def _set_cartesian_interpolator_service_client(self, service_name: str = "compute_cartesian_path") -> None:
-        self.cartesian_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
-        self.cartesian_client_ = self.create_client(GetCartesianPath, self.cartesian_srv_name_)
-        if not self.cartesian_client_.wait_for_service(timeout_sec=self.timeout_sec_):
-            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.cartesian_client_.srv_name}.")
+        self.spline_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
+        self.spline_client_ = self.create_client(GetCartesianPath, self.spline_srv_name_)
+        if not self.spline_client_.wait_for_service(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.spline_client_.srv_name}.")
             exit(1)
         self.CARTESIAN_SERVICE_CLIENT_FLAG = True
 
@@ -441,10 +451,10 @@ class MoveitInterface(Node):
         return _response_handle
 
     def _set_cartesian_sequence_service_client(self, service_name: str = "plan_sequence_path") -> None:
-        self.sequence_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
-        self.sequence_client_ = self.create_client(GetMotionSequence, self.sequence_srv_name_)        
-        if not self.sequence_client_.wait_for_service(timeout_sec=self.timeout_sec_):
-            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.sequence_client_.srv_name}.")
+        self.spline_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
+        self.spline_client_ = self.create_client(GetMotionSequence, self.spline_srv_name_)        
+        if not self.spline_client_.wait_for_service(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.spline_client_.srv_name}.")
             exit(1)
         self.SEQUENCE_SERVICE_CLIENT_FLAG = True
     

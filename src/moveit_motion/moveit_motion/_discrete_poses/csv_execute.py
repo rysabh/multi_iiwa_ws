@@ -83,9 +83,18 @@ def main(_robot_name, _file_name):
 
     # client.execute_joint_traj(joint_robot_traj)
 
+    # _cartesian_plan_handle= client.get_cartesian_spline_plan(waypoints= _pose_waypoints, time_stamps=[], planning_frame='world',
+    #                                                          _planner_type= "cartesian_interpolator",
+    #                                                          max_step = 0.01, jump_threshold = 0.0, avoid_collisions = False, 
+    #                                                          attempts=1
+    #                                                          )
+
     _cartesian_plan_handle= client.get_cartesian_spline_plan(waypoints= _pose_waypoints, time_stamps=[], planning_frame='world',
-                                                       max_step = 0.01, jump_threshold = 0.0, avoid_collisions = False, 
-                                                       attempts=1)
+                                                             _planner_type= "cartesian_sequence",
+                                                             blend_radius = 0.01, max_acceleration_scaling_factor=0.1, max_velocity_scaling_factor=0.1,
+                                                             num_planning_attempts=1, attempts=1
+                                                             )
+    
     # print(client.sequence_srv_name_)
     # _cartesian_plan_handle = client.get
     _cartesian_plan = _cartesian_plan_handle['trajectory']
