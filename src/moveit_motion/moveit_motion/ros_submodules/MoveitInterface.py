@@ -83,8 +83,8 @@ class MoveitInterface(Node):
 
         #link names 
         self.base_ = f"{prefix}_link_0" if prefix else f"{remapping_name}/link_0" # for FK and IK
-        self.end_effector_ = f"{prefix}_link_ee" if prefix else 'link_ee'    # for FK
-        # self.end_effector_ = f"{prefix}_link_tcp" if prefix else 'link_tcp'    # for FK
+        # self.end_effector_ = f"{prefix}_link_ee" if prefix else 'link_ee'    # for FK
+        self.end_effector_ = f"{prefix}_link_tcp" if prefix else 'link_tcp'    # for FK
         
 
         self.ik_client_ = self.create_client(GetPositionIK, self.ik_srv_name_)
