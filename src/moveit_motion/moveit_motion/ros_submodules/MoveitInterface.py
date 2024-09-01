@@ -19,6 +19,7 @@ from moveit_msgs.msg import (
     MotionSequenceRequest,
     OrientationConstraint,
     PositionConstraint,
+    WorkspaceParameters
 )
 
 from shape_msgs.msg import SolidPrimitive
@@ -82,8 +83,8 @@ class MoveitInterface(Node):
 
         #link names 
         self.base_ = f"{prefix}_link_0" if prefix else f"{remapping_name}/link_0" # for FK and IK
-        # self.end_effector_ = f"{prefix}_link_ee" if prefix else 'link_ee'    # for FK
-        self.end_effector_ = f"{prefix}_link_tcp" if prefix else 'link_tcp'    # for FK
+        self.end_effector_ = f"{prefix}_link_ee" if prefix else 'link_ee'    # for FK
+        # self.end_effector_ = f"{prefix}_link_tcp" if prefix else 'link_tcp'    # for FK
         
 
         self.ik_client_ = self.create_client(GetPositionIK, self.ik_srv_name_)
@@ -278,20 +279,46 @@ class MoveitInterface(Node):
     #===================================================================
 
     ###---------------------- Joint Space Planning -----------------------
-    def _create_motion_plan_request(self, start_state: RobotState, goal_constraints: Constraints, **kwargs) -> GetMotionPlan.Request:
-        request = GetMotionPlan.Request()
-        request.motion_plan_request.group_name = self.move_group_name_
-        request.motion_plan_request.start_state = start_state
-        request.motion_plan_request.goal_constraints.append(goal_constraints)
-        request.motion_plan_request.num_planning_attempts = kwargs.get("attempts", 10) #TODO -> earlier it was 10 -> how is this different from "attempts"
-        request.motion_plan_request.allowed_planning_time = kwargs.get("allowed_planning_time", 5.0)
-        request.motion_plan_request.max_velocity_scaling_factor = kwargs.get("max_velocity_scaling_factor", 0.05)
-        request.motion_plan_request.max_acceleration_scaling_factor = kwargs.get("max_acceleration_scaling_factor", 0.1)
-        request.motion_plan_request.pipeline_id = kwargs.get("pipeline_id", "ompl")
-        request.motion_plan_request.planner_id = kwargs.get("planner_id", "APSConfigDefault")
-        # self.get_logger().info(f"requesting plan for -> \n{np.round(start_state.joint_state.position,2)} -> {np.round(goal_constraints.joint_constraints[-1].joint_state.position,2)}\n")
-        return request
+    # def _create_motion_plan_request(self, goal_constraints: Constraints, 
+    #                                 start_state: RobotState = None, 
+    #                                 **kwargs) -> GetMotionPlan.Request:
+    #     request = GetMotionPlan.Request()
+    #     request.motion_plan_request.group_name = self.move_group_name_
+    #     # request.motion_plan_request.start_state = start_state
+    #     request.motion_plan_request.goal_constraints.append(goal_constraints)
+    #     request.motion_plan_request.num_planning_attempts = kwargs.get("attempts", 10) #TODO -> earlier it was 10 -> how is this different from "attempts"
+    #     request.motion_plan_request.allowed_planning_time = kwargs.get("allowed_planning_time", 5.0)
+    #     request.motion_plan_request.max_velocity_scaling_factor = kwargs.get("max_velocity_scaling_factor", 0.05)
+    #     request.motion_plan_request.max_acceleration_scaling_factor = kwargs.get("max_acceleration_scaling_factor", 0.1)
+    #     request.motion_plan_request.pipeline_id = kwargs.get("pipeline_id", "ompl")
+    #     request.motion_plan_request.planner_id = kwargs.get("planner_id", "APSConfigDefault")
+    #     # self.get_logger().info(f"requesting plan for -> \n{np.round(start_state.joint_state.position,2)} -> {np.round(goal_constraints.joint_constraints[-1].joint_state.position,2)}\n")
+    #     return request
     
+    
+    def _create_motion_plan_request(self, goal_constraints: list[Constraints],
+                                    path_constraints: list[Constraints] = None,
+                                    start_joint_state: JointState = None, 
+                                    **kwargs) -> GetMotionPlan.Request:
+        
+        request = GetMotionPlan.Request(
+            motion_plan_request=MotionPlanRequest(
+                workspace_parameters=WorkspaceParameters(),  #header, min_corner, max_corner
+                group_name=self.move_group_name_,
+                # start_state=rosm.joint_2_robot_state(start_joint_state if start_joint_state else self.get_current_joint_state()),
+                goal_constraints=goal_constraints,
+                # path_constraints=path_constraints if path_constraints else [],  # Ensure it's a list,
+                num_planning_attempts=kwargs.get("attempts", 10),
+                allowed_planning_time=kwargs.get("allowed_planning_time", 5.0),
+                max_velocity_scaling_factor=kwargs.get("max_velocity_scaling_factor", 0.05),
+                max_acceleration_scaling_factor=kwargs.get("max_acceleration_scaling_factor", 0.1),
+                pipeline_id=kwargs.get("pipeline_id", "ompl"),
+                planner_id=kwargs.get("planner_id", "APSConfigDefault")
+                )
+            )
+        # self.get_logger().info(f"requesting plan for -> \n{np.round(start_joint_state.position,2)} -> {np.round(goal_constraints[-1].joint_constraints[-1].position,2)}\n")
+        return request
+
     def _motion_plan_response_handler(self, response):
         _response_handle = {'trajectory': None, 'stop_flag': False}
 
@@ -310,11 +337,8 @@ class MoveitInterface(Node):
             return RobotTrajectory()
         
         ##Create target using target_joint_state
-        _constraints = rosm.joint_states_2_constraints(target_joint_state)
+        _constraints = [rosm.joint_states_2_constraints(target_joint_state)]
         
-        ## convert start_joint_state to robot_state to get motion plan
-        _start_robot_state = rosm.joint_2_robot_state(start_joint_state)
-
         self.get_logger().info(f"requesting plan for -> \n{np.round(start_joint_state.position,2)} -> {np.round(target_joint_state.position,2)}\n")
 
         ### set motion planner type
@@ -322,9 +346,14 @@ class MoveitInterface(Node):
         pipeline_id, planner_id = self._get_planner_config(planner_type)
         
         ## Request Motion Plan
-        request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
-                                         pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
-
+        # request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
+        #                                  pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
+        
+        request = self._create_motion_plan_request(goal_constraints=_constraints,
+                                                   start_joint_state=start_joint_state, 
+                                                   attempts=attempts,
+                                                   pipeline_id=pipeline_id, planner_id=planner_id, 
+                                                   **kwargs)
         ## plan for n attempts until succesful
         return self._request_for_attempts(request, self.plan_client_, self._motion_plan_response_handler, attempts)
     
