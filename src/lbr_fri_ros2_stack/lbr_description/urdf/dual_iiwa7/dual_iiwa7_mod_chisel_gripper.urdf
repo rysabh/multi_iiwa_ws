@@ -11,7 +11,7 @@
   </link>
 
   <joint name="world_kuka_green_joint" type="fixed">
-    <origin rpy="0 0 3.14" xyz="0.75 0.8 -0.3"/>
+    <origin rpy="0 0 -2.356" xyz="0.8 0.7 -0.4"/>
     <parent link="world"/>
     <child link="kuka_green_link_0"/>
   </joint>
