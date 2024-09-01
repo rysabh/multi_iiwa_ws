@@ -83,7 +83,7 @@ class MoveitInterface(Node):
         #link names 
         self.base_ = f"{prefix}_link_0" if prefix else f"{remapping_name}/link_0" # for FK and IK
         # self.end_effector_ = f"{prefix}_link_ee" if prefix else 'link_ee'    # for FK
-        self.end_effector_ = f"{prefix}_link_tcp" if prefix else 'link_ee'    # for FK
+        self.end_effector_ = f"{prefix}_link_tcp" if prefix else 'link_tcp'    # for FK
         
 
         self.ik_client_ = self.create_client(GetPositionIK, self.ik_srv_name_)
@@ -155,6 +155,7 @@ class MoveitInterface(Node):
             return None
         return self.get_fk(_current_joint_state)
 
+    #TODO - add planning frame to get IK
     @filter_for_prefix
     def get_ik(self, pose: Pose) -> Union[JointState, None]:
         request = GetPositionIK.Request()
@@ -479,30 +480,54 @@ class MoveitInterface(Node):
 
         # Loop through waypoints to create motion requests for the sequence
         for waypoint in waypoints:
-            motion_request = MotionPlanRequest(
-                pipeline_id="pilz_industrial_motion_planner",
-                planner_id="LIN",
-                allowed_planning_time=10.0,
-                group_name=self.move_group_name_,
-                max_acceleration_scaling_factor=kwargs.get('max_acceleration_scaling_factor', 0.1),
-                max_velocity_scaling_factor=kwargs.get('max_velocity_scaling_factor', 0.1),
-                num_planning_attempts=kwargs.get('num_planning_attempts', 1000),
-            )
+            req = GetMotionPlan.Request()
+            req.motion_plan_request.pipeline_id = "pilz_industrial_motion_planner"
+            req.motion_plan_request.planner_id = "LIN"
+            req.motion_plan_request.allowed_planning_time = 10.0
+            req.motion_plan_request.group_name = self.move_group_name_
+            req.motion_plan_request.max_acceleration_scaling_factor = 0.1
+            req.motion_plan_request.max_velocity_scaling_factor = 0.1
+            req.motion_plan_request.num_planning_attempts = 1
             
-            # Generate constraints for the motion request
-            motion_request.goal_constraints.append(
-                rosm._pose_to_constraints(waypoint, planning_frame, self.end_effector_)
-            )
+            # request.motion_plan_request.start_state = start_state
 
+            req.motion_plan_request.goal_constraints.append(
+            Constraints(
+                position_constraints=[
+                    PositionConstraint(
+                        header = Header(frame_id = planning_frame),
+                        link_name = self.end_effector_,
+                        constraint_region = BoundingVolume(
+                            primitives = [SolidPrimitive(type=2, dimensions=[0.0001])],
+                            primitive_poses = [Pose(position=waypoint.position)],
+                        ),
+                        weight = 1.0,
+                    )
+                ],
+                orientation_constraints = [
+                    OrientationConstraint(
+                        header = Header(frame_id = planning_frame),
+                        link_name = self.end_effector_,
+                        orientation = waypoint.orientation,
+                        absolute_x_axis_tolerance = 0.001,
+                        absolute_y_axis_tolerance = 0.001,
+                        absolute_z_axis_tolerance = 0.001,
+                        weight = 1.0,
+                    )
+                ],
+            )
+        )
             # Add the motion request to the sequence with the specified blending radius
             sequence_item = MotionSequenceItem(
-                req=motion_request,
-                blend_radius=kwargs.get('blend_radius', 0.00001)
+                req=req.motion_plan_request,
+                blend_radius = 0.00001
             )
+
             sequence_request.request.items.append(sequence_item)
 
         if sequence_request.request.items:
             sequence_request.request.items[-1].blend_radius = 0.0
+        
         return sequence_request
 
     def _motion_sequence_response_handler(self, response):

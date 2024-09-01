@@ -18,7 +18,7 @@ import moveit_motion.diffusion_policy_cam.submodules.cleaned_file_parser as cfp
 import moveit_motion.ros_submodules.ros_math as rm
 
 class SequenceMotion(Node):
-    def __init__(self, name_space, move_groups: List[str]):
+    def __init__(self, move_groups: List[str]):
         super().__init__("sequence_motion")
         self._action_client = ActionClient(self, MoveGroupSequence, f"/sequence_move_group")
 
@@ -53,8 +53,8 @@ class SequenceMotion(Node):
         req.planner_id = "LIN"
         req.allowed_planning_time = 10.0
         req.group_name = move_group
-        req.max_acceleration_scaling_factor = 0.1
-        req.max_velocity_scaling_factor = 0.1
+        req.max_acceleration_scaling_factor = 0.5
+        req.max_velocity_scaling_factor = 0.5
         req.num_planning_attempts = 1000
 
         req.goal_constraints.append(
@@ -124,11 +124,11 @@ class SequenceMotion(Node):
         else:
             self.get_logger().info(f"Future did not complete")
 
-def main(_robot_name):
+def main(_robot_name, _file_name):
     rclpy.init()
     move_groups = ["kuka_blue", "kuka_green"]
-    sequence_motion = SequenceMotion(name_space=_robot_name, move_groups = move_groups)
-    path = 'no-sync/edge_3/ft_011.csv'
+    sequence_motion = SequenceMotion(move_groups = move_groups)
+    path = f'no-sync/edge_3/{_file_name}'
     FPS = 15
     data = cfp.DataParser.from_quat_file(file_path = path, target_fps= FPS, filter=False, window_size=5, polyorder=3)
 
@@ -179,9 +179,9 @@ def main(_robot_name):
 
 if __name__ == "__main__":
     import sys
-    _robot_name = "kuka_green"
 
-    if len(sys.argv) > 1:
-        _robot_name = sys.argv[1]
-        
-    main(_robot_name)
+    _robot_name = sys.argv[1] if len(sys.argv) > 1 else "kuka_green"
+    _file_name = sys.argv[2] if len(sys.argv) > 2 else "ft_010.csv"
+
+    main(_robot_name = _robot_name, 
+         _file_name = _file_name)

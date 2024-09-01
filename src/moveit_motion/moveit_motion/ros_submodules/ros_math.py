@@ -28,10 +28,36 @@ def joint_list_2_state(joint_positions: list, joint_names: list) -> JointState:
     joint_state.name = joint_names
     joint_state.position = joint_positions
     return joint_state
+from sensor_msgs.msg import JointState
 
-def joint_state_2_list(joint_state: JointState) -> list:
-    # sort the joint_state.position based on the joint_state.name then return the sorted joint_state.position
-    return [pos for _, pos in sorted(zip(joint_state.name, joint_state.position))]
+def joint_state_2_list(joint_state: JointState, **kwargs) -> list:
+    """
+    def joint_state_2_list(joint_state: JointState) -> list: print -> enabled
+    """
+    
+    # Sort the joint names and positions together based on the joint names
+    sorted_joints = sorted(zip(joint_state.name, joint_state.position))
+    
+    # Extract the sorted positions
+    sorted_positions = [pos for _, pos in sorted_joints]
+    
+    if kwargs.get("verbose", False):
+        #Prepare the XML-like output
+        group_name = "YY"
+        state_name = "XX"
+        
+        print(f'<group_state name="{state_name}" group="{group_name}">')
+        for joint_name, joint_position in sorted_joints:
+            print(f'    <joint name="{joint_name}" value="{joint_position:.3f}"/>')
+        print(f'</group_state>\n')
+        
+        # Prepare the YAML-like output
+        print(f'initial_positions:')
+        for joint_name, joint_position in sorted_joints:
+            print(f'  {joint_name}: {joint_position:.3f}')
+    
+    return sorted_positions
+
 
 
 

@@ -43,6 +43,37 @@
         <joint name="kuka_green_A6" value="0.929"/>
         <joint name="kuka_green_A7" value="0.956"/>
     </group_state>
+    <group_state name="chisel_3B" group="kuka_green">
+        <joint name="kuka_green_A1" value="1.866"/>
+        <joint name="kuka_green_A2" value="0.936"/>
+        <joint name="kuka_green_A3" value="-1.401"/>
+        <joint name="kuka_green_A4" value="-1.232"/>
+        <joint name="kuka_green_A5" value="-0.028"/>
+        <joint name="kuka_green_A6" value="0.808"/>
+        <joint name="kuka_green_A7" value="1.41"/>
+    </group_state>
+    <!-- <group_state name="chisel_4_90" group="kuka_green">
+        <joint name="kuka_green_A1" value="0.261"/>
+        <joint name="kuka_green_A2" value="1.294"/>
+        <joint name="kuka_green_A3" value="-1.898"/>
+        <joint name="kuka_green_A4" value="-1.216"/>
+        <joint name="kuka_green_A5" value="0.772"/>
+        <joint name="kuka_green_A6" value="0.929"/>
+        <joint name="kuka_green_A7" value="−2.184"/>
+    </group_state> -->
+
+    <!-- Working great for ->  <joint name="world_kuka_green_joint" type="fixed">
+     <origin rpy="0 0 3.14" xyz="0.75 0.8 -0.3"/> -->
+    <group_state name="chisel_4_0" group="kuka_green">
+        <joint name="kuka_green_A1" value="-0.686"/>
+        <joint name="kuka_green_A2" value="0.728"/>
+        <joint name="kuka_green_A3" value="2.144"/>
+        <joint name="kuka_green_A4" value="-2.089"/>
+        <joint name="kuka_green_A5" value="1.380"/>
+        <joint name="kuka_green_A6" value="-1.399"/>
+        <joint name="kuka_green_A7" value="-1.516"/>
+    </group_state>
+    
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="chisel" parent_link="kuka_blue_link_7" group="kuka_blue"/>
     <end_effector name="robotiq_gripper" parent_link="kuka_green_link_7" group="kuka_green"/>
