@@ -9,3 +9,7 @@
 [submodule "src/serial"]
 	path = src/serial
 	url = git@github.com:tylerjw/serial.git
+
+[submodule "src/rros-mocap-optitrack"]
+	path = src/rros-mocap-optitrack
+	url = git@github.com:RROS-Lab/rros-mocap-optitrack.git
