@@ -47,7 +47,7 @@ def main(_robot_name, _file_name):
     
     item_of_req = 'chisel' if _robot_name == 'kuka_green' else 'gripper'
 
-    _data = data.get_rigid_TxyzQwxyz()[item_of_req][0:]
+    _data = data.get_rigid_TxyzQwxyz()[item_of_req][20:]
 
     FRACTION_TO_RUN = 1.0
     
