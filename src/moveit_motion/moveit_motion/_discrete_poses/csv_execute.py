@@ -31,9 +31,6 @@ def main(_robot_name, _file_name):
     cjs = client.get_current_joint_state()
     
     rosm.joint_state_2_list(cjs, verbose=True)
-
-
-
     
     # path = 'no-sync/ik_results_1_degrees.csv'
     # path = 'no-sync/2024-08-28_15-33-26.csv'
@@ -50,7 +47,12 @@ def main(_robot_name, _file_name):
     
     item_of_req = 'chisel' if _robot_name == 'kuka_green' else 'gripper'
 
-    _data_points = data.get_rigid_TxyzQwxyz()[item_of_req]
+    _data = data.get_rigid_TxyzQwxyz()[item_of_req][0:]
+
+    FRACTION_TO_RUN = 1.0
+    
+    _len_data = len(_data)
+    _data_points = _data[:int(FRACTION_TO_RUN*_len_data)]
     print(f"Number of data points: {len(_data_points)}")
 
     _data_points = np.apply_along_axis(rm.robodk_2_ros, 1, _data_points)
