@@ -433,6 +433,8 @@ class MoveitInterface(Node):
         _response_handle = self._request_for_attempts(_request, self.spline_client_, _CHOICES[_planner_type]['response_handler'], attempts=attempts)
         return _response_handle
 
+    
+    
     ### TODO - Doing (Read chatGPT)
     def _set_cartesian_interpolator_service_client(self, service_name: str = "compute_cartesian_path") -> None:
         self.spline_srv_name_ = f"{self.remapping_name_}/{service_name}" if self.remapping_name_ else service_name    
@@ -583,3 +585,7 @@ class MoveitInterface(Node):
 
                                            
     #================== End of Moveit Planning ========================
+
+
+    ##### create real execution client
+    

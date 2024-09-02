@@ -282,7 +282,8 @@
 
   <joint name="world_kuka_blue_joint" type="fixed">
     <!-- <origin rpy="0 0 0.783" xyz="0.8 -0.5 -0.15"/> -->
-    <origin rpy="0 0 0.783" xyz="0.55 -0.4 -0.25"/>
+    <!-- <origin rpy="0 0 0.783" xyz="0.55 -0.35 -0.25"/>   works for 80% cases-->
+    <origin rpy="0 0 0.783" xyz="0.55 -0.4 -0.25"/>  
     <parent link="world"/>
     <child link="kuka_blue_link_0"/>
   </joint>
