@@ -38,8 +38,7 @@ from trajectory_msgs.msg import JointTrajectory
 from moveit_motion.ros_submodules.wait_for_message import wait_for_message
 
 import numpy as np
-
-from moveit_motion.ros_submodules.RS_submodules import MSE_joint_states, filter_for_prefix
+import moveit_motion.ros_submodules.RS_submodules as rsmod
 import moveit_motion.ros_submodules.ros_math as rosm
 
 
@@ -61,7 +60,7 @@ class MoveitInterface(Node):
         "cartesian": []
         }
     
-    THRESHOLD_2_MOVE = 0.0005 # 0.0005
+    THRESHOLD_2_MOVE = 0.000005 # 0.0005
 
     CARTESIAN_SERVICE_CLIENT_FLAG = False
     EXECUTE_ACTION_CLIENT_FLAG = False
@@ -103,7 +102,7 @@ class MoveitInterface(Node):
             exit(1)
         
 
-    @filter_for_prefix
+    @rsmod.filter_joint_state_for_prefix
     def get_current_joint_state(self) -> Union[JointState, None]: # use descriptors for filtering
         '''
         Joint State for the moveit move group
@@ -117,7 +116,7 @@ class MoveitInterface(Node):
             self.get_logger().error("Failed to get current joint state")
             return None
         
-        return _current_joint_state
+        return rsmod.sort_joint_state(_current_joint_state)
 
     def get_fk(self, joint_state: JointState) -> Union[Pose, None]:
         '''
@@ -157,7 +156,7 @@ class MoveitInterface(Node):
         return self.get_fk(_current_joint_state)
 
     #TODO - add planning frame to get IK
-    @filter_for_prefix
+    @rsmod.filter_joint_state_for_prefix
     def get_ik(self, pose: Pose) -> Union[JointState, None]:
         request = GetPositionIK.Request()
         request.ik_request.group_name = self.move_group_name_
@@ -187,7 +186,7 @@ class MoveitInterface(Node):
             target_joint_state = self.get_ik(target_pose)
             if target_joint_state is None:
                 continue
-            cost = MSE_joint_states(current_joint_state, target_joint_state)
+            cost = rsmod.MSE_joint_states(current_joint_state, target_joint_state)
             if cost < best_cost:
                 best_cost = cost
                 best_joint_state = target_joint_state
@@ -227,7 +226,7 @@ class MoveitInterface(Node):
     def _filter_waypoints_threshold(self, waypoints: list[JointState]) -> list[JointState]:
         filtered_waypoints = [waypoints[0]]
         for i in range(1, len(waypoints)):
-            if MSE_joint_states(waypoints[i], waypoints[i-1]) > self.THRESHOLD_2_MOVE:
+            if rsmod.MSE_joint_states(waypoints[i], waypoints[i-1]) > self.THRESHOLD_2_MOVE:
                 filtered_waypoints.append(waypoints[i])
         return filtered_waypoints
 
@@ -306,6 +305,7 @@ class MoveitInterface(Node):
                 workspace_parameters=WorkspaceParameters(),  #header, min_corner, max_corner
                 group_name=self.move_group_name_,
                 # start_state=rosm.joint_2_robot_state(start_joint_state if start_joint_state else self.get_current_joint_state()),
+                start_state=rosm.joint_2_robot_state(start_joint_state),
                 goal_constraints=goal_constraints,
                 # path_constraints=path_constraints if path_constraints else [],  # Ensure it's a list,
                 num_planning_attempts=kwargs.get("attempts", 10),
@@ -332,7 +332,7 @@ class MoveitInterface(Node):
 
     
     def get_joint_ptp_plan(self, start_joint_state: JointState, target_joint_state: JointState, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
-        if MSE_joint_states(target_joint_state, start_joint_state) <= self.THRESHOLD_2_MOVE:
+        if rsmod.MSE_joint_states(target_joint_state, start_joint_state) <= self.THRESHOLD_2_MOVE:
             self.get_logger().info("Start and End goals match. ** NOT ** moving anything and Passing Empty Trajectory")
             return RobotTrajectory()
         
@@ -585,7 +585,9 @@ class MoveitInterface(Node):
 
                                            
     #================== End of Moveit Planning ========================
-
-
     ##### create real execution client
-    
+    def modify_joint_state_for_moveit(self, joint_state):
+        return rsmod.modify_joint_state(joint_state, self.prefix_, frame_id="world", add_prefix=True)
+
+    def modify_trajectory_for_moveit(self, trajectory):
+        return rsmod.modify_trajectory(trajectory, self.prefix_, frame_id="world", add_prefix=True)

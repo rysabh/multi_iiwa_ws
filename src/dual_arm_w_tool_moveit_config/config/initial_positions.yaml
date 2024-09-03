@@ -8,12 +8,19 @@ initial_positions:
   kuka_blue_A5: -1.824
   kuka_blue_A6: 0.721
   kuka_blue_A7: 0.418
-
-  kuka_green_A1: -0.686
-  kuka_green_A2: 0.728
-  kuka_green_A3: 2.144
-  kuka_green_A4: -2.089
-  kuka_green_A5: 1.380
-  kuka_green_A6: -1.399
-  kuka_green_A7: -1.516
+  
+  kuka_green_A1: -1.956
+  kuka_green_A2: -0.855
+  kuka_green_A3: -0.068
+  kuka_green_A4: 1.741
+  kuka_green_A5: -0.003
+  kuka_green_A6: 0.000
+  kuka_green_A7: 0.001
+  # kuka_green_A1: -0.686
+  # kuka_green_A2: 0.728
+  # kuka_green_A3: 2.144
+  # kuka_green_A4: -2.089
+  # kuka_green_A5: 1.380
+  # kuka_green_A6: -1.399
+  # kuka_green_A7: -1.516
 

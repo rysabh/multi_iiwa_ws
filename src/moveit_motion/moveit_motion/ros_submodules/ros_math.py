@@ -26,8 +26,11 @@ def robodk_2_ros(TxyzQwxyz: list) -> list:
 def joint_list_2_state(joint_positions: list, joint_names: list) -> JointState:
     joint_state = JointState()
     joint_state.name = joint_names
-    joint_state.position = joint_positions
+    joint_state.position = [float(pos) for pos in joint_positions]
+    joint_state.velocity = [0.0] * len(joint_positions)
+    joint_state.effort = [0.0] * len(joint_positions)
     return joint_state
+
 from sensor_msgs.msg import JointState
 
 def joint_state_2_list(joint_state: JointState, **kwargs) -> list:
@@ -142,7 +145,7 @@ def TxyzQxyzw_2_Pose(TxyzQxyzw: list) -> Pose:
     pose.orientation.w = TxyzQxyzw[6]
     return pose
     
-def combine_trajectories(trajectories: list[RobotTrajectory]) -> RobotTrajectory:
+def extend_trajectories(trajectories: list[RobotTrajectory]) -> RobotTrajectory:
     print("Combining Trajectories")
     
     if not trajectories:
@@ -258,3 +261,6 @@ def interpolate_trajectory_timestamps(trajectory: RobotTrajectory,
         trajectory_point.time_from_start = Duration(sec=sec, nanosec=nanosec)
 
     return trajectory
+
+
+
