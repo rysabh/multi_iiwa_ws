@@ -109,6 +109,11 @@ class DiffusionService(Node):
         observation = []
         
         for rb in self.action_bodies:
+            for i in range(len(rigid_bodies[rb])):
+                rigid_body = rma.motive_2_robodk_rigidbody(rigid_bodies[rb][i])
+                # Multiply the first three elements by 1000
+                rigid_bodies[rb][i] = [val * 1000 for val in rigid_body[:3]] + rigid_body[3:]
+    
             # print("RB - ", rb)
             # print("Rigid Body: ", rigid_bodies.keys())
             # print("#######################################")
@@ -128,6 +133,10 @@ class DiffusionService(Node):
             observation.extend([self.gripper_state(rigid_bodies[rb], marker_sets[self.unlabbled_marker])])
         
         for ms in self.labbled_markers:
+            for i in range(len(marker_sets[ms])):
+                marker = rma.motive_2_robodk_marker(marker_sets[ms][i])
+                # Multiply the first three elements by 1000
+                marker_sets[ms][i] = [val * 1000 for val in marker]
             # print("MS - ", ms)
             # print("Marker: ", marker_sets.keys())
             # print("#######################################")
@@ -188,7 +197,7 @@ def main(args=None):
     unlabbled_marker = 1510 # Example ID for the unlabeled marker
     labbled_markers = [131075, 393221] # Example IDs for labeled markers
 
-    checkpoint_path = 'no-sync/chkpts/checkpoint_2BODY_4_markers_edge_1_step_all_epoch_199.pth'
+    checkpoint_path = '/home/cam/Documents/raj/diffusion_policy_cam/no-sync/checkpoints/checkpoint_2BODY_4_markers_edge_1_step_all_epoch_199.pth'
 
     checkpoint = torch.load(checkpoint_path)
 
