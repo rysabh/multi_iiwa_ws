@@ -19,7 +19,7 @@ from moveit_motion.diffusion_policy_cam.diffusion_jupyternotebook import live_in
 
 class DiffusionService(Node):
 
-    def __init__(self, rigid_bodies, action_bodies, obs_bodies, unlabbled_marker, 
+    def __init__(self, rigid_bodies, action_bodies, obs_bodies, unlabbled_marker,
                         labbled_markers, statistics, obs_horizon,
                         pred_horizon, action_horizon, action_dim, 
                         noise_scheduler, num_diffusion_iters,
@@ -53,7 +53,7 @@ class DiffusionService(Node):
 
         # Extract rigid bodies
         for rb in mocap_data.rigid_bodies:
-            euler_pose = rma.TxyzQwxyz_2_TxyzRxyz([
+            euler_pose = [
                     rb.pose_stamped.pose.position.x,
                     rb.pose_stamped.pose.position.y,
                     rb.pose_stamped.pose.position.z,
@@ -61,7 +61,7 @@ class DiffusionService(Node):
                     rb.pose_stamped.pose.orientation.x,
                     rb.pose_stamped.pose.orientation.y,
                     rb.pose_stamped.pose.orientation.z
-                ])
+                ]
             
             rigid_body_info[rb.id] = euler_pose
             # rigid_bodies.append(rigid_body_info)
@@ -108,41 +108,54 @@ class DiffusionService(Node):
     def bodies_and_markers(self, rigid_bodies, marker_sets):
         observation = []
         
-        for rb in self.action_bodies:
-            for i in range(len(rigid_bodies[rb])):
-                rigid_body = rma.motive_2_robodk_rigidbody(rigid_bodies[rb][i])
-                # Multiply the first three elements by 1000
-                rigid_bodies[rb][i] = [val * 1000 for val in rigid_body[:3]] + rigid_body[3:]
-    
+        for rb in self.rigid_bodies:
+            # for i in range(len(rigid_bodies[rb])):
+                
             # print("RB - ", rb)
             # print("Rigid Body: ", rigid_bodies.keys())
             # print("#######################################")
             # print("#######################################")
             # print("#######################################")
             # print("Ridig Body: ", rb, rigid_bodies[rb])
+                
+            rigid_body = rma.motive_2_robodk_rigidbody(np.array(rigid_bodies[rb], dtype=float))
+            # Multiply the first three elements by 1000
+            rigid_body = [val * 1000 for val in rigid_body[:3]] + rigid_body[3:]
+            
+            rigid_bodies[rb] = rma.TxyzQwxyz_2_TxyzRxyz(rigid_body)
+            
+            # print("#######################################")
+            # print("#######################################")
+            # print("#######################################")
+            # print("New Ridig Body: ", rb, rigid_bodies[rb])
+    
             observation.extend(rigid_bodies[rb])
             
-        for rb in self.obs_bodies:
-            # print("RB - ", rb)
-            # print("Rigid Body: ", rigid_bodies.keys())
-            # print("Marker: ", marker_sets.keys())
-            # print("#######################################")
-            # print("#######################################")
-            # print("#######################################")
-            # print("Ridig Body: ", rb, rigid_bodies[rb])
-            observation.extend([self.gripper_state(rigid_bodies[rb], marker_sets[self.unlabbled_marker])])
+        # for rb in self.obs_bodies:
+        #     # print("RB - ", rb)
+        #     # print("Rigid Body: ", rigid_bodies.keys())
+        #     # print("Marker: ", marker_sets.keys())
+        #     # print("#######################################")
+        #     # print("#######################################")
+        #     # print("#######################################")
+        #     # print("Ridig Body: ", rb, rigid_bodies[rb])
+        #     observation.extend([self.gripper_state(rigid_bodies[rb], marker_sets[self.unlabbled_marker])])
         
         for ms in self.labbled_markers:
-            for i in range(len(marker_sets[ms])):
-                marker = rma.motive_2_robodk_marker(marker_sets[ms][i])
-                # Multiply the first three elements by 1000
-                marker_sets[ms][i] = [val * 1000 for val in marker]
+            # for i in range(len(marker_sets[ms])):
             # print("MS - ", ms)
             # print("Marker: ", marker_sets.keys())
             # print("#######################################")
             # print("#######################################")
             # print("#######################################")
             # print("Marker: ", marker_sets[ms])
+            marker = rma.motive_2_robodk_marker(np.array(marker_sets[ms], dtype=float))
+            # Multiply the first three elements by 1000
+            marker_sets[ms] = [val * 1000 for val in marker]
+            # print("#######################################")
+            # print("#######################################")
+            # print("#######################################")
+            # print("New Marker: ", marker_sets[ms])
             observation.extend(marker_sets[ms])
             
         print("Observation: ", observation)
@@ -157,6 +170,7 @@ class DiffusionService(Node):
                         self.pred_horizon, self.action_horizon, self.action_dim, 
                         self.noise_scheduler, self.num_diffusion_iters,
                         self.noise_pred_net, self.device)
+        # print("Actions: ", actions)
 
         # # Slice the observation to get the first 7 values
         # observation_slice = observation[:7]
@@ -177,7 +191,8 @@ class DiffusionService(Node):
         
         for i in range(len(actions)):
             msg = PredictedAction()
-            msg.data = actions[i]
+            # print("Action: ", actions[i], type(actions[i]))
+            msg.data = actions[i].tolist()
             action_list.append(msg)
             
         response.actions = action_list
@@ -191,13 +206,13 @@ def main(args=None):
     rclpy.init(args=args)
 
     # Specify the initial values for the attributes
-    rigid_bodies = [2, 6]  # Example IDs for rigid bodies
-    action_bodies = [6]     # Example IDs for action bodies
-    obs_bodies = [2]       # Example IDs for observed bodies
-    unlabbled_marker = 1510 # Example ID for the unlabeled marker
-    labbled_markers = [131075, 393221] # Example IDs for labeled markers
+    rigid_bodies = [8, 7, 4]  # Example IDs for rigid bodies
+    action_bodies = [8, 7]     # Example IDs for action bodies
+    obs_bodies = [4]       # Example IDs for observed bodies
+    unlabbled_marker =  0000 # Example ID for the unlabeled marker
+    labbled_markers = [6,7,14,10] # Example IDs for labeled markers
 
-    checkpoint_path = '/home/cam/Documents/raj/diffusion_policy_cam/no-sync/checkpoints/checkpoint_2BODY_4_markers_edge_1_step_all_epoch_199.pth'
+    checkpoint_path = ''
 
     checkpoint = torch.load(checkpoint_path)
 

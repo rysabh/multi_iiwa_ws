@@ -1,5 +1,4 @@
 from sensor_msgs.msg import JointState
-
 from moveit_msgs.msg import (
     RobotState,
     RobotTrajectory,
@@ -31,7 +30,7 @@ def joint_list_2_state(joint_positions: list, joint_names: list) -> JointState:
     joint_state.effort = [0.0] * len(joint_positions)
     return joint_state
 
-from sensor_msgs.msg import JointState
+
 
 def joint_state_2_list(joint_state: JointState, **kwargs) -> list:
     """

@@ -7,11 +7,13 @@ from geometry_msgs.msg import Point, Pose, Quaternion
 from sensor_msgs.msg import JointState
 
 from moveit_motion.ros_submodules.MoveitInterface import MoveitInterface
-
+import copy
 import moveit_motion.ros_submodules.ros_math as rosm
 import numpy as np
 import moveit_motion.diffusion_policy_cam.submodules.cleaned_file_parser as cfp
-import moveit_motion.ros_submodules.ros_math as rm
+import moveit_motion.diffusion_policy_cam.submodules.robomath_addon as rma
+import moveit_motion.diffusion_policy_cam.submodules.robomath as rm
+import time
 import csv
 from math import pi
 from moveit_motion.ros_submodules.RobotInterface import RobotInterface
@@ -23,11 +25,11 @@ def main(_file_name):
     rclpy.init()
     kg =None; kb = None
     
-    # kg =  MoveitInterface(node_name=f"client_kuka_green",     
-    #                               move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
-    #                               remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
-    #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-    #                              )
+    kg =  MoveitInterface(node_name=f"client_kuka_green",     
+                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
 
 
     kb = MoveitInterface(node_name=f"client_kuka_blue",     
@@ -60,11 +62,11 @@ def main(_file_name):
     print(f"Number of data points for gripper: {len(_data_points_gripper)}")
     print(f"Number of data points for time: {len(_data_times)}")
 
-    _data_points_chisel = np.apply_along_axis(rm.robodk_2_ros, 1, _data_points_chisel)
+    _data_points_chisel = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_chisel)
     _pose_waypoints_chisel = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_chisel)
     _pose_waypoints_chisel = _pose_waypoints_chisel.tolist()
 
-    _data_points_gripper = np.apply_along_axis(rm.robodk_2_ros, 1, _data_points_gripper)
+    _data_points_gripper = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_gripper)
     _pose_waypoints_gripper = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_gripper)
     _pose_waypoints_gripper = _pose_waypoints_gripper.tolist()
 
@@ -119,19 +121,38 @@ def main(_file_name):
         
         if kb:
             kb.execute_joint_traj(kb_plan_handle['trajectory'])
-        # with ThreadPoolExecutor() as executor:
-        #     future_exec_kg = executor.submit(kg.execute_joint_traj, kg_plan_handle['trajectory'])
-        #     future_exec_kb = executor.submit(kb.execute_joint_traj, kb_plan_handle['trajectory'])
-            
-        #     # Ensure both have started simultaneously
-        #     future_exec_kg.result()
-        #     future_exec_kb.result()
 
+        # wait for both to finish, however, have a timeout
+
+        _tick = time.time()
+        while not execution_finished:
+            mse_kg = 0
+            if kg:
+                kg_cjs = kg.get_current_joint_state()
+                kg_tjs = copy.deepcopy(kg_cjs)
+                kg_tjs.position = kg_plan_handle['trajectory'].joint_trajectory.points[-1].positions
+                mse_kg = rsmod.MSE_joint_states(kg_cjs, kg_tjs)
+
+            mse_kb = 0
+            if kb:
+                kb_cjs = kb.get_current_joint_state()
+                kb_tjs = copy.deepcopy(kb_cjs)
+                kb_tjs.position = kb_plan_handle['trajectory'].joint_trajectory.points[-1].positions
+                mse_kb = rsmod.MSE_joint_states(kb_cjs, kb_tjs)
+
+
+            if (mse_kg < 0.0002) and (mse_kb < 0.0002):
+                execution_finished = True
+            
+            _tock = time.time()
+            if _tock - _tick > 10:
+                print("Timeout: Execution not finished")
+                break
+
+        time.sleep(0.01)
     else:
         print("Trajectory not executed")
 
-    # LOOP_BREAK_FLAG = input("\n--------> ALERT !!! Continue? (y/n): ").strip().lower()
-    # if not LOOP_BREAK_FLAG == 'y':
     rclpy.shutdown()
 
 if __name__ == '__main__':
@@ -142,3 +163,17 @@ if __name__ == '__main__':
     main(_file_name)
 
 
+
+
+    '''dump
+            # with ThreadPoolExecutor() as executor:
+            #     future_exec_kg = executor.submit(kg.execute_joint_traj, kg_plan_handle['trajectory'])
+            #     future_exec_kb = executor.submit(kb.execute_joint_traj, kb_plan_handle['trajectory'])
+                
+            #     # Ensure both have started simultaneously
+            #     future_exec_kg.result()
+            #     future_exec_kb.result()
+
+
+
+    '''

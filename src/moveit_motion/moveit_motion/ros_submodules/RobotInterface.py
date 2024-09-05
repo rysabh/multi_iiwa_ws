@@ -2,7 +2,7 @@ import os
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
-
+from lbr_fri_idl.msg import LBRState
 from typing import Optional, Union
 from std_msgs.msg import Header
 
@@ -10,9 +10,6 @@ from moveit_msgs.msg import (
     RobotState,
     RobotTrajectory,
 )
-
-
-
 
 from sensor_msgs.msg import JointState
 
@@ -69,7 +66,7 @@ class RobotInterface(Node):
         Joint State for the moveit move group
         '''
         _JOINT_STATE_TOPIC = self.joint_states_topic_
-
+        
         _MSG_RECEIVED_BOOL, _current_joint_state = wait_for_message(
             JointState, self, _JOINT_STATE_TOPIC, time_to_wait=self.timeout_sec_
         )
@@ -117,3 +114,19 @@ class RobotInterface(Node):
 
     def modify_joint_state_for_robot(self, joint_state):
         return rsmod.modify_joint_state(joint_state, self.remapping_name_, frame_id='', add_prefix=False)
+    
+
+if __name__ == "__main__":
+    rclpy.init()
+    try:
+        client =  RobotInterface(
+            node_name="real_client_blue",      # lbr / kuka_blue -> required for FK service
+            move_group_name="kuka_blue",  # arm / kuka_blue -> required for motion planning
+            remapping_name="kuka_blue",            # lbr / ""        -> required for service and action remapping
+            prefix="",           # ""  / kuka_blue -> required for filtering joint states and links
+            ) 
+           
+        cjs = client.get_current_joint_state()
+        print(cjs)
+    finally:
+        rclpy.shutdown()
