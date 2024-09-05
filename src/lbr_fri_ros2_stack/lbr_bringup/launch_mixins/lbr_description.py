@@ -103,7 +103,7 @@ class LBRDescriptionMixin:
             name="model",
             default_value=default_value,
             description="The LBR model in use.",
-            choices=["iiwa7", "iiwa14", "med7", "med14"],
+            choices=["iiwa7", "iiwa14", "med7", "med14", "kuka_green", "kuka_blue"],
         )
 
     @staticmethod

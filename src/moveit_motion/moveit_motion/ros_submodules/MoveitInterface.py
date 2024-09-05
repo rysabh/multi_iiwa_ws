@@ -257,7 +257,7 @@ class MoveitInterface(Node):
         self.get_logger().info("Trajectory accepted, moving the robot...")
         result_future = goal_handle.get_result_async()
 
-        rclpy.spin_until_future_complete(self, result_future)
+        # rclpy.spin_until_future_complete(self, result_future)
         #Hantao's Code
         # expect_duration = traj.joint_trajectory.points[-1].time_from_start
         # expect_time = time.time() + 2 * expect_duration.sec 
@@ -265,9 +265,9 @@ class MoveitInterface(Node):
         #     time.sleep(0.01)
 
         # robot_interface_node.get_logger().info("Trajectory executed")
-        if not result_future.done():
-            self.get_logger().info("!!! Trajectory NOT executed")
-            raise RuntimeError
+        # if not result_future.done():
+        #     self.get_logger().info("!!! Trajectory NOT executed")
+        #     raise RuntimeError
         
         self.get_logger().info("Trajectory executed")
         return

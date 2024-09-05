@@ -7,6 +7,7 @@ hardware:
   port_id: 30202 # port id for the UDP communication. Useful in multi-robot setups
   kuka_blue_port_id: 30201
   kuka_green_port_id: 30202
+  lbr_port_id: 30202
   remote_host: INADDR_ANY # the expected robot IP address. INADDR_ANY will accept any incoming connection
   rt_prio: 80 # real-time priority for the control loop
   pid_p: 0.1 # P gain for the joint position  (useful for asynchronous control)

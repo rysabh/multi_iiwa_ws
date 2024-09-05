@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+
+<!-- top level -->
+<robot name="iiwa7" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- include the lbr iiwa macro -->
+    <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description.xacro" />
+    <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" />
+
+
+    <xacro:arg name="robot_name" default="lbr" />
+    <xacro:arg name="sim" default="true" />
+    <xacro:arg name="use_fake_hardware" default="true" />
+
+    <xacro:arg
+        name="system_parameters_path"
+        default="$(find lbr_ros2_control)/config/lbr_system_parameters.yaml" />
+
+    <!-- fixed to world, see http://classic.gazebosim.org/tutorials?tut=ros_urdf&cat=connect_ros -->
+    <link name="world" />
+
+    <!-- joint between world and link_0 -->
+    <joint name="world_joint" type="fixed">
+        <parent link="world" />
+        <child link="link_0" />
+        <origin xyz="0.55 -0.4 -0.25" rpy="0 0 0.783"/>
+    </joint>
+
+    <!-- iiwa -->
+    <xacro:iiwa7
+        robot_name="$(arg robot_name)"
+        sim="$(arg sim)"
+        system_parameters_path="$(arg system_parameters_path)" />
+
+    <!-- End Effector -->
+
+    <link name="link_ee">
+        <inertial>
+            <origin rpy="1.57 0 1.57" xyz="0 0 0.08524" />
+            <mass value="0.55" />
+            <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001" />
+        </inertial>
+        <visual>
+            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.035" />
+            <geometry>
+                <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.035" />
+            <geometry>
+                <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="joint_ee" type="fixed">
+        <parent link="link_7"/>
+        <child link="link_ee"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+    </joint>
+
+    <link name="link_tcp"/>
+
+    <joint name="joint_tcp" type="fixed">
+        <parent link="link_ee"/>
+        <child link="link_tcp"/>
+        <origin rpy="0 0 0" xyz="-0.00022 0.00163 0.17048"/>
+    </joint>
+</robot>

@@ -32,7 +32,7 @@ def main(_robot_name, _file_name):
     
     rosm.joint_state_2_list(cjs, verbose=True)
     
-    '''
+
     # path = 'no-sync/ik_results_1_degrees.csv'
     # path = 'no-sync/2024-08-28_15-33-26.csv'
     # with open(path, 'r') as f:
@@ -126,7 +126,7 @@ def main(_robot_name, _file_name):
     ############################################################
 
     print(f"Fraction of path executed: {_fraction}")
-    '''
+
     rclpy.shutdown()
 
 

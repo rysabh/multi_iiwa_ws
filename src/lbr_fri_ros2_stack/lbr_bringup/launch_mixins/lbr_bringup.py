@@ -54,7 +54,7 @@ class LBRMoveGroupMixin:
 
     @staticmethod
     def moveit_configs_builder(
-        robot_name: str, package_name: str
+        robot_name: str, package_name: str, **kwargs
     ) -> MoveItConfigsBuilder:
         return (
             MoveItConfigsBuilder(
@@ -67,7 +67,7 @@ class LBRMoveGroupMixin:
                     f"urdf/{robot_name}/{robot_name}.xacro",
                 ),
             )
-            .planning_pipelines(default_planning_pipeline="ompl", pipelines=["ompl", "isaac_ros_cumotion"])
+            .planning_pipelines(default_planning_pipeline="ompl", pipelines=["ompl", "pilz_industrial_motion_planner"])
         )
 
     @staticmethod
@@ -81,6 +81,7 @@ class LBRMoveGroupMixin:
             "capabilities": ParameterValue(
                 LaunchConfiguration("capabilities"), value_type=str
             ),
+            "capabilities": "pilz_industrial_motion_planner/MoveGroupSequenceAction pilz_industrial_motion_planner/MoveGroupSequenceService",
             "disable_capabilities": ParameterValue(
                 LaunchConfiguration("disable_capabilities"), value_type=str
             ),

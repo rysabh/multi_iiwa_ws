@@ -229,9 +229,9 @@ def interpolate_trajectory_timestamps(trajectory: RobotTrajectory,
     total_waypoints = len(timestamps)
     total_points = len(trajectory.joint_trajectory.points)
     
-    _start_time = timestamps[0]
+    _start_time = float(timestamps[0])
     # subtract the start time from all timestamps
-    timestamps = [_t - _start_time for _t in timestamps]
+    timestamps = [float(_t) - _start_time for _t in timestamps]
 
     if total_waypoints < 2 or total_points < 2:
         raise ValueError("There must be at least 2 waypoints and 2 trajectory points for interpolation.")

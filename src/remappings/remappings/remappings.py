@@ -32,7 +32,7 @@ class JointStatePublisher(Node):
 
     def kuka_blue_joint_state_callback(self, msg):
         joint_state = JointState()
-        joint_state.name = [f"kuka_blue_{name}" for name in msg.name]
+        joint_state.name = [f"{name}" for name in msg.name]
         joint_state.position = msg.position
         joint_state.header = msg.header
         joint_state.velocity = msg.velocity
@@ -42,7 +42,7 @@ class JointStatePublisher(Node):
 
     def kuka_green_joint_state_callback(self, msg):
         joint_state = JointState()
-        joint_state.name = [f"kuka_green_{name}" for name in msg.name]
+        joint_state.name = [f"{name}" for name in msg.name]
         joint_state.header = msg.header
         joint_state.position = msg.position
         joint_state.velocity = msg.velocity

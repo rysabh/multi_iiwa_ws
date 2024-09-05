@@ -17,8 +17,10 @@ from launch_mixins.lbr_ros2_control import LBRROS2ControlMixin
 
 def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     ld = LaunchDescription()
+    robot_name = LaunchConfiguration("robot_name")
 
     robot_description = LBRDescriptionMixin.param_robot_description(sim=False)
+    
     world_robot_tf = [0, 0, 0, 0, 0, 0]  # keep zero
 
     # robot state publisher
@@ -69,7 +71,8 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     # - requires world frame
     # - urdf only has robot_name/world
     # This transform needs publishing
-    robot_name = LaunchConfiguration("robot_name").perform(context)
+    # robot_name = LaunchConfiguration("robot_name").perform(context)
+    robot_name = robot_name.perform(context)
     ld.add_action(
         LBRDescriptionMixin.node_static_tf(
             tf=world_robot_tf,
@@ -103,9 +106,16 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     )
 
     # RViz and MoveIt
+    config_file="config/moveit.rviz"
+    # if robot_name == "kuka_blue":
+    #     config_file="config/moveit_blue.rviz"
+    # if robot_name == "kuka_green":
+    #     config_file="config/moveit_green.rviz"
+
     rviz_moveit = RVizMixin.node_rviz(
         rviz_config_pkg=f"{model}_moveit_config",
-        rviz_config="config/moveit.rviz",
+        # rviz_config="config/moveit.rviz",
+        rviz_config=config_file,
         parameters=LBRMoveGroupMixin.params_rviz(
             moveit_configs=moveit_configs_builder.to_moveit_configs()
         )
