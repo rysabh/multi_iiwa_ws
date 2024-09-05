@@ -23,7 +23,8 @@
     <joint name="world_joint" type="fixed">
         <parent link="world" />
         <child link="link_0" />
-        <origin xyz="0.55 -0.4 -0.25" rpy="0 0 0.783"/>
+        <!-- <origin xyz="0.55 -0.4 -0.25" rpy="0 0 0.783"/> -->
+        <origin xyz="0.55 -0.4 -0.35" rpy="0 0 0.783"/>
     </joint>
 
     <!-- iiwa -->

@@ -23,6 +23,16 @@
         <joint name="A7" value="0.418"/>
     </group_state>
 
+    <group_state name="gripper_HIGH" group="kuka_blue">
+        <joint name="A1" value="-0.590"/>
+        <joint name="A2" value="-1.136"/>
+        <joint name="A3" value="-2.251"/>
+        <joint name="A4" value="1.250"/>
+        <joint name="A5" value="-1.929"/>
+        <joint name="A6" value="0.964"/>
+        <joint name="A7" value="0.494"/>
+    </group_state>
+
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="gripper" parent_link="link_7" group="kuka_blue"/>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->

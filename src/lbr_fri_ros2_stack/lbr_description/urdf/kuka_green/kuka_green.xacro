@@ -19,7 +19,8 @@
     <joint name="world_joint" type="fixed">
         <parent link="world" />
         <child link="link_0" />
-        <origin xyz="0.8 0.7 -0.4" rpy="0 0 -2.356"/>
+        <!-- <origin xyz="0.8 0.7 -0.4" rpy="0 0 -2.356"/> -->
+        <origin xyz="0.8 0.7 -0.55" rpy="0 0 -2.356"/>
     </joint>
 
     <!-- iiwa -->
@@ -61,6 +62,6 @@
     <joint name="joint_tcp" type="fixed">
         <parent link="link_ee"/>
         <child link="link_tcp"/>
-        <origin rpy="0 0 0" xyz="-0.00071 -0.00018 0.11105"/>
+        <origin rpy="0 0 0" xyz="0.00051 -0.00012 0.23332"/>
     </joint>
 </robot>

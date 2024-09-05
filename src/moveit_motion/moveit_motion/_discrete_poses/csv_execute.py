@@ -21,18 +21,24 @@ def main(_robot_name, _file_name):
 
     rclpy.init()
     
+    # client = MoveitInterface(node_name=f"client_{_robot_name}",     
+    #                               move_group_name=_robot_name, # arm # kuka_g/b..   #-> required for motion planning
+    #                               remapping_name="",           # lbr # ""          #-> required for service and action remapping
+    #                               prefix=_robot_name,          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+    #                              )
+    
     client = MoveitInterface(node_name=f"client_{_robot_name}",     
-                                  move_group_name=_robot_name, # arm # kuka_g/b..   #-> required for motion planning
-                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
-                                  prefix=_robot_name,          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-                                 )
+                                move_group_name=_robot_name, # arm # kuka_g/b..   #-> required for motion planning
+                                remapping_name=_robot_name,           # lbr # ""          #-> required for service and action remapping
+                                prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                )
     
 
     cjs = client.get_current_joint_state()
     
     rosm.joint_state_2_list(cjs, verbose=True)
     
-
+    '''
     # path = 'no-sync/ik_results_1_degrees.csv'
     # path = 'no-sync/2024-08-28_15-33-26.csv'
     # with open(path, 'r') as f:
@@ -126,7 +132,7 @@ def main(_robot_name, _file_name):
     ############################################################
 
     print(f"Fraction of path executed: {_fraction}")
-
+    '''
     rclpy.shutdown()
 
 

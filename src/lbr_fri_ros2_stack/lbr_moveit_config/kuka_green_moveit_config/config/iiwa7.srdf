@@ -23,6 +23,16 @@
         <joint name="A7" value="-1.516"/>
     </group_state>
 
+    <group_state name="chisel_HIGH" group="kuka_green">
+        <joint name="A1" value="-0.614"/>
+        <joint name="A2" value="0.634"/>
+        <joint name="A3" value="2.302"/>
+        <joint name="A4" value="-1.634"/>
+        <joint name="A5" value="1.526"/>
+        <joint name="A6" value="-1.549"/>
+        <joint name="A7" value="-1.897"/>
+    </group_state>
+
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="chisel" parent_link="link_7" group="kuka_green"/>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
