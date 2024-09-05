@@ -10,31 +10,62 @@ def minimize_error(world_points, robot_points):
     for W_TxyzQwxyz_P, R_TxyzRxyz_P in zip(world_points, robot_points):
         # Convert the pose representations
         R_T_P = rm.KUKA_2_Pose(R_TxyzRxyz_P)
+        # print("R_T_P: ", R_T_P)
         W_T_P = rma.TxyzQwxyz_2_Pose(W_TxyzQwxyz_P)
+        # print("W_T_P: ", W_T_P)
         
         # Compute the transformation from world to robot frame
         W_T_R = W_T_P * rm.invH(R_T_P)
+        # print("W_T_R: ", W_T_R)
         W_T_R_list.append(W_T_R)
+        
     
     # Average the transformations (in practice, consider using SVD for rotation averaging)
-    avg_W_T_R = np.mean(W_T_R_list, axis=0)
+    # avg_W_T_R = np.mean(W_T_R_list, axis=0)
 
-    return avg_W_T_R
+    return W_T_R_list
 
 # Example usage with multiple points
+
 world_points = [
-    [1.0, 2.0, 3.0, 0.1, 0.2, 0.3, 0.4],
-    [2.0, 3.0, 4.0, 0.2, 0.3, 0.4, 0.5],
+    [1172.231812, 57.700745, 175.775574, 0.529326, -0.836879, 0.069937, -0.120649], #mocap frame
+    # [2.0, 3.0, 4.0, 0.2, 0.3, 0.4, 0.5],
     # Add more points
 ]
+
+
+# write code for running rma.motive_2_robodk_rigidbody for all points in world_points
+for i in range(len(world_points)):
+    world_points[i] = rma.motive_2_robodk_rigidbody(world_points[i])
+
 
 robot_points = [
-    [0.5, 1.5, 2.5, 0.05, 0.15, 0.25],
-    [1.5, 2.5, 3.5, 0.15, 0.25, 0.35],
+    [0.65035, -0.31351, 0.52362, 0.11093, 0.06069, 0.15004],
+    # [1.5, 2.5, 3.5, 0.15, 0.25, 0.35],
     # Add more points
 ]
 
+
+
 avg_transformation = minimize_error(world_points, robot_points)
-print("Average Transformation Matrix:")
-print(avg_transformation)
+# print("Average Transformation Matrix:")
+
+# print(avg_transformation)
+
+print("Average Transformation Matrix (as a list):")
+
+out = []
+
+# write code for running rma.motive_2_robodk_rigidbody for all points in world_points
+for i in range(len(avg_transformation)):
+    out.append(rm.pose_2_xyzrpw(avg_transformation[i]))
+
+# out = rma.TxyzRxyz_2_TxyzQwxyz(out[0])
+# out = rma.robodk_2_motive(out)
+# out = rma.TxyzQwxyz_2_TxyzRxyz(out)
+
+
+
+print(out)
+
 

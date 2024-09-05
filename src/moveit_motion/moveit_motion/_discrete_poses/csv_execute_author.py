@@ -70,20 +70,22 @@ def main(_file_name):
 
     # Parallelize the planning phase
     # Run kg and kb planning sequentially to avoid the spin issue
-    kg_plan_handle = kg.get_cartesian_spline_plan(
-        waypoints=_pose_waypoints_chisel, planning_frame='world',
-        _planner_type="cartesian_interpolator", max_step=0.01,
-        jump_threshold=0.0, avoid_collisions=False, attempts=1
-    )
+    if kg:
+        kg_plan_handle = kg.get_cartesian_spline_plan(
+            waypoints=_pose_waypoints_chisel, planning_frame='world',
+            _planner_type="cartesian_interpolator", max_step=0.01,
+            jump_threshold=0.0, avoid_collisions=False, attempts=1
+        )
 
-    kb_plan_handle = kb.get_cartesian_spline_plan(
-        waypoints=_pose_waypoints_gripper, planning_frame='world',
-        _planner_type="cartesian_interpolator", max_step=0.01,
-        jump_threshold=0.0, avoid_collisions=False, attempts=1
-    )
+    # if kb:
+    #     kb_plan_handle = kb.get_cartesian_spline_plan(
+    #         waypoints=_pose_waypoints_gripper, planning_frame='world',
+    #         _planner_type="cartesian_interpolator", max_step=0.01,
+    #         jump_threshold=0.0, avoid_collisions=False, attempts=1
+    #     )
 
     print(f"Fraction of path executed (kg): {kg_plan_handle['fraction']}\nStop flag (kg): {kg_plan_handle['stop_flag']}")
-    print(f"Fraction of path executed (kb): {kb_plan_handle['fraction']}\nStop flag (kb): {kb_plan_handle['stop_flag']}")
+    # print(f"Fraction of path executed (kb): {kb_plan_handle['fraction']}\nStop flag (kb): {kb_plan_handle['stop_flag']}")
 
 
     # Proceed with trajectory timing correction
@@ -97,23 +99,26 @@ def main(_file_name):
             _completed_time_steps = int(len(_data_times) * kg_plan_handle['fraction'])
             kg_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kg_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
 
-    if kb:
-        ADD_TIMES_FLAG_GRIPPER = len(_data_times) == len(_data_points_gripper)
-        if len(_data_times) > 0 and not ADD_TIMES_FLAG_GRIPPER:
-            kb.get_logger().error("Invalid time_stamps provided")
-            return None
+    # if kb:
+    #     ADD_TIMES_FLAG_GRIPPER = len(_data_times) == len(_data_points_gripper)
+    #     if len(_data_times) > 0 and not ADD_TIMES_FLAG_GRIPPER:
+    #         kb.get_logger().error("Invalid time_stamps provided")
+    #         return None
 
-        if ADD_TIMES_FLAG_GRIPPER and kb_plan_handle['stop_flag']:
-            _completed_time_steps = int(len(_data_times) * kb_plan_handle['fraction'])
-            kb_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kb_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
+    #     if ADD_TIMES_FLAG_GRIPPER and kb_plan_handle['stop_flag']:
+    #         _completed_time_steps = int(len(_data_times) * kb_plan_handle['fraction'])
+    #         kb_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kb_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
 
 
     # Execute both trajectories simultaneously
     EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
 
     if EXECUTE_FLAG == 'y':
-        kg.execute_joint_traj(kg_plan_handle['trajectory'])
-        kb.execute_joint_traj(kb_plan_handle['trajectory'])
+        if kg:
+            kg.execute_joint_traj(kg_plan_handle['trajectory'])
+        
+        # if kb:
+        #     kb.execute_joint_traj(kb_plan_handle['trajectory'])
         # with ThreadPoolExecutor() as executor:
         #     future_exec_kg = executor.submit(kg.execute_joint_traj, kg_plan_handle['trajectory'])
         #     future_exec_kb = executor.submit(kb.execute_joint_traj, kb_plan_handle['trajectory'])
