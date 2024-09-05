@@ -6,18 +6,24 @@ from diffusion_interface.msg import PredictedAction
 
 import sys
 import os
-parent_dir = os.path.abspath(os.path.join('/home/cam/Documents/raj/diffusion_policy_cam', '..'))
+import torch
+parent_dir = os.path.abspath(os.path.join('/home/cam/multi_iiwa_ws/src/moveit_motion/moveit_motion/diffusion_policy_cam', '..'))
 print(parent_dir)
 sys.path.append(parent_dir)
 
-from diffusion_policy_cam.submodules import robomath_addon as rma
-from diffusion_policy_cam.submodules import robomath as rm
-from diffusion_policy_cam.diffusion_jupyternotebook.live_infrence_evaluation import main
+from moveit_motion.diffusion_policy_cam.submodules import robomath_addon as rma
+from moveit_motion.diffusion_policy_cam.submodules import robomath as rm
+
+from moveit_motion.diffusion_policy_cam.diffusion_jupyternotebook import live_infrence_evaluation as live
 
 
 class DiffusionService(Node):
 
-    def __init__(self, rigid_bodies, action_bodies, obs_bodies, unlabbled_marker, labbled_markers):
+    def __init__(self, rigid_bodies, action_bodies, obs_bodies, unlabbled_marker, 
+                        labbled_markers, statistics, obs_horizon,
+                        pred_horizon, action_horizon, action_dim, 
+                        noise_scheduler, num_diffusion_iters,
+                        noise_pred_net, device):
         super().__init__('diffusion_service')
         self.srv = self.create_service(DiffusionAction, 
                                        'predicts_action', 
@@ -29,10 +35,19 @@ class DiffusionService(Node):
         self.obs_bodies = obs_bodies
         self.unlabbled_marker = unlabbled_marker
         self.labbled_markers = labbled_markers
+        self.obs_horizon = obs_horizon
+        self.pred_horizon = pred_horizon
+        self.action_horizon = action_horizon
+        self.action_dim = action_dim
+        self.statistics = statistics
+        self.noise_scheduler = noise_scheduler
+        self.num_diffusion_iters = num_diffusion_iters
+        self.noise_pred_net = noise_pred_net
+        self.device = device
 
     def extract_rigid_bodies_and_marker_sets(self, mocap_data):
-        rigid_bodies = []
-        marker_sets = []
+        # rigid_bodies = []
+        # marker_sets = []
         rigid_body_info = {}
         marker_set_info = {}
 
@@ -129,8 +144,13 @@ class DiffusionService(Node):
             
         rigid_bodies, marker_sets = self.extract_rigid_bodies_and_marker_sets(request.observations)
         observation = self.bodies_and_markers(rigid_bodies, marker_sets)
-        actions = main(observation)
-        observation_slice = observation[:7]
+        actions = live._pred_traj(observation, self.statistics, self.obs_horizon,
+                        self.pred_horizon, self.action_horizon, self.action_dim, 
+                        self.noise_scheduler, self.num_diffusion_iters,
+                        self.noise_pred_net, self.device)
+
+        # # Slice the observation to get the first 7 values
+        # observation_slice = observation[:7]
 
         # # Convert all values to float
         # float_observation_slice = [float(value) for value in observation_slice]
@@ -168,8 +188,34 @@ def main(args=None):
     unlabbled_marker = 1510 # Example ID for the unlabeled marker
     labbled_markers = [131075, 393221] # Example IDs for labeled markers
 
+    checkpoint_path = 'no-sync/chkpts/checkpoint_2BODY_4_markers_edge_1_step_all_epoch_199.pth'
+
+    checkpoint = torch.load(checkpoint_path)
+
+    # Parameters corrsponding to
+    num_epochs =checkpoint['num_epochs']
+    obs_dim = checkpoint['obs_dim']
+    action_dim = checkpoint['action_dim']
+    # parameters
+    pred_horizon = checkpoint['pred_horizon']
+    obs_horizon = checkpoint['obs_horizon']
+    action_horizon = checkpoint['action_horizon']
+
+    statistics = checkpoint['dataset_stats']
+    len_dataloader = checkpoint['len_dataloader']   
+    num_diffusion_iters = checkpoint['num_diffusion_iters']
+    
+    noise_pred_net, noise_scheduler, device, ema, optimizer, lr_scheduler = live._model_initalization(action_dim, obs_dim, obs_horizon, pred_horizon, num_epochs, len_dataloader, num_diffusion_iters)
+    
+    noise_pred_net.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    lr_scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+    ema.load_state_dict(checkpoint['ema_state_dict'])
+
     # Instantiate the DiffusionService node with the specific values
-    diffusion_service = DiffusionService(rigid_bodies, action_bodies, obs_bodies, unlabbled_marker, labbled_markers)
+    diffusion_service = DiffusionService(rigid_bodies, action_bodies, obs_bodies, unlabbled_marker, labbled_markers, 
+                                         statistics, obs_horizon, pred_horizon, action_horizon, action_dim,
+                                         noise_scheduler, num_diffusion_iters, noise_pred_net, device)
 
     # Keep the node alive to handle incoming requests
     rclpy.spin(diffusion_service)
