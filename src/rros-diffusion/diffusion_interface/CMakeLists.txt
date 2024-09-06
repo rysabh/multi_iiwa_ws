@@ -21,7 +21,7 @@ find_package(mocap_optitrack_interfaces REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/DiffusionAction.srv"
   "msg/PredictedAction.msg"
-  "msg/Observations.msg"
+  "msg/Observation.msg"
   DEPENDENCIES mocap_optitrack_interfaces geometry_msgs std_msgs
  )
 
