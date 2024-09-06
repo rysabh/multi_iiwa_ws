@@ -188,28 +188,37 @@ def main():
     if kb: move_client_ptp(kb, KB_GRIPPER_START)
     
     try :
+        observations_1 = None
         while True:
             _data_points_chisel = []
             _data_points_gripper = []
             
             time.sleep(0.01)
-            observations = diffusion_client.get_mocap_data()
-            rclpy.spin_until_future_complete(diffusion_client, observations)
+            observations_2 = diffusion_client.get_mocap_data()
+            rclpy.spin_until_future_complete(diffusion_client, observations_2)
 
-            if observations.done():
+            if observations_2.done():
                 # Wait until the mocap service call completes
-                response_mocap = observations.result()
+                response_mocap = observations_2.result()
                 diffusion_client.get_logger().info(f'Mocap Service call completed')
 
                 # Send the observation to the diffusion service
                 new_test = []
-                new_ob = Observation()
-                new_ob.capture_data =  response_mocap.latest_message
+                new_ob_1 = Observation()
+                new_ob_2 = Observation()
+                new_ob_2.capture_data =  response_mocap.latest_message
                 # print(response_mocap.latest_message)
-                new_test.append(new_ob)
+                if observations_1 is None:
+                    new_test.append(new_ob_2)
+                    new_test.append(new_ob_2)
+                else:
+                    # new_test.append(new_ob)
+                    new_ob_1.capture_data = observations_1.result().latest_message
+                    new_test.append(new_ob_1)
+                    new_test.append(new_ob_2)
                 # new_test.append(new_ob)
                 print("New test: ", len(new_test))
-                print("new_test", new_test)
+                # print("new_test")
                 print("############################################")
                 actions = diffusion_client.send_observation(new_test)
 
@@ -264,12 +273,17 @@ def main():
                     mse_kb = 0
                     if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle['trajectory'])
 
-                    if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
+                    if (mse_kg < 0.0002) and (mse_kb < 0.0002):
+                        execution_finished = True
                     
                     _tock = time.time()
                     if _tock - _tick > 10: print("Timeout: Execution not finished"); break
 
                     time.sleep(0.01)
+                    
+                    
+                observations_1 = observations_2
+                
                     
     except KeyboardInterrupt:
         print("\nKeyboard interrupt received. Exiting loop...")

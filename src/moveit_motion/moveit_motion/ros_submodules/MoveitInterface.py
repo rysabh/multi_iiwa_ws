@@ -124,7 +124,8 @@ class MoveitInterface(Node):
         '''
         _robot_state = rosm.joint_2_robot_state(joint_state)
         _request = GetPositionFK.Request()
-        _request.header.frame_id = self.base_
+        # _request.header.frame_id = self.base_
+        _request.header.frame_id = 'world'
         # _request.header.frame_id = 'lbr/link_0' #kuka_blue_link_0
         _request.header.stamp = self.get_clock().now().to_msg()
         # _request.fk_link_names.append('link_ee')
@@ -160,7 +161,8 @@ class MoveitInterface(Node):
     def get_ik(self, pose: Pose) -> Union[JointState, None]:
         request = GetPositionIK.Request()
         request.ik_request.group_name = self.move_group_name_
-        request.ik_request.pose_stamped.header.frame_id = self.base_
+        # request.ik_request.pose_stamped.header.frame_id = self.base_
+        request.ik_request.pose_stamped.header.frame_id = "world"
         request.ik_request.pose_stamped.header.stamp = self.get_clock().now().to_msg()
         request.ik_request.pose_stamped.pose = pose
         request.ik_request.avoid_collisions = True

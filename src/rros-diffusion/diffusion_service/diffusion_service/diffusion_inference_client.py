@@ -64,13 +64,13 @@ def main(args=None):
             rclpy.spin_until_future_complete(diffusion_client, actions)
             
             if actions.done():
-                # diffusion_client.get_logger().info(f'Response: {actions.result().actions}')
-                # print("Received data: ", actions.result().actions)
-                for value in actions.result().actions:
-                    chisel = value.data[0:6]
-                    print("Chisel: ", chisel)
-                    gripper = value.data[6:12]
-                    print("Gripper: ", gripper)
+                diffusion_client.get_logger().info(f'Response: {actions.result().actions}')
+                print("Received data: ", actions.result().actions)
+                # for value in actions.result().actions:
+                #     chisel = value.data[0:6]
+                #     print("Chisel: ", chisel)
+                #     gripper = value.data[6:12]
+                #     print("Gripper: ", gripper)
         
         except KeyboardInterrupt:
             pass

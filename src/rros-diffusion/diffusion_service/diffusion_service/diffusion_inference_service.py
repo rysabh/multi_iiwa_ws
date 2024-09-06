@@ -78,30 +78,15 @@ class DiffusionService(Node):
         return rigid_body_info, marker_set_info
 
     def gripper_state(self, rigid_body_pose, marker_pose):
-        # print("#######################################")
-        # print("#######################################")
-        # print("#######################################")
-        # print("Rigid Body Pose: ", np.array(rigid_body_pose, dtype=float))
-        # print(len(rigid_body_pose))
-        # print("Marker Pose: ", np.array(marker_pose, dtype=float))
-        # print(len(marker_pose))
-        # print("#######################################")
-        # print("#######################################")
-        # print("#######################################")
+
         new_pose_wrt_gripper = rma.Vxyz_wrt_TxyzRxyz(np.array(marker_pose, dtype=float), np.array(rigid_body_pose, dtype=float))
-        # print("New Pose wrt Gripper: ", new_pose_wrt_gripper)
-        # print("#######################################")
-        # print("#######################################")
-        # print("#######################################")
         distance = rm.distance(new_pose_wrt_gripper, [0, 0, 0])
         
         if distance > 30:
             on_off_state = 1
         else:
             on_off_state = -1
-            
-        # print("Distance: ", distance)
-        # print("On Off State: ", on_off_state)           
+             
         
         return on_off_state
 
@@ -109,25 +94,13 @@ class DiffusionService(Node):
         observation = []
         
         for rb in self.rigid_bodies:
-            # for i in range(len(rigid_bodies[rb])):
-                
-            # print("RB - ", rb)
-            # print("Rigid Body: ", rigid_bodies.keys())
-            # print("#######################################")
-            # print("#######################################")
-            # print("#######################################")
-            # print("Ridig Body: ", rb, rigid_bodies[rb])
+
                 
             rigid_body = rma.motive_2_robodk_rigidbody(np.array(rigid_bodies[rb], dtype=float))
             # Multiply the first three elements by 1000
             rigid_body = [val * 1000 for val in rigid_body[:3]] + rigid_body[3:]
             
             rigid_bodies[rb] = rma.TxyzQwxyz_2_TxyzRxyz(rigid_body)
-            
-            # print("#######################################")
-            # print("#######################################")
-            # print("#######################################")
-            # print("New Ridig Body: ", rb, rigid_bodies[rb])
     
             observation.extend(rigid_bodies[rb])
             
@@ -142,20 +115,11 @@ class DiffusionService(Node):
         #     observation.extend([self.gripper_state(rigid_bodies[rb], marker_sets[self.unlabbled_marker])])
         
         for ms in self.labbled_markers:
-            # for i in range(len(marker_sets[ms])):
-            # print("MS - ", ms)
-            # print("Marker: ", marker_sets.keys())
-            # print("#######################################")
-            # print("#######################################")
-            # print("#######################################")
-            # print("Marker: ", marker_sets[ms])
             marker = rma.motive_2_robodk_marker(np.array(marker_sets[ms], dtype=float))
+            
             # Multiply the first three elements by 1000
             marker_sets[ms] = [val * 1000 for val in marker]
-            # print("#######################################")
-            # print("#######################################")
-            # print("#######################################")
-            # print("New Marker: ", marker_sets[ms])
+            
             observation.extend(marker_sets[ms])
             
         # print("Observation: ", observation)
@@ -171,7 +135,9 @@ class DiffusionService(Node):
             rigid_bodies, marker_sets = self.extract_rigid_bodies_and_marker_sets(observation)
             result = self.bodies_and_markers(rigid_bodies, marker_sets)
             all_observations.append(result)
-            
+        
+        
+        # print("all_observation -",all_observations) 
         actions = live._pred_traj(all_observations, self.statistics, self.obs_horizon,
                         self.pred_horizon, self.action_horizon, self.action_dim, 
                         self.noise_scheduler, self.num_diffusion_iters,
@@ -207,18 +173,17 @@ class DiffusionService(Node):
     
 
 
-
 def main(args=None):
     rclpy.init(args=args)
 
     # Specify the initial values for the attributes
-    rigid_bodies = [8, 7, 4]  # Example IDs for rigid bodies
-    action_bodies = [8, 7]     # Example IDs for action bodies
+    rigid_bodies = [13, 7, 4]  # Example IDs for rigid bodies
+    action_bodies = [13, 7]     # Example IDs for action bodies
     obs_bodies = [4]       # Example IDs for observed bodies
     unlabbled_marker =  0000 # Example ID for the unlabeled marker
-    labbled_markers = [6,7,14,10] # Example IDs for labeled markers
+    labbled_markers = [40,39,37,36] # Example IDs for labeled markers
 
-    checkpoint_path = ''
+    checkpoint_path = 'no-sync/chkpts/checkpoint_2BODY_4_markers_edge_3_step_all_obs_horizon_1_action_horizon_60_old_epoch_199.pth'
 
     checkpoint = torch.load(checkpoint_path)
 
