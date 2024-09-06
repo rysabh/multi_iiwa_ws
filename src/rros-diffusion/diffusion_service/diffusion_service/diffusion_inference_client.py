@@ -1,6 +1,8 @@
 import rclpy
 from rclpy.node import Node
+import numpy as np
 from diffusion_interface.srv import DiffusionAction  # Adjust this import according to your service definition
+from diffusion_interface.msg import Observation
 from mocap_optitrack_interfaces.srv import GetMotionCaptureData
 
 class DiffusionClient(Node):
@@ -49,7 +51,14 @@ def main(args=None):
             diffusion_client.get_logger().info(f'Mocap Service call completed')
 
             # Send the observation to the diffusion service
-            actions = diffusion_client.send_observation(response_mocap.latest_message)
+            new_test = []
+            new_ob = Observation()
+            new_ob.capture_data =  response_mocap.latest_message
+            new_test.append(new_ob)
+            new_test.append(new_ob)
+            # print("New test: ", len(new_test))
+            print("############################################")
+            actions = diffusion_client.send_observation(new_test)
 
             # Wait until the diffusion service call completes
             rclpy.spin_until_future_complete(diffusion_client, actions)

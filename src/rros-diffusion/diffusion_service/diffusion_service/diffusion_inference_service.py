@@ -52,7 +52,7 @@ class DiffusionService(Node):
         marker_set_info = {}
 
         # Extract rigid bodies
-        for rb in mocap_data.rigid_bodies:
+        for rb in mocap_data.capture_data.rigid_bodies:
             euler_pose = [
                     rb.pose_stamped.pose.position.x,
                     rb.pose_stamped.pose.position.y,
@@ -67,7 +67,7 @@ class DiffusionService(Node):
             # rigid_bodies.append(rigid_body_info)
 
         # Extract marker sets
-        for ms in mocap_data.marker_sets:
+        for ms in mocap_data.capture_data.marker_sets:
             marker_set_info[ms.id] = [
                     ms.position.x,
                     ms.position.y,
@@ -158,15 +158,21 @@ class DiffusionService(Node):
             # print("New Marker: ", marker_sets[ms])
             observation.extend(marker_sets[ms])
             
-        print("Observation: ", observation)
+        # print("Observation: ", observation)
             
         return observation
 
     def predicted_action_callback(self, request, response):
+        
+        all_observations = []
+
+        # Iterate over all observations in the request
+        for observation in request.observations:
+            rigid_bodies, marker_sets = self.extract_rigid_bodies_and_marker_sets(observation)
+            result = self.bodies_and_markers(rigid_bodies, marker_sets)
+            all_observations.append(result)
             
-        rigid_bodies, marker_sets = self.extract_rigid_bodies_and_marker_sets(request.observations)
-        observation = self.bodies_and_markers(rigid_bodies, marker_sets)
-        actions = live._pred_traj(observation, self.statistics, self.obs_horizon,
+        actions = live._pred_traj(all_observations, self.statistics, self.obs_horizon,
                         self.pred_horizon, self.action_horizon, self.action_dim, 
                         self.noise_scheduler, self.num_diffusion_iters,
                         self.noise_pred_net, self.device)

@@ -20,6 +20,7 @@ from moveit_motion.ros_submodules.RobotInterface import RobotInterface
 import moveit_motion.ros_submodules.RS_submodules as rsmod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 ###############################
 #---- Next Action Generator ---
 ###############################
@@ -154,7 +155,7 @@ def main():
     if kb: move_client_ptp(kb, KB_HOME)
 
     for next_actions in action_generator:
-        _data_points_chisel = next_actions['data_chisel']
+        _data_points_chisel = next_actions['data_chisel'] 
         _data_points_chisel = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_chisel)
         _pose_waypoints_chisel = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_chisel)
         _pose_waypoints_chisel = _pose_waypoints_chisel.tolist()

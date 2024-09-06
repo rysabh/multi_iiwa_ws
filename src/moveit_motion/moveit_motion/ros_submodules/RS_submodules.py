@@ -53,6 +53,23 @@ def MSE_joint_states(joint_state_1: JointState, joint_state_2: JointState) -> fl
     _mse = np.mean(_squared_diffs)
     return _mse
 
+def MSE_joint_points(point_1, point_2):
+    # points are same as joint_trajectory.points[0]
+    # Extract positions from both JointTrajectoryPoint messages
+    positions_1 = np.array(point_1.positions)
+    positions_2 = np.array(point_2.positions)
+
+    # Sanity check: Ensure the two position arrays have the same length
+    if positions_1.shape != positions_2.shape:
+        raise ValueError("Joint positions for calculating MSE do not have the same length")
+
+    # Calculate squared differences between corresponding joint positions
+    _squared_diffs = (positions_1 - positions_2) ** 2
+
+    # Compute the Mean Squared Error
+    _mse = np.mean(_squared_diffs)
+    return _mse
+
 
 def MSE_poses():
     pass
