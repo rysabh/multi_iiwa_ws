@@ -4,7 +4,6 @@
 <robot name="iiwa7" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <!-- include the lbr iiwa macro -->
-    <xacro:include filename="$(find lbr_description)/urdf/iiwa7/materials.xacro" />
     <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description.xacro" />
 
     <xacro:arg name="robot_name" default="lbr" />
@@ -24,8 +23,7 @@
         <!-- <origin xyz="0.8 0.7 -0.55" rpy="0 0 -2.356"/> -->
         <!-- <origin xyz="0.8 0.7 -0.425" rpy="0 0 -2.356"/> -->
         <!-- <origin xyz="0.8 0.7 -0.47" rpy="0 0 -2.356"/> -->
-        <!-- <origin xyz="0.85 0.60 -0.46" rpy="0 0 -2.356"/> -->
-        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <origin xyz="0.85 0.60 -0.46" rpy="0 0 -2.356"/>
     </joint>
 
     <!-- iiwa -->
@@ -46,21 +44,19 @@
             <geometry>
                 <mesh filename="package://lbr_description/meshes/iiwa7/visual/chisel.dae" scale="0.01 0.01 0.01"/>
             </geometry>
-            <material name="Black"/>
         </visual>
         <collision>
             <origin rpy="1.57 0 1.57" xyz="0.0 0.0 0.0" />
             <geometry>
                 <mesh filename="package://lbr_description/meshes/iiwa7/collision/chisel.stl" scale="0.001 0.001 0.001"/>
             </geometry>
-            <material name="Black"/>
         </collision>
     </link>
     
     <joint name="joint_ee" type="fixed">
         <parent link="link_7"/>
         <child link="link_ee"/>
-        <origin rpy="0 0 3.14" xyz="0 0 0.045"/>
+        <origin rpy="0 0 3.14" xyz="0 0 0.035"/>
     </joint>
 
     <!-- TCP Link -->

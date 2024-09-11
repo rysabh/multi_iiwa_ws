@@ -4,6 +4,7 @@
 <robot name="iiwa7" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <!-- include the lbr iiwa macro -->
+    <xacro:include filename="$(find iiwa7_description)/urdf/materials.xacro" />
     <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description.xacro" />
     <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" />
 
@@ -44,16 +45,18 @@
             <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001" />
         </inertial>
         <visual>
-            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.035" />
+            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.045" />
             <geometry>
                 <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
             </geometry>
+            <material name="Black"/>
         </visual>
         <collision>
-            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.035" />
+            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.045" />
             <geometry>
                 <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
             </geometry>
+            <material name="Black"/>
         </collision>
     </link>
 
