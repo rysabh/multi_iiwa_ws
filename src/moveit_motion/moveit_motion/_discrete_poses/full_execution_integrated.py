@@ -182,10 +182,10 @@ def main():
     # action_generator = get_robot_next_actions()
 
     if kg: move_client_ptp(kg, KG_HOME)
-    if kb: move_client_ptp(kb, KB_HOME)
+    # if kb: move_client_ptp(kb, KB_HOME)
     
     if kg: move_client_ptp(kg, KG_CHISEL_START)
-    if kb: move_client_ptp(kb, KB_GRIPPER_START)
+    # if kb: move_client_ptp(kb, KB_GRIPPER_START)
     
     try :
         while True:
