@@ -47,76 +47,90 @@ def parse_pose_data(pose_data):
 
 
 ############################################################################################################
+'''
 print("-----------------------------------------------------------------------------------------------------------------")
 base_data = """
 position:
-    x: 0.5735150575637817
-    y: -0.43317827582359314
-    z: 0.935540497303009
+    x: 0.17086389660835266
+    y: 0.0008673427510075271
+    z: 0.23214586079120636
 orientation:
-    x: 0.012493790127336979
-    y: -0.9843049049377441
-    z: -0.00804084911942482
-    w: -0.17584951221942902
+    x: -0.0010002314811572433
+    y: -0.6588081121444702
+    z: 0.0029677206184715033
+    w: 0.7523044943809509
 """
+
+      
+
 
 base_data = parse_pose_data(base_data)
 # print("base_data: \n", [round(i, 7) for i in base_data])
 base_TxyzQwxyz = base_data
 base_TxyzQwxyz =  rma.motive_2_robodk_rigidbody(base_TxyzQwxyz)
-base_TxyzQwxyz = [ i*1000 for i in base_TxyzQwxyz[:3]] +  base_TxyzQwxyz[3:]
+base_TxyzQwxyz = [ i*1000 for i in base_TxyzQwxyz[:3]] +  base_TxyzQwxyz[3:] # meters
+
 # base_TxyzQwxyz = rosm.robodk_2_ros(base_TxyzQwxyz)
 print("base_TxyzQwxyz: \n", [round(i, 7) for i in base_TxyzQwxyz])
 
 
-base_TxyzRxyz = rma.TxyzQwxyz_2_TxyzRxyz(base_TxyzQwxyz) #don't use this for KUKA calibration; this is just for sanity check that rviz and this should match exactly
-# base_TxyzRxyz = rm.Pose_2_KUKA(rma.TxyzQwxyz_2_Pose(base_TxyzQwxyz)); base_TxyzRxyz = base_TxyzRxyz[:3] + [ i*pi/180 for i in base_TxyzRxyz[3:]] #for KUKA calibration
-base_TxyzRxyz = base_TxyzRxyz[:3] + [ i*180/pi for i in base_TxyzRxyz[3:]]
+# base_TxyzRxyz = rma.TxyzQwxyz_2_TxyzRxyz(base_TxyzQwxyz) #meters and radians #don't use this for KUKA calibration; this is just for sanity check that rviz and this should match exactly
+base_TxyzRxyz = rm.Pose_2_KUKA(rma.TxyzQwxyz_2_Pose(base_TxyzQwxyz)); #meter and degrees
+# base_TxyzRxyz = base_TxyzRxyz[:3] + [ i*pi/180 for i in base_TxyzRxyz[3:]] # meters and radians
+# base_TxyzRxyz = base_TxyzRxyz[:3] + [ i*180/pi for i in base_TxyzRxyz[3:]]
 print("base_TxyzRxyz: \n", [round(i, 7) for i in base_TxyzRxyz])
 
 
-base_data_rviz = [0.93554, 0.57352, -0.43318, 0.17585, 0.0080408, -0.012494, 0.9843]
 
-base_TxyzRxyz_rviz = rma.TxyzQwxyz_2_TxyzRxyz(base_data_rviz)
-base_TxyzRxyz_rviz = base_TxyzRxyz_rviz[:3] + [ i*180/pi for i in base_TxyzRxyz_rviz[3:]]
+base_data_rviz = [0.23222, 0.17079, 0.0005317, 0.75224, 0.0025645, -0.00068819, -0.65888] # meters and radians
+
+# base_TxyzRxyz_rviz = rma.TxyzQwxyz_2_TxyzRxyz(base_data_rviz)
+# base_TxyzRxyz_rviz = base_TxyzRxyz_rviz[:3] + [ i*180/pi for i in base_TxyzRxyz_rviz[3:]] # meters and degrees
+base_TxyzRxyz_rviz = rm.Pose_2_KUKA(rma.TxyzQwxyz_2_Pose(base_data_rviz)) # meters and degrees
 print("base_TxyzRxyz_rviz: \n", [round(i, 7) for i in base_TxyzRxyz_rviz])
 
 # subtract base_TxyzRxyz from base_TxyzRxyz_rviz
 base_TxyzRxyz_diff = [base_TxyzRxyz[i] - base_TxyzRxyz_rviz[i] for i in range(6)]; base_TxyzRxyz_diff = [i*1000 for i in base_TxyzRxyz_diff[0:3]] + base_TxyzRxyz_diff[3:]
 print("-----------------------------------------------------------------------------------------------------------------")
 print("Error in Base Motive vs ROS (mm + deg): \n", [round(i, 7) for i in base_TxyzRxyz_diff])
+'''
+
 
 ############################################################################################################
 print("==============================================================================================================")
 
 tool_data = """
 position:
-    x: 0.13114924728870392
-    y: 0.20714326202869415
-    z: 0.5260780453681946
+    x: 0.1498989760875702
+    y: 1.2517316341400146
+    z: 0.22835218906402588
 orientation:
-    x: -0.8199679255485535
-    y: 0.14818738400936127
-    z: 0.15629489719867706
-    w: 0.5303443074226379
+    x: -0.00013029460387770087
+    y: 0.7515493035316467
+    z: -0.000042
+    w: 0.6596769690513611
 """
 
-tool_data = parse_pose_data(tool_data)
+tool_data = parse_pose_data(tool_data) 
 print("pose_data: \n", [round(i, 7) for i in tool_data])
 
 Tool_W_TxyzQwxyz = tool_data
 Tool_W_TxyzQwxyz =  rma.motive_2_robodk_rigidbody(Tool_W_TxyzQwxyz)
-Tool_W_TxyzQwxyz = [ i*1000 for i in Tool_W_TxyzQwxyz[:3]] +  Tool_W_TxyzQwxyz[3:]
+Tool_W_TxyzQwxyz = [ i*1000 for i in Tool_W_TxyzQwxyz[:3]] +  Tool_W_TxyzQwxyz[3:] #in meters radians
 # Tool_W_TxyzQwxyz = rosm.robodk_2_ros(Tool_W_TxyzQwxyz)
-print("Tool_W_TxyzQwxyz: \n", [round(i, 7) for i in Tool_W_TxyzQwxyz])
+print("Tool_W_TxyzQwxyz: \n", [round(i, 7) for i in Tool_W_TxyzQwxyz]) # in meters and radians
 
-Tool_W_TxyzRxyz = rma.TxyzQwxyz_2_TxyzRxyz(Tool_W_TxyzQwxyz); Tool_W_TxyzRxyz = Tool_W_TxyzRxyz[:3] + [ i*180/pi for i in Tool_W_TxyzRxyz[3:]]
+# Tool_W_TxyzRxyz = rma.TxyzQwxyz_2_TxyzRxyz(Tool_W_TxyzQwxyz); Tool_W_TxyzRxyz = Tool_W_TxyzRxyz[:3] + [ i*180/pi for i in Tool_W_TxyzRxyz[3:]]
+Tool_W_TxyzRxyz = rm.Pose_2_KUKA(rma.TxyzQwxyz_2_Pose(Tool_W_TxyzQwxyz)) #in meters and degrees
 print("Tool_W_TxyzRxyz: \n", [round(i, 4) for i in Tool_W_TxyzRxyz])
 
 
-Tool_W_TxyzQwxyz_rviz = [0.52832, 0.13089, 0.21086, 0.53268, 0.17562, -0.81685, 0.13479 ]
+Tool_W_TxyzQwxyz_rviz = [0.22757, 0.15945, 1.2509, 0.6595, -0.00072855, -0.0026592, 0.7517]
+
 print("Tool_W_TxyzQwxyz_rviz: \n", Tool_W_TxyzQwxyz_rviz)
-Tool_W_TxyzRxyz_rviz = rma.TxyzQwxyz_2_TxyzRxyz(Tool_W_TxyzQwxyz_rviz); Tool_W_TxyzRxyz_rviz = Tool_W_TxyzRxyz_rviz[:3] + [ i*180/pi for i in Tool_W_TxyzRxyz_rviz[3:]]
+# Tool_W_TxyzRxyz_rviz = rma.TxyzQwxyz_2_TxyzRxyz(Tool_W_TxyzQwxyz_rviz); Tool_W_TxyzRxyz_rviz = Tool_W_TxyzRxyz_rviz[:3] + [ i*180/pi for i in Tool_W_TxyzRxyz_rviz[3:]]
+Tool_W_TxyzRxyz_rviz = rm.Pose_2_KUKA(rma.TxyzQwxyz_2_Pose(Tool_W_TxyzQwxyz_rviz)) #in meters and degrees
+
 print("Tool_W_TxyzRxyz_rviz: \n", [round(i, 4) for i in Tool_W_TxyzRxyz_rviz])
 
 print("-----------------------------------------------------------------------------------------------------------------")

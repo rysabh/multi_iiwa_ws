@@ -9,12 +9,12 @@ A2:
   velocity: 98
   effort: 200
 A3:
-  lower: -170
+  lower: -167
   upper: 170
   velocity: 100
   effort: 200
 A4:
-  lower: -120
+  lower: -117
   upper: 120
   velocity: 130
   effort: 200
@@ -24,7 +24,7 @@ A5:
   velocity: 140
   effort: 200
 A6:
-  lower: -120
+  lower: -117
   upper: 120
   velocity: 180
   effort: 200
