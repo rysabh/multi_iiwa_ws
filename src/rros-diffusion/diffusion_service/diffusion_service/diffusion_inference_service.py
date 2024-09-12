@@ -183,7 +183,7 @@ def main(args=None):
     unlabbled_marker =  0000 # Example ID for the unlabeled marker
     labbled_markers = [40,39,37,36] # Example IDs for labeled markers
 
-    checkpoint_path = 'no-sync/chkpts/checkpoint_2BODY_4_markers_edge_3_step_all_obs_horizon_1_action_horizon_60_old_epoch_199.pth'
+    checkpoint_path = 'no-sync/chkpts/checkpoint_training_4_obs_1_action_60_epoch_199.pth'
 
     checkpoint = torch.load(checkpoint_path)
 

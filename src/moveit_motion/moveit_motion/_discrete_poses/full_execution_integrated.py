@@ -181,11 +181,11 @@ def main():
     
     # action_generator = get_robot_next_actions()
 
-    if kg: move_client_ptp(kg, KG_HOME)
-    # if kb: move_client_ptp(kb, KB_HOME)
+    # if kg: move_client_ptp(kg, KG_HOME)
+    if kb: move_client_ptp(kb, KB_HOME)
     
     if kg: move_client_ptp(kg, KG_CHISEL_START)
-    # if kb: move_client_ptp(kb, KB_GRIPPER_START)
+    if kb: move_client_ptp(kb, KB_GRIPPER_START)
     
     try :
         while True:
@@ -245,7 +245,7 @@ def main():
             # CARTESIAN_MSE_THRESHOLD = 0.0002
             CARTESIAN_MSE_THRESHOLD = 1
             
-            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, 5)
+            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, 100)
             if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, 5)
 
 
