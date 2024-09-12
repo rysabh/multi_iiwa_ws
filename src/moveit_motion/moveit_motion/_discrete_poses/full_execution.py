@@ -175,7 +175,7 @@ def main():
         if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, 5)
 
 
-        EXECUTE_FLAG = 'y' #input("Execute trajectory? (y/n): ").strip().lower()
+        EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
         
         if EXECUTE_FLAG == input("Execute trajectory? (y/n): ").strip().lower():
             if kg: kg.execute_joint_traj(kg_plan_handle['trajectory'])

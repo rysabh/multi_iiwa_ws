@@ -25,8 +25,15 @@
         <child link="link_0" />
         <!-- <origin xyz="0.55 -0.4 -0.25" rpy="0 0 0.783"/> -->
         <!-- <origin xyz="0.55 -0.4 -0.35" rpy="0 0 0.783"/> -->
-        <origin xyz="0.55 -0.4 -0.264" rpy="0 0 0.783"/>
-        <!-- <origin xyz="0.6 -0.5 -0.299" rpy="0 0 0.783"/> -->
+        <!-- <origin xyz="0.55 -0.4 -0.264" rpy="0 0 0.783"/>   CORRECT VALUE USED ON FRIDAY DEMO -->
+        <!-- <origin xyz="0.5796 -0.4125 -0.2668" rpy="0.74287 -0.01400 0.029986"/> RS --> 
+        <!-- <origin xyz="0.5796 -0.4125 -0.2668" rpy="0.03155910360450854 0.00996866505764844 0.7429270934423268"/>  RS-->
+        <!-- <origin xyz="0.5796 -0.4125 -0.2668" rpy="0.03155910360450854 0.00996866505764844 0.7429270934423268"/> CHNAGING THIS ON WEDNESDAY SEP 11 -->
+        <!-- <origin xyz="0.5725015 -0.4188297 -0.2629327" rpy="0.0096794 -0.0028546 0.7357978"/> CORRECT VALUE OBTAINED AFTER POSE 2 KUKA -->
+        <!-- <origin xyz="0.1191248 -0.1369534 -0.0014446" rpy="0.0017781 -0.0007357 -0.7348171"/> -->
+        <!-- <origin xyz="0.5775893 -0.4121741 -0.265291" rpy="0.0150255 -0.0146531 0.7451824"/> -->
+        <origin xyz="0.5754642 -0.4159573 -0.2617773" rpy="0.0046846 -0.0042898 0.7420555"/>
+        <!-- <origin xyz="0 0 0" rpy="0 0 0 "/> -->
     </joint>
 
     <!-- iiwa -->
@@ -44,13 +51,13 @@
             <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001" />
         </inertial>
         <visual>
-            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.035" />
+            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0" />
             <geometry>
                 <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0.035" />
+            <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0" />
             <geometry>
                 <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
             </geometry>
@@ -60,7 +67,7 @@
     <joint name="joint_ee" type="fixed">
         <parent link="link_7"/>
         <child link="link_ee"/>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <origin rpy="0 0 0" xyz="0 0 0.035"/>
     </joint>
 
     <link name="link_tcp"/>
@@ -68,6 +75,7 @@
     <joint name="joint_tcp" type="fixed">
         <parent link="link_ee"/>
         <child link="link_tcp"/>
-        <origin rpy="0 0 0" xyz="-0.00022 0.00163 0.17048"/>
+        <!-- <origin rpy="0 0 0" xyz="-0.00022 0.00163 0.17048"/> -->
+        <origin rpy="0 0 0" xyz="0.00031 0.00073 0.17152"/>
     </joint>
 </robot>
