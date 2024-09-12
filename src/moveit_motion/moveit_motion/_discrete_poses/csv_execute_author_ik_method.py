@@ -71,18 +71,18 @@ def main(_file_name):
     rclpy.init()
     kg =None; kb = None
     
-    kg =  MoveitInterface(node_name=f"client_kuka_green",     
-                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
-                                  remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
-                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-                                 )
-
-
-    # kb = MoveitInterface(node_name=f"client_kuka_blue",     
-    #                               move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
-    #                               remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
+    # kg =  MoveitInterface(node_name=f"client_kuka_green",     
+    #                               move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+    #                               remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
     #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
     #                              )
+
+
+    kb = MoveitInterface(node_name=f"client_kuka_blue",     
+                                  move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
     
     # kg_cjs = kg.get_current_joint_state(); # print("kg_cjs: ", kg_cjs.position)
     
@@ -123,46 +123,24 @@ def main(_file_name):
     _pose_waypoints_gripper = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_gripper)
     _pose_waypoints_gripper = _pose_waypoints_gripper.tolist()
 
-    CARTESIAN_MSE_THRESHOLD = 0.13
     
-    if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, 5)
-    if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, 5)
-    
-    
-    # Proceed with trajectory timing correction
     if kg:
-        ADD_TIMES_FLAG_CHISEL = len(_data_times) == len(_data_points_chisel)
-        if len(_data_times) > 0 and not ADD_TIMES_FLAG_CHISEL:
-            kg.get_logger().error("Invalid time_stamps provided")
-            return None
-
-        if ADD_TIMES_FLAG_CHISEL and kg_plan_handle['stop_flag']:
-            _completed_time_steps = int(len(_data_times) * kg_plan_handle['fraction'])
-            kg_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kg_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
+        _kg_cgs = kg.get_current_joint_state()
+        _kg_iks = []
+        for _waypoint in _pose_waypoints_gripper:
+            _kg_ngs = kb.get_best_ik(_kg_cgs, _waypoint, attempts=100)
+            _kg_cgs = _kg_ngs
+            _kg_iks.append(_kg_ngs)
 
     if kb:
-        ADD_TIMES_FLAG_GRIPPER = len(_data_times) == len(_data_points_gripper)
-        if len(_data_times) > 0 and not ADD_TIMES_FLAG_GRIPPER:
-            kb.get_logger().error("Invalid time_stamps provided")
-            return None
-
-        if ADD_TIMES_FLAG_GRIPPER and kb_plan_handle['stop_flag']:
-            _completed_time_steps = int(len(_data_times) * kb_plan_handle['fraction'])
-            kb_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kb_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
-
-    # if kb:
-    #     # get ptp plan for gripper where goal is waypoint 0
-    #     _gcjs = kb.get_current_joint_state()
-    #     _gripper_goal = _pose_waypoints_gripper[0]
-    #     _gripper_goal_ik = kb.get_best_ik(_gcjs, _gripper_goal, attempts=100)
-        
-    #     _temp_plan = kb.get_joint_ptp_plan(_gcjs, _gripper_goal_ik, max_velocity_scaling_factor=0.01)
-    #     #execute the plan if yes
-    #     if input(f"Execute {kb.move_group_name_} plan? (y/n): ").strip().lower() == 'y':
-    #         kb.execute_joint_traj(_temp_plan['trajectory'])
-        
-        
-
+        _kb_cgs = kb.get_current_joint_state()
+        _kb_iks = []
+        for _waypoint in _pose_waypoints_gripper:
+            _kb_ngs = kb.get_best_ik(_kb_cgs, _waypoint, attempts=100)
+            _kb_cgs = _kb_ngs
+            _kb_iks.append(_kb_ngs)
+    
+    
     # Execute both trajectories simultaneously
     EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
         

@@ -24,49 +24,7 @@ from diffusion_interface.srv import DiffusionAction  # Adjust this import accord
 from diffusion_interface.msg import Observation
 # from mocap_optitrack_interfaces.srv import GetMotionCaptureData
 from diffusion_service.diffusion_inference_client import DiffusionClient
-###############################
-#---- Next Action Generator ---
-###############################
-_file_name = "ft_010.csv"
-path = f'no-sync/edge_3/{_file_name}'
-data_loader = cfp.DataParser.from_quat_file(file_path = path, target_fps= 60, filter=False, window_size=30, polyorder=3)
-#while not input is to quit
-FRACTION_TO_RUN = 1.0
-SLOWNESS_FACTOR = 5.0
 
-
-_data_chisel = data_loader.get_rigid_TxyzQwxyz()['chisel']
-_data_gripper = data_loader.get_rigid_TxyzQwxyz()['gripper']
-
-# define int(FRACTION_TO_RUN*len(_data_chisel)
-index_ = int(FRACTION_TO_RUN*len(_data_chisel))
-
-_data_chisel = _data_chisel[:index_]
-_data_gripper = _data_gripper[:index_]
-_data_times = data_loader.get_time()[:index_]
-
-print(f"Number of data points for chisel: {len(_data_chisel)}")
-print(f"Number of data points for gripper: {len(_data_gripper)}")
-print(f"Number of data points for time: {len(_data_times)}")
-#-----------------------------#
-
-
-
-
-
-
-def get_robot_next_actions():
-    step_size = 8
-    # Zip the data_chisel and data_gripper so we can iterate over them simultaneously
-    for i in range(0, len(_data_chisel), step_size):
-        data_chisel_chunk = _data_chisel[i:i+step_size]
-        data_gripper_chunk = _data_gripper[i:i+step_size]
-        
-        # Yield the chunks for both chisel and gripper
-        yield {
-            'data_chisel': data_chisel_chunk,
-            'data_gripper': data_gripper_chunk
-        }
 
 def move_client_ptp(_client, goal_list: list, tolerance=0.0005):
     _cjs = _client.get_current_joint_state()
@@ -154,11 +112,11 @@ def main():
                                  )
 
 
-    kb = MoveitInterface(node_name=f"client_real_kuka_blue",     
-                                  move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
-                                  remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
-                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-                                 )
+    # kb = MoveitInterface(node_name=f"client_real_kuka_blue",     
+    #                               move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
+    #                               remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
+    #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+    #                              )
 
     # kg = MoveitInterface(node_name=f"client_sim_kuka_green",     
     #                                 move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
@@ -175,13 +133,11 @@ def main():
     
     diffusion_client = DiffusionClient()
 
-
-
     #-----------------------------#
     
     # action_generator = get_robot_next_actions()
 
-    # if kg: move_client_ptp(kg, KG_HOME)
+    if kg: move_client_ptp(kg, KG_HOME)
     if kb: move_client_ptp(kb, KB_HOME)
     
     if kg: move_client_ptp(kg, KG_CHISEL_START)
@@ -193,8 +149,7 @@ def main():
             _data_points_gripper = []
             
             time.sleep(0.01)
-            observations = diffusion_client.get_mocap_data()
-            rclpy.spin_until_future_complete(diffusion_client, observations)
+            observations = diffusion_client.get_mocap_data(); rclpy.spin_until_future_complete(diffusion_client, observations)
 
             if observations.done():
                 # Wait until the mocap service call completes
