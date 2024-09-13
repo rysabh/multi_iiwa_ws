@@ -59,7 +59,7 @@ def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float,
             waypoints=waypoints, planning_frame='world',
             attempts=1,
             _planner_type="cartesian_sequence_action", 
-            allowed_planning_time=10.0, max_velocity_scaling_factor=0.95,
+            allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
             max_acceleration_scaling_factor=0.1, num_planning_attempts=100
         )
 
@@ -92,17 +92,13 @@ def main(_file_name):
     rclpy.init()
     kg =None; kb = None
     
-    # kg =  MoveitInterface(node_name=f"client_kuka_green",     
-    #                               move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
-    #                               remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
-    #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-    #                              )
-
-    kg =  MoveitInterface(node_name=f"client_kuka_green_sim",     
+    kg =  MoveitInterface(node_name=f"client_kuka_green",     
                                   move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
-                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
-                                  prefix="kuka_green",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                  remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
                                  )
+
+
 
     # kb = MoveitInterface(node_name=f"client_kuka_blue",     
     #                               move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning

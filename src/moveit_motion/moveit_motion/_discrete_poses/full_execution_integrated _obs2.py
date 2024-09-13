@@ -60,7 +60,7 @@ def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float,
             waypoints=waypoints, planning_frame='world',
             attempts=1,
             _planner_type="cartesian_sequence_action", 
-            allowed_planning_time=10.0, max_velocity_scaling_factor=0.95,
+            allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
             max_acceleration_scaling_factor=0.1, num_planning_attempts=100
         )
 

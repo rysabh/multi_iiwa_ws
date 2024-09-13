@@ -58,11 +58,18 @@ def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float,
     for _attempt in range(max_attemps):
         _cartesian_plan_handle = _client.get_cartesian_spline_plan(
             waypoints=waypoints, planning_frame='world',
-            _planner_type="cartesian_interpolator", max_step=0.01,
-            jump_threshold=0.0, avoid_collisions=False, attempts=1,
-            max_velocity_scaling_factor = 0.05
+            attempts=1,
+            _planner_type="cartesian_sequence_action", 
+            allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
+            max_acceleration_scaling_factor=0.1, num_planning_attempts=100
         )
-        
+
+        print("\n\n\=====================================================")
+        print(_client.spline_client_._action_name.split("/")[-1])
+        print("=====================================================\n\n\n")
+
+        if _client.spline_client_._action_name.split("/")[-1] == "sequence_move_group":
+            return
         
         _start_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[0]
         _end_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[-1]

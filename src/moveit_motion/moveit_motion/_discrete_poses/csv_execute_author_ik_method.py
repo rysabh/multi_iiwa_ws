@@ -59,7 +59,7 @@ def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float,
             waypoints=waypoints, planning_frame='world',
             _planner_type="cartesian_interpolator", max_step=0.01,
             jump_threshold=0.0, avoid_collisions=False, attempts=1,
-            max_velocity_scaling_factor = 0.05
+            max_velocity_scaling_factor = 0.1
         )
         
         
