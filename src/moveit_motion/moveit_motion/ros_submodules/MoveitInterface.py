@@ -67,9 +67,8 @@ class MoveitInterface(Node):
     
     THRESHOLD_2_MOVE = 0.000005 # 0.0005
 
-    CARTESIAN_SERVICE_CLIENT_FLAG = False
     EXECUTE_ACTION_CLIENT_FLAG = False
-    SEQUENCE_CLIENT_FLAG = False
+    SPLINE_CLIENT_FLAG = False
     
     def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
@@ -332,9 +331,9 @@ class MoveitInterface(Node):
                 # start_state=rosm.joint_2_robot_state(start_joint_state),
                 goal_constraints=goal_constraints,
                 # path_constraints=path_constraints if path_constraints else [],  # Ensure it's a list,
-                num_planning_attempts=kwargs.get("attempts", 10),
-                allowed_planning_time=kwargs.get("allowed_planning_time", 5.0),
-                max_velocity_scaling_factor=kwargs.get("max_velocity_scaling_factor", 0.05),
+                num_planning_attempts=kwargs.get("num_planning_attempts", 10),
+                allowed_planning_time=kwargs.get("allowed_planning_time", 10.0),
+                max_velocity_scaling_factor=kwargs.get("max_velocity_scaling_factor", 0.1),
                 max_acceleration_scaling_factor=kwargs.get("max_acceleration_scaling_factor", 0.1),
                 pipeline_id=kwargs.get("pipeline_id", "ompl"),
                 planner_id=kwargs.get("planner_id", "APSConfigDefault")
@@ -419,20 +418,30 @@ class MoveitInterface(Node):
                                   _planner_type = "cartesian_interpolator",
                                   **kwargs) -> Union[RobotTrajectory, None]:
         '''
-        Plan a Cartesian path (spline) through the given waypoints.
+Plan a Cartesian path (spline) through the given waypoints.
+:param waypoints: List of Pose objects defining the Cartesian waypoints.
+:param planning_frame: The frame in which the waypoints are defined. -> self.base_ or 'world'
         
-        :param waypoints: List of Pose objects defining the Cartesian waypoints.
-        :param planning_frame: The frame in which the waypoints are defined. -> self.base_ or 'world'
-        :param eef_step: The step size for end effector in Cartesian space.
-        :param jump_threshold: The threshold for allowed joint space jumps.
-        :param avoid_collisions: Whether to avoid collisions while planning.
-        :return: Planned Cartesian path as a RobotTrajectory object, or None if planning failed.
+        
+motion-plan-specific parameters:
+    num_planning_attempts = 10, 
+    allowed_planning_time=10.0, 
+    max_velocity_scaling_factor=0.1,
+    max_acceleration_scaling_factor=0.1,
+    pipeline_id,
+    planner_id,
+    goal_constraints, path_constraints
+    start_state
 
-        **kwargs -> cartesian planner specific arguments:
-        max_step: float = 0.01, jump_threshold: float = 0.0, avoid_collisions: bool = False
-        
-        **kwargs -> pilz planner specific arguments:
-        max_velocity_scaling_factor: float = 0.1, max_acceleration_scaling_factor: float = 0.1
+pilz-sequence-action-specific parameters:
+    blend_radius=0.000005
+    
+cartesian-interpolator-specific parameters:
+    max_step = 0.01 # Decreased from default to increase waypoints
+    jump_threshold = 0.0 # Disable to prevent sudden jumps
+    avoid_collisions = False,
+    prismatic_jump_threshold: 0.1, 
+    revolute_jump_threshold: 0.1, -> By setting the threshold to 0.1 radians, you are allowing a maximum joint angle change of about 5.73 degrees between consecutive waypoints for any revolute joint.
         '''
         _CHOICES = {
                 'cartesian_interpolator': {
@@ -440,21 +449,18 @@ class MoveitInterface(Node):
                 'create_request': self._create_cartesian_interpolator_motion_plan_request,
                 "requester": self._request_srv_for_attempts,
                 'response_handler': self._cartesian_interpolator_response_handler,
-                'SETUP_FLAG': self.CARTESIAN_SERVICE_CLIENT_FLAG
             },
                 'cartesian_sequence': {
                 'create_client': self._set_cartesian_sequence_service_client,
-                'create_request': self._create_motion_sequence_request,
+                'create_request': self._create_motion_sequence_srv_plan_request,
                 'requester': self._request_srv_for_attempts,
-                'response_handler': self._motion_sequence_response_handler,
-                'SETUP_FLAG': self.SEQUENCE_CLIENT_FLAG
+                'response_handler': self._motion_sequence_srv_response_handler,
             },
                 'cartesian_sequence_action': {
                 'create_client': self._set_cartesian_sequence_action_client,
-                'create_request': self._create_motion_sequence_goal_request,
+                'create_request': self._create_motion_sequence_action_plan_request,
                 'requester': self._request_action_for_attempts,
                 'response_handler': self._motion_sequence_action_response_handler,
-                'SETUP_FLAG': self.SEQUENCE_CLIENT_FLAG
             },
 
         }
@@ -463,8 +469,11 @@ class MoveitInterface(Node):
             self.get_logger().error(f"Invalid Planner Type: {_planner_type}.\nValid options are: {list(_CHOICES.keys())}")
             exit(1)
             
-        if not _CHOICES[_planner_type]['SETUP_FLAG']:
+        if not self.SPLINE_CLIENT_FLAG:
             _CHOICES[_planner_type]['create_client']()
+            self.SPLINE_CLIENT_FLAG = True #redundant but safe to keep
+            self.get_logger().info(f"Setting up {_planner_type} spline client")
+            
 
         _request = _CHOICES[_planner_type]['create_request'](waypoints, planning_frame, **kwargs)
         _requester = _CHOICES[_planner_type]['requester']
@@ -480,7 +489,7 @@ class MoveitInterface(Node):
         if not self.spline_client_.wait_for_service(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.spline_client_.srv_name}.")
             exit(1)
-        self.CARTESIAN_SERVICE_CLIENT_FLAG = True
+        self.SPLINE_CLIENT_FLAG = True
 
     def _create_cartesian_interpolator_motion_plan_request(self, waypoints: list[Pose], 
                                                            planning_frame: str,
@@ -496,7 +505,9 @@ class MoveitInterface(Node):
             waypoints=waypoints,
             max_step = kwargs.get("max_step", 0.01),
             jump_threshold = kwargs.get("jump_threshold", 0.0),
-            avoid_collisions = kwargs.get("avoid_collisions", False)
+            avoid_collisions = kwargs.get("avoid_collisions", False),
+            revolute_jump_threshold = kwargs.get("revolute_jump_threshold", 0.0),
+            prismatic_jump_threshold = kwargs.get("prismatic_jump_threshold", 0.0),
         )
         return _request
     
@@ -526,9 +537,9 @@ class MoveitInterface(Node):
         if not self.spline_client_.wait_for_service(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.spline_client_.srv_name}.")
             exit(1)
-        self.SEQUENCE_CLIENT_FLAG = True
+        self.SPLINE_CLIENT_FLAG = True
     
-    def _create_motion_sequence_request(self, waypoints: list[Pose], 
+    def _create_motion_sequence_srv_plan_request(self, waypoints: list[Pose], 
                                         planning_frame: str,
                                         **kwargs) -> MotionSequenceRequest:
         """
@@ -599,7 +610,7 @@ class MoveitInterface(Node):
         
         return sequence_request
 
-    def _motion_sequence_response_handler(self, response):
+    def _motion_sequence_srv_response_handler(self, response):
         """
         Handle the response from a MotionSequenceRequest.
 
@@ -630,9 +641,9 @@ class MoveitInterface(Node):
         if not self.spline_client_.wait_for_server(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: MoveGroupSequence action not available -> {self.spline_client_._action_name}")
             exit(1)
-        self.SEQUENCE_CLIENT_FLAG = True
+        self.SPLINE_CLIENT_FLAG = True
 
-    def _create_motion_sequence_goal_request(self, waypoints: list[Pose], 
+    def _create_motion_sequence_action_plan_request(self, waypoints: list[Pose], 
                                         planning_frame: str,
                                         **kwargs) -> MotionSequenceRequest:
         """
@@ -654,14 +665,14 @@ class MoveitInterface(Node):
         # Loop through waypoints to create motion requests for the sequence
         for waypoint in waypoints:
             _waypoint_constraint = rosm._pose_to_constraints(target_pose=waypoint, frame_id=planning_frame, link_name=self.end_effector_)
-            _waypoint_req = self._create_motion_plan_request(goal_constraints=[_waypoint_constraint], 
-                                                             pipeline_id="pilz_industrial_motion_planner", planner_id="LIN",
-                                                             allowed_planning_time=kwargs.get("allowed_planning_time", 10.0),
-                                                             max_velocity_scaling_factor=kwargs.get("max_velocity_scaling_factor", 0.1),
-                                                             max_acceleration_scaling_factor=kwargs.get("max_acceleration_scaling_factor", 0.1),
-                                                             num_planning_attempts=kwargs.get("num_planning_attempts", 1000)
-                                                        )
-
+            _waypoint_req = self._create_motion_plan_request(
+                    goal_constraints=[_waypoint_constraint], 
+                    pipeline_id="pilz_industrial_motion_planner", planner_id="LIN",
+                    allowed_planning_time=kwargs.get("allowed_planning_time", 10.0),
+                    max_velocity_scaling_factor=kwargs.get("max_velocity_scaling_factor", 0.1),
+                    max_acceleration_scaling_factor=kwargs.get("max_acceleration_scaling_factor", 0.1),
+                    num_planning_attempts=kwargs.get("num_planning_attempts", 1000)
+                    )
 
             # Add the motion request to the sequence with the specified blending radius
             sequence_item = MotionSequenceItem(

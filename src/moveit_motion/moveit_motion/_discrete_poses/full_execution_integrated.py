@@ -62,14 +62,48 @@ def plan_client_cartesian(_client, waypoints: list,
     planner_type = "cartesian_interpolator"
     # planner_type = "cartesian_sequence_action"
     
+    '''
+    motion-plan-specific parameters:
+        num_planning_attempts = 10, 
+        allowed_planning_time=10.0, 
+        max_velocity_scaling_factor=0.1,
+        max_acceleration_scaling_factor=0.1,
+        pipeline_id,
+        planner_id,
+        goal_constraints, path_constraints
+        start_state
+
+    pilz-sequence-action-specific parameters:
+        blend_radius=0.000005
+    
+    cartesian-interpolator-specific parameters:
+        max_step = 0.01 # Decreased from default to increase waypoints
+        jump_threshold = 0.0 # Disable to prevent sudden jumps
+        avoid_collisions = False,
+        'prismatic_jump_threshold': 0.1, 
+        'revolute_jump_threshold': 0.1, -> By setting the threshold to 0.1 radians, you are allowing a maximum joint angle change of about 5.73 degrees between consecutive waypoints for any revolute joint.
+    '''
+    
     for _attempt in range(max_attemps):
         _cartesian_plan_handle = _client.get_cartesian_spline_plan(
             waypoints=waypoints, planning_frame='world',
-            attempts=1, 
+            attempts=10, 
             _planner_type=planner_type,
-            allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
-            max_acceleration_scaling_factor=0.1, num_planning_attempts=100,
-            blend_radius=0.000005
+            #motion-plan-specific parameters
+            allowed_planning_time=kwargs.get('allowed_planning_time', 10.0), 
+            max_velocity_scaling_factor=kwargs.get('max_velocity_scaling_factor', 0.1),
+            max_acceleration_scaling_factor=kwargs.get('max_acceleration_scaling_factor', 0.1),
+            num_planning_attempts=kwargs.get('num_planning_attempts', 100),
+            
+            #pilz-sequence-action-specific parameters
+            blend_radius=kwargs.get('blend_radius', 0.000005),
+            
+            # cartesian-interpolator-specific parameters
+            max_step = kwargs.get("max_step", 0.01),
+            jump_threshold = kwargs.get("jump_threshold", 0.0),
+            avoid_collisions = kwargs.get("avoid_collisions", False),
+            revolute_jump_threshold = kwargs.get("revolute_jump_threshold", 0.0),
+            prismatic_jump_threshold = kwargs.get("prismatic_jump_threshold", 0.0),
         )
         
         slowness_factor = kwargs.get('slowness_factor', 1)
@@ -111,7 +145,7 @@ KG_CHISEL_START = [-0.908, 1.000, 2.218, -1.330, 1.377, -1.391, -2.146]
 KB_GRIPPER_START = [-0.548, -0.289, -1.942, 1.609, -1.596, 1.258, -0.877]
 
 EXECUTION_TIMEOUT = 60
-SLOWNESS_FACTOR = 10
+SLOWNESS_FACTOR = 5
 ###############################
 #------------ Main -----------#
 ###############################
@@ -203,8 +237,8 @@ def main():
             
         
             # _data_points_chisel = next_actions['data_chisel'] 
-            _data_points_chisel = dft.filter_outliers_verbose(_data_points_chisel, threshold=2.0)
-            _data_points_chisel = dft.smooth_waypoints_sg(_data_points_chisel, window_length=10, polyorder=3)
+            _data_points_chisel = dft.filter_outliers_verbose(_data_points_chisel, threshold=2)
+            _data_points_chisel = dft.smooth_waypoints_sg(_data_points_chisel, window_length=4, polyorder=3) #remove to have more chiseling
             
             _data_points_chisel = np.apply_along_axis(rma.TxyzRxyz_2_TxyzQwxyz, 1,_data_points_chisel)
             _data_points_chisel = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_chisel)
@@ -212,7 +246,7 @@ def main():
             _pose_waypoints_chisel = _pose_waypoints_chisel.tolist()
 
             # _data_points_gripper = next_actions['data_gripper']
-            _data_points_gripper = dft.filter_outliers_verbose(_data_points_gripper, threshold=2.0)
+            _data_points_gripper = dft.filter_outliers_verbose(_data_points_gripper, threshold=1.5)
             _data_points_gripper = dft.smooth_waypoints_sg(_data_points_gripper, window_length=10, polyorder=3)
     
             _data_points_gripper = np.apply_along_axis(rma.TxyzRxyz_2_TxyzQwxyz, 1,_data_points_gripper)
@@ -222,9 +256,11 @@ def main():
 
             # CARTESIAN_MSE_THRESHOLD = 0.0002
             CARTESIAN_MSE_THRESHOLD = 1
-            
-            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, max_attemps=1, 
+            #TODO - play with the threshold parameters
+            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, max_attemps=1,
+                                                          max_step=0.001, jump_threshold = 0.0, revolute_jump_threshold=0.0, 
                                                           slowness_factor=SLOWNESS_FACTOR)
+            
             if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, max_attemps=1, 
                                                           slowness_factor=SLOWNESS_FACTOR)
 
