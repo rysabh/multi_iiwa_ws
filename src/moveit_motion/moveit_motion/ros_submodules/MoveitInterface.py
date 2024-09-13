@@ -666,7 +666,7 @@ class MoveitInterface(Node):
             # Add the motion request to the sequence with the specified blending radius
             sequence_item = MotionSequenceItem(
                 req=_waypoint_req.motion_plan_request, #_waypoint_req, #
-                blend_radius = kwargs.get("blend_radius", 0.000005)
+                blend_radius = kwargs.get("blend_radius", 0.00001)
             )
 
             sequence_goal_request.request.items.append(sequence_item)

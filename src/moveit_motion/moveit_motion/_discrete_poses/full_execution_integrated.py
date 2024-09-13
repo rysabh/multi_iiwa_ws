@@ -13,6 +13,7 @@ import numpy as np
 import moveit_motion.diffusion_policy_cam.submodules.cleaned_file_parser as cfp
 import moveit_motion.diffusion_policy_cam.submodules.robomath_addon as rma
 import moveit_motion.diffusion_policy_cam.submodules.robomath as rm
+import moveit_motion.diffusion_policy_cam.submodules.data_filter as dft
 import time
 import csv
 from math import pi
@@ -55,22 +56,27 @@ def move_client_ptp(_client, goal_list: list, tolerance=0.0005, time_out=60):
 
 
 
-def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float, max_attemps: int = 5):
+def plan_client_cartesian(_client, waypoints: list, 
+                          max_motion_threshold= float, max_attemps: int = 1,
+                          **kwargs):
+    planner_type = "cartesian_interpolator"
+    # planner_type = "cartesian_sequence_action"
+    
     for _attempt in range(max_attemps):
         _cartesian_plan_handle = _client.get_cartesian_spline_plan(
             waypoints=waypoints, planning_frame='world',
-            attempts=1,
-            _planner_type="cartesian_sequence_action", 
+            attempts=1, 
+            _planner_type=planner_type,
             allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
             max_acceleration_scaling_factor=0.1, num_planning_attempts=100,
             blend_radius=0.000005
         )
-
-        print("\n\n\=====================================================")
-        print(_client.spline_client_._action_name.split("/")[-1])
-        print("=====================================================\n\n\n")
-
-        if _client.spline_client_._action_name.split("/")[-1] == "sequence_move_group":
+        
+        slowness_factor = kwargs.get('slowness_factor', 1)
+        if slowness_factor:
+            _cartesian_plan_handle['trajectory'] = rosm.slow_down_trajectory(_cartesian_plan_handle['trajectory'], slowness_factor)
+            
+        if planner_type == "cartesian_sequence_action":
             return
         
         _start_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[0]
@@ -103,6 +109,9 @@ KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494]
 
 KG_CHISEL_START = [-0.908, 1.000, 2.218, -1.330, 1.377, -1.391, -2.146]
 KB_GRIPPER_START = [-0.548, -0.289, -1.942, 1.609, -1.596, 1.258, -0.877]
+
+EXECUTION_TIMEOUT = 60
+SLOWNESS_FACTOR = 10
 ###############################
 #------------ Main -----------#
 ###############################
@@ -144,12 +153,12 @@ def main():
     #-----------------------------#
     
     # action_generator = get_robot_next_actions()
-
-    # if kg: move_client_ptp(kg, KG_HOME)
-    # if kb: move_client_ptp(kb, KB_HOME)
+    if kb: move_client_ptp(kb, KB_HOME)
+    if kg: move_client_ptp(kg, KG_HOME)
     
-    # if kg: move_client_ptp(kg, KG_CHISEL_START)
-    # if kb: move_client_ptp(kb, KB_GRIPPER_START)
+    if kb: move_client_ptp(kb, KB_GRIPPER_START)
+    if kg: move_client_ptp(kg, KG_CHISEL_START)
+    
     
     try :
         while True:
@@ -194,12 +203,18 @@ def main():
             
         
             # _data_points_chisel = next_actions['data_chisel'] 
+            _data_points_chisel = dft.filter_outliers_verbose(_data_points_chisel, threshold=2.0)
+            _data_points_chisel = dft.smooth_waypoints_sg(_data_points_chisel, window_length=10, polyorder=3)
+            
             _data_points_chisel = np.apply_along_axis(rma.TxyzRxyz_2_TxyzQwxyz, 1,_data_points_chisel)
             _data_points_chisel = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_chisel)
             _pose_waypoints_chisel = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_chisel)
             _pose_waypoints_chisel = _pose_waypoints_chisel.tolist()
 
             # _data_points_gripper = next_actions['data_gripper']
+            _data_points_gripper = dft.filter_outliers_verbose(_data_points_gripper, threshold=2.0)
+            _data_points_gripper = dft.smooth_waypoints_sg(_data_points_gripper, window_length=10, polyorder=3)
+    
             _data_points_gripper = np.apply_along_axis(rma.TxyzRxyz_2_TxyzQwxyz, 1,_data_points_gripper)
             _data_points_gripper = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_gripper)
             _pose_waypoints_gripper = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_gripper)
@@ -208,31 +223,33 @@ def main():
             # CARTESIAN_MSE_THRESHOLD = 0.0002
             CARTESIAN_MSE_THRESHOLD = 1
             
-            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, max_attemps=1)
-            if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, max_attemps=1)
+            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, max_attemps=1, 
+                                                          slowness_factor=SLOWNESS_FACTOR)
+            if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, max_attemps=1, 
+                                                          slowness_factor=SLOWNESS_FACTOR)
 
 
-            # EXECUTE_FLAG = 'y' #input("Execute trajectory? (y/n): ").strip().lower()
+            EXECUTE_FLAG = 'y' #input("Execute trajectory? (y/n): ").strip().lower()
             
-            # if EXECUTE_FLAG == 'y':
-            #     if kg: kg.execute_joint_traj(kg_plan_handle['trajectory'])
-            #     if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
+            if EXECUTE_FLAG == 'y':
+                if kg:kg.execute_joint_traj(kg_plan_handle['trajectory'])
+                if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
 
-            #     _tick = time.time()
-            #     execution_finished = False
-            #     while not execution_finished:
-            #         mse_kg = 0
-            #         if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle['trajectory'])
+                _tick = time.time()
+                execution_finished = False
+                while not execution_finished:
+                    mse_kg = 0
+                    if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle['trajectory'])
 
-            #         mse_kb = 0
-            #         if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle['trajectory'])
+                    mse_kb = 0
+                    if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle['trajectory'])
 
-            #         if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
+                    if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
                     
-            #         _tock = time.time()
-            #         if _tock - _tick > 10: print("Timeout: Execution not finished"); break
+                    _tock = time.time()
+                    if _tock - _tick > EXECUTION_TIMEOUT: print("Timeout: Execution not finished"); break
 
-            #         time.sleep(0.01)
+                    time.sleep(0.01)
                     
     except KeyboardInterrupt:
         print("\nKeyboard interrupt received. Exiting loop...")

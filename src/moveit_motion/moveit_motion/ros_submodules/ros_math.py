@@ -16,7 +16,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from std_msgs.msg import Header
 import numpy as np
 from typing import Union
-
+import copy
 
 
 def robodk_2_ros(TxyzQwxyz: list) -> list:
@@ -261,5 +261,45 @@ def interpolate_trajectory_timestamps(trajectory: RobotTrajectory,
 
     return trajectory
 
+def slow_down_trajectory(trajectory: RobotTrajectory, time_scaling_factor: float) -> RobotTrajectory:
+    # Create a new RobotTrajectory object to store the modified trajectory
+    new_trajectory = RobotTrajectory()
+    new_trajectory.joint_trajectory.joint_names = trajectory.joint_trajectory.joint_names
+    new_trajectory.joint_trajectory.header = trajectory.joint_trajectory.header
+        
+    # Scale the time of each trajectory point
+    for point in trajectory.joint_trajectory.points:
+        new_point = point  # Copy the original point
+        
+        # Scale time_from_start
+        new_point.time_from_start = Duration(
+            sec=int(point.time_from_start.sec * time_scaling_factor),
+            nanosec=int(point.time_from_start.nanosec * time_scaling_factor)
+        )
+        # Append the modified point to the new trajectory
+        new_trajectory.joint_trajectory.points.append(new_point)
+    
+    return new_trajectory
 
+def slow_down_trajectory(trajectory: RobotTrajectory, time_scaling_factor: float) -> RobotTrajectory:
+    # Create a new RobotTrajectory object
+    new_trajectory = RobotTrajectory()
+    new_trajectory.joint_trajectory.joint_names = trajectory.joint_trajectory.joint_names
+    new_trajectory.joint_trajectory.header = trajectory.joint_trajectory.header  # Copy the header
+
+    # Scale the time of each trajectory point
+    for point in trajectory.joint_trajectory.points:
+        new_point = point  # Copy the original point
+        
+        # Scale time_from_start
+        total_nanoseconds = (point.time_from_start.sec * 1e9 + point.time_from_start.nanosec) * time_scaling_factor
+        new_sec = int(total_nanoseconds // 1e9)
+        new_nanosec = int(total_nanoseconds % 1e9)
+
+        new_point.time_from_start = Duration(sec=new_sec, nanosec=new_nanosec)
+        
+        # Append the modified point to the new trajectory
+        new_trajectory.joint_trajectory.points.append(new_point)
+    
+    return new_trajectory
 

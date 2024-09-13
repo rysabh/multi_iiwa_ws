@@ -16,6 +16,7 @@ from moveit_msgs.msg import (
 
 from sensor_msgs.msg import JointState
 
+
 def save_trajectory(trajectory_data, file_name, dir_path):
     '''
     trajectory_data, file_name, dir_path
