@@ -64,7 +64,7 @@ def get_robot_next_actions():
             'data_gripper': data_gripper_chunk
         }
 
-def move_client_ptp(_client, goal_list: list, tolerance=0.0005):
+def move_client_ptp(_client, goal_list: list, tolerance=0.0005, time_out=60):
     _cjs = _client.get_current_joint_state()
     _goal_state = rosm.joint_list_2_state(goal_list, _cjs.name)
 
@@ -72,10 +72,24 @@ def move_client_ptp(_client, goal_list: list, tolerance=0.0005):
         print("Already at goal")
         return
     
-    _goal_plan = _client.get_joint_ptp_plan(_cjs, _goal_state, max_velocity_scaling_factor=0.1)
+    _goal_plan_handle = _client.get_joint_ptp_plan(_cjs, _goal_state, max_velocity_scaling_factor=0.1)
+    
     if input(f"Execute {_client.move_group_name_} plan? (y/n): ").strip().lower() == 'y':
-        _client.execute_joint_traj(_goal_plan['trajectory'])
+        _client.execute_joint_traj(_goal_plan_handle['trajectory'])
 
+        _tick = time.time()
+        execution_finished = False
+        print("Waiting for execution to finish...")
+        while not execution_finished:
+            mse_client = get_mse_planend_current(_client, _goal_plan_handle)
+
+            if (mse_client < 0.0002):
+                execution_finished = True
+            
+            _tock = time.time()
+
+            if _tock - _tick > time_out: print(f"Timeout {time_out} seconds: Execution not finished"); break
+            time.sleep(0.01)
 
 def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float, max_attemps: int = 5):
     for _attempt in range(max_attemps):

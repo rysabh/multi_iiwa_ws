@@ -27,8 +27,7 @@ from diffusion_service.diffusion_inference_client import DiffusionClient
 
 
 
-
-def move_client_ptp(_client, goal_list: list, tolerance=0.0005):
+def move_client_ptp(_client, goal_list: list, tolerance=0.0005, time_out=60):
     _cjs = _client.get_current_joint_state()
     _goal_state = rosm.joint_list_2_state(goal_list, _cjs.name)
 
@@ -36,36 +35,41 @@ def move_client_ptp(_client, goal_list: list, tolerance=0.0005):
         print("Already at goal")
         return
     
-    _goal_plan = _client.get_joint_ptp_plan(_cjs, _goal_state, max_velocity_scaling_factor=0.05)
-    if input(f"Execute {_client.move_group_name_} plan? (y/n): ").strip().lower() == 'y':
-        _client.execute_joint_traj(_goal_plan['trajectory'])
+    _goal_plan_handle = _client.get_joint_ptp_plan(_cjs, _goal_state, max_velocity_scaling_factor=0.1)
     
-    _tick = time.time()
-    _execution_finished = False
-    while not _execution_finished:
-        _mse_client = 0
-        if _client:
-            _mse_client = get_mse_planend_current(_client, _goal_plan['trajectory'])
+    if input(f"Execute {_client.move_group_name_} plan? (y/n): ").strip().lower() == 'y':
+        _client.execute_joint_traj(_goal_plan_handle['trajectory'])
 
-        if _mse_client < 0.0002: 
-            _execution_finished = True
-        
-        _tock = time.time()
-        if _tock - _tick > 10:
-            print("Timeout: Execution not finished");
-            break
-        
-        time.sleep(0.01)
+        _tick = time.time()
+        execution_finished = False
+        print("Waiting for execution to finish...")
+        while not execution_finished:
+            mse_client = get_mse_planend_current(_client, _goal_plan_handle)
 
+            if (mse_client < 0.0002):
+                execution_finished = True
+            
+            _tock = time.time()
+
+            if _tock - _tick > time_out: print(f"Timeout {time_out} seconds: Execution not finished"); break
+            time.sleep(0.01)
 
 def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float, max_attemps: int = 5):
     for _attempt in range(max_attemps):
         _cartesian_plan_handle = _client.get_cartesian_spline_plan(
             waypoints=waypoints, planning_frame='world',
-            _planner_type="cartesian_interpolator", max_step=0.01,
-            jump_threshold=0.0, avoid_collisions=False, attempts=1
+            attempts=1,
+            _planner_type="cartesian_sequence_action", 
+            allowed_planning_time=10.0, max_velocity_scaling_factor=0.95,
+            max_acceleration_scaling_factor=0.1, num_planning_attempts=100
         )
-        
+
+        print("\n\n\=====================================================")
+        print(_client.spline_client_._action_name.split("/")[-1])
+        print("=====================================================\n\n\n")
+
+        if _client.spline_client_._action_name.split("/")[-1] == "sequence_move_group":
+            return
         
         _start_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[0]
         _end_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[-1]

@@ -5,7 +5,6 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from geometry_msgs.msg import Point, Pose, Quaternion
 from sensor_msgs.msg import JointState
-
 from moveit_motion.ros_submodules.MoveitInterface import MoveitInterface
 import copy
 import moveit_motion.ros_submodules.ros_math as rosm
@@ -58,11 +57,18 @@ def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float,
     for _attempt in range(max_attemps):
         _cartesian_plan_handle = _client.get_cartesian_spline_plan(
             waypoints=waypoints, planning_frame='world',
-            _planner_type="cartesian_interpolator", max_step=0.01,
-            jump_threshold=0.0, avoid_collisions=False, attempts=1,
-            max_velocity_scaling_factor = 0.05
+            attempts=1,
+            _planner_type="cartesian_sequence_action", 
+            allowed_planning_time=10.0, max_velocity_scaling_factor=0.95,
+            max_acceleration_scaling_factor=0.1, num_planning_attempts=100
         )
-        
+
+        print("\n\n\=====================================================")
+        print(_client.spline_client_._action_name.split("/")[-1])
+        print("=====================================================\n\n\n")
+
+        if _client.spline_client_._action_name.split("/")[-1] == "sequence_move_group":
+            return
         
         _start_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[0]
         _end_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[-1]
@@ -86,12 +92,17 @@ def main(_file_name):
     rclpy.init()
     kg =None; kb = None
     
-    kg =  MoveitInterface(node_name=f"client_kuka_green",     
-                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
-                                  remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
-                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-                                 )
+    # kg =  MoveitInterface(node_name=f"client_kuka_green",     
+    #                               move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+    #                               remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
+    #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+    #                              )
 
+    kg =  MoveitInterface(node_name=f"client_kuka_green_sim",     
+                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="kuka_green",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
 
     # kb = MoveitInterface(node_name=f"client_kuka_blue",     
     #                               move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
@@ -112,7 +123,7 @@ def main(_file_name):
     path = f'no-sync/edge_3/{_file_name}'
     data_loader = cfp.DataParser.from_quat_file(file_path = path, target_fps= 60, filter=False, window_size=30, polyorder=4)
     #while not input is to quit
-    FRACTION_TO_RUN = 1.0
+    FRACTION_TO_RUN = 0.1
     SLOWNESS_FACTOR = 5.0
 
     
@@ -140,30 +151,33 @@ def main(_file_name):
 
     CARTESIAN_MSE_THRESHOLD = 0.13
     
-    if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, 5)
-    if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, 5)
-    
-    
-    # Proceed with trajectory timing correction
     if kg:
-        ADD_TIMES_FLAG_CHISEL = len(_data_times) == len(_data_points_chisel)
-        if len(_data_times) > 0 and not ADD_TIMES_FLAG_CHISEL:
-            kg.get_logger().error("Invalid time_stamps provided")
-            return None
-
-        if ADD_TIMES_FLAG_CHISEL and kg_plan_handle['stop_flag']:
-            _completed_time_steps = int(len(_data_times) * kg_plan_handle['fraction'])
-            kg_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kg_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
-
+        kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, 5)
     if kb:
-        ADD_TIMES_FLAG_GRIPPER = len(_data_times) == len(_data_points_gripper)
-        if len(_data_times) > 0 and not ADD_TIMES_FLAG_GRIPPER:
-            kb.get_logger().error("Invalid time_stamps provided")
-            return None
+        kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, 5)
+    
+    print("done")
+    
+    # # Proceed with trajectory timing correction
+    # if kg:
+    #     ADD_TIMES_FLAG_CHISEL = len(_data_times) == len(_data_points_chisel)
+    #     if len(_data_times) > 0 and not ADD_TIMES_FLAG_CHISEL:
+    #         kg.get_logger().error("Invalid time_stamps provided")
+    #         return None
 
-        if ADD_TIMES_FLAG_GRIPPER and kb_plan_handle['stop_flag']:
-            _completed_time_steps = int(len(_data_times) * kb_plan_handle['fraction'])
-            kb_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kb_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
+    #     if ADD_TIMES_FLAG_CHISEL and kg_plan_handle['stop_flag']:
+    #         _completed_time_steps = int(len(_data_times) * kg_plan_handle['fraction'])
+    #         kg_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kg_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
+
+    # if kb:
+    #     ADD_TIMES_FLAG_GRIPPER = len(_data_times) == len(_data_points_gripper)
+    #     if len(_data_times) > 0 and not ADD_TIMES_FLAG_GRIPPER:
+    #         kb.get_logger().error("Invalid time_stamps provided")
+    #         return None
+
+    #     if ADD_TIMES_FLAG_GRIPPER and kb_plan_handle['stop_flag']:
+    #         _completed_time_steps = int(len(_data_times) * kb_plan_handle['fraction'])
+    #         kb_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kb_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
 
     # if kb:
     #     # get ptp plan for gripper where goal is waypoint 0
@@ -178,24 +192,24 @@ def main(_file_name):
         
         
 
-    # Execute both trajectories simultaneously
-    EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
+    # # Execute both trajectories simultaneously
+    # EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
         
-    if EXECUTE_FLAG == "y":
-        if kg: kg.execute_joint_traj(kg_plan_handle['trajectory'])
-        if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
-        _tick = time.time()
-        execution_finished = False
-        while not execution_finished:
-            mse_kg = 0
-            if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle)
-            mse_kb = 0
-            if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle)
-            if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
+    # if EXECUTE_FLAG == "y":
+    #     if kg: kg.execute_joint_traj(kg_plan_handle['trajectory'])
+    #     if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
+    #     _tick = time.time()
+    #     execution_finished = False
+    #     while not execution_finished:
+    #         mse_kg = 0
+    #         if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle)
+    #         mse_kb = 0
+    #         if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle)
+    #         if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
             
-            _tock = time.time()
-            if _tock - _tick > 60: print("Timeout: Execution not finished"); break
-            time.sleep(0.01)
+    #         _tock = time.time()
+    #         if _tock - _tick > 60: print("Timeout: Execution not finished"); break
+    #         time.sleep(0.01)
 
 
     rclpy.shutdown()

@@ -5,7 +5,12 @@ from rclpy.node import Node
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
 from typing import Optional, Union
 from std_msgs.msg import Header
-from moveit_msgs.action import MoveGroup, ExecuteTrajectory
+from moveit_msgs.action import (
+    MoveGroup,
+    ExecuteTrajectory,
+    MoveGroupSequence
+)
+
 from moveit_msgs.msg import (
     RobotState,
     RobotTrajectory,
@@ -64,6 +69,7 @@ class MoveitInterface(Node):
 
     CARTESIAN_SERVICE_CLIENT_FLAG = False
     EXECUTE_ACTION_CLIENT_FLAG = False
+    SEQUENCE_CLIENT_FLAG = False
     
     def __init__(self, node_name, move_group_name="arm", remapping_name="lbr", prefix=""):
         super().__init__(node_name)
@@ -209,12 +215,28 @@ class MoveitInterface(Node):
         return self.PLANNER_CONFIG[planner_type]
     
     
-    def _request_for_attempts(self, request, client, response_handler, attempts: int) -> Union[RobotTrajectory, None]:
+    def _request_srv_for_attempts(self, request, client, response_handler, attempts: int) -> Union[RobotTrajectory, None]:
         for _ in range(attempts):
             plan_future = client.call_async(request)
             rclpy.spin_until_future_complete(self, plan_future)
             if plan_future.result() is None:
                 self.get_logger().error("Failed to get response from service")
+                continue
+            response = plan_future.result()
+            _response_handle = response_handler(response)
+            
+            if _response_handle['stop_flag']:
+                return _response_handle
+            
+            self.get_logger().error("Failed to get any plan")
+        return None
+    
+    def _request_action_for_attempts(self, request, client, response_handler, attempts: int) -> Union[RobotTrajectory, None]:
+        for _ in range(attempts):
+            plan_future = client.send_goal_async(request)
+            rclpy.spin_until_future_complete(self, plan_future)
+            if plan_future.result() is None:
+                self.get_logger().error("Failed to get response from Action")
                 continue
             response = plan_future.result()
             _response_handle = response_handler(response)
@@ -307,7 +329,7 @@ class MoveitInterface(Node):
                 workspace_parameters=WorkspaceParameters(),  #header, min_corner, max_corner
                 group_name=self.move_group_name_,
                 # start_state=rosm.joint_2_robot_state(start_joint_state if start_joint_state else self.get_current_joint_state()),
-                start_state=rosm.joint_2_robot_state(start_joint_state),
+                # start_state=rosm.joint_2_robot_state(start_joint_state),
                 goal_constraints=goal_constraints,
                 # path_constraints=path_constraints if path_constraints else [],  # Ensure it's a list,
                 num_planning_attempts=kwargs.get("attempts", 10),
@@ -318,6 +340,7 @@ class MoveitInterface(Node):
                 planner_id=kwargs.get("planner_id", "APSConfigDefault")
                 )
             )
+        
         # self.get_logger().info(f"requesting plan for -> \n{np.round(start_joint_state.position,2)} -> {np.round(goal_constraints[-1].joint_constraints[-1].position,2)}\n")
         return request
 
@@ -357,7 +380,7 @@ class MoveitInterface(Node):
                                                    pipeline_id=pipeline_id, planner_id=planner_id, 
                                                    **kwargs)
         ## plan for n attempts until succesful
-        return self._request_for_attempts(request, self.plan_client_, self._motion_plan_response_handler, attempts)
+        return self._request_srv_for_attempts(request, self.plan_client_, self._motion_plan_response_handler, attempts)
     
     
     #TODO - Later
@@ -379,7 +402,7 @@ class MoveitInterface(Node):
         request = self._create_motion_plan_request(_start_robot_state, _constraints, attempts=attempts,
                                          pipeline_id=pipeline_id, planner_id=planner_id, **kwargs)
         ## plan for n attempts until succesful
-        return self._request_for_attempts(request, attempts)
+        return self._request_srv_for_attempts(request, attempts)
     
     ### ---------------------- Cartesian Space Planning -----------------------
     def get_cartesian_ptp_plan(self, start_pose: Pose, target_pose: Pose, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
@@ -412,27 +435,40 @@ class MoveitInterface(Node):
         max_velocity_scaling_factor: float = 0.1, max_acceleration_scaling_factor: float = 0.1
         '''
         _CHOICES = {
-            'cartesian_interpolator': {
+                'cartesian_interpolator': {
                 'create_client': self._set_cartesian_interpolator_service_client,
                 'create_request': self._create_cartesian_interpolator_motion_plan_request,
-                'response_handler': self._cartesian_interpolator_response_handler
+                "requester": self._request_srv_for_attempts,
+                'response_handler': self._cartesian_interpolator_response_handler,
+                'SETUP_FLAG': self.CARTESIAN_SERVICE_CLIENT_FLAG
             },
-            'cartesian_sequence': {
+                'cartesian_sequence': {
                 'create_client': self._set_cartesian_sequence_service_client,
                 'create_request': self._create_motion_sequence_request,
-                'response_handler': self._motion_sequence_response_handler
-            }
+                'requester': self._request_srv_for_attempts,
+                'response_handler': self._motion_sequence_response_handler,
+                'SETUP_FLAG': self.SEQUENCE_CLIENT_FLAG
+            },
+                'cartesian_sequence_action': {
+                'create_client': self._set_cartesian_sequence_action_client,
+                'create_request': self._create_motion_sequence_goal_request,
+                'requester': self._request_action_for_attempts,
+                'response_handler': self._motion_sequence_action_response_handler,
+                'SETUP_FLAG': self.SEQUENCE_CLIENT_FLAG
+            },
+
         }
 
         if _planner_type not in _CHOICES.keys():
             self.get_logger().error(f"Invalid Planner Type: {_planner_type}.\nValid options are: {list(_CHOICES.keys())}")
             exit(1)
             
-        if not self.CARTESIAN_SERVICE_CLIENT_FLAG:
+        if not _CHOICES[_planner_type]['SETUP_FLAG']:
             _CHOICES[_planner_type]['create_client']()
 
         _request = _CHOICES[_planner_type]['create_request'](waypoints, planning_frame, **kwargs)
-        _response_handle = self._request_for_attempts(_request, self.spline_client_, _CHOICES[_planner_type]['response_handler'], attempts=attempts)
+        _requester = _CHOICES[_planner_type]['requester']
+        _response_handle = _requester(_request, self.spline_client_, _CHOICES[_planner_type]['response_handler'], attempts=attempts)
         return _response_handle
 
     
@@ -490,7 +526,7 @@ class MoveitInterface(Node):
         if not self.spline_client_.wait_for_service(timeout_sec=self.timeout_sec_):
             self.get_logger().error(f"*** Basic Error: GetCartesianPath service not available -> {self.spline_client_.srv_name}.")
             exit(1)
-        self.SEQUENCE_SERVICE_CLIENT_FLAG = True
+        self.SEQUENCE_CLIENT_FLAG = True
     
     def _create_motion_sequence_request(self, waypoints: list[Pose], 
                                         planning_frame: str,
@@ -585,7 +621,86 @@ class MoveitInterface(Node):
 
         return response_handle
 
-                                           
+
+    def _set_cartesian_sequence_action_client(self, action_name: str = "sequence_move_group") -> None:
+        self.spline_action_name_ = f"{self.remapping_name_}/{action_name}" if self.remapping_name_ else action_name
+
+        self.spline_client_ = ActionClient(self, MoveGroupSequence, self.spline_action_name_)
+
+        if not self.spline_client_.wait_for_server(timeout_sec=self.timeout_sec_):
+            self.get_logger().error(f"*** Basic Error: MoveGroupSequence action not available -> {self.spline_client_._action_name}")
+            exit(1)
+        self.SEQUENCE_CLIENT_FLAG = True
+
+    def _create_motion_sequence_goal_request(self, waypoints: list[Pose], 
+                                        planning_frame: str,
+                                        **kwargs) -> MotionSequenceRequest:
+        """
+        Create a MotionSequenceRequest for the Pilz planner, using the provided poses and motion type.
+
+        :param waypoints: List of Pose objects defining the Cartesian waypoints for the sequence.
+        :param move_group: The name of the move group to plan for.
+        :param motion_type: Type of motion ('PTP', 'LIN', 'CIRC'). Defaults to 'LIN'.
+        :param blend_radius: Blending radius for transitions between sequence items. Defaults to 0.00001
+        :param kwargs: Additional parameters for velocity and acceleration scaling factors.
+            - max_velocity_scaling_factor: float = 0.1
+            - max_acceleration_scaling_factor: float = 0.1
+        :return: A populated MotionSequenceRequest.
+        """
+        
+        sequence_goal_request = MoveGroupSequence.Goal() 
+        
+        
+        # Loop through waypoints to create motion requests for the sequence
+        for waypoint in waypoints:
+            _waypoint_constraint = rosm._pose_to_constraints(target_pose=waypoint, frame_id=planning_frame, link_name=self.end_effector_)
+            _waypoint_req = self._create_motion_plan_request(goal_constraints=[_waypoint_constraint], 
+                                                             pipeline_id="pilz_industrial_motion_planner", planner_id="LIN",
+                                                             allowed_planning_time=kwargs.get("allowed_planning_time", 10.0),
+                                                             max_velocity_scaling_factor=kwargs.get("max_velocity_scaling_factor", 0.1),
+                                                             max_acceleration_scaling_factor=kwargs.get("max_acceleration_scaling_factor", 0.1),
+                                                             num_planning_attempts=kwargs.get("num_planning_attempts", 1000)
+                                                        )
+
+
+            # Add the motion request to the sequence with the specified blending radius
+            sequence_item = MotionSequenceItem(
+                req=_waypoint_req.motion_plan_request, #_waypoint_req, #
+                blend_radius = 0.00001
+            )
+
+            sequence_goal_request.request.items.append(sequence_item)
+  
+
+        if sequence_goal_request.request.items:
+            sequence_goal_request.request.items[-1].blend_radius = 0.0
+        
+        return sequence_goal_request
+    
+    def _motion_sequence_action_response_handler(self, response):
+        """
+        Handle the response from a MotionSequenceRequest.
+
+        :param response: The response from the motion planning service.
+        :return: A dictionary containing the trajectory, fraction of the path planned, and stop flag.
+        """
+        response_handle = {'trajectory': None, 'stop_flag': False, 'fraction': None}
+        
+        if response.accepted != 1:
+            self.get_logger().error(f"Failed to compute motion sequence: action status {response.status}")
+            return response_handle
+
+        trajectory = response.get_result_async()
+        rclpy.spin_until_future_complete(self, trajectory)
+        # fraction = response.fraction
+
+        response_handle['trajectory'] = trajectory.result().result
+        # response_handle['fraction'] = fraction
+        response_handle['stop_flag'] = True
+
+        return response_handle
+
+
     #================== End of Moveit Planning ========================
     ##### create real execution client
     def modify_joint_state_for_moveit(self, joint_state):
