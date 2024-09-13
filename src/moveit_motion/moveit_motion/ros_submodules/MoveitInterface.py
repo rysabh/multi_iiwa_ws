@@ -234,7 +234,7 @@ class MoveitInterface(Node):
     def _request_action_for_attempts(self, request, client, response_handler, attempts: int) -> Union[RobotTrajectory, None]:
         for _ in range(attempts):
             plan_future = client.send_goal_async(request)
-            rclpy.spin_until_future_complete(self, plan_future)
+            rclpy.spin_until_future_complete(self, plan_future) #TODO - check if this is necessary
             if plan_future.result() is None:
                 self.get_logger().error("Failed to get response from Action")
                 continue
@@ -666,7 +666,7 @@ class MoveitInterface(Node):
             # Add the motion request to the sequence with the specified blending radius
             sequence_item = MotionSequenceItem(
                 req=_waypoint_req.motion_plan_request, #_waypoint_req, #
-                blend_radius = 0.00001
+                blend_radius = kwargs.get("blend_radius", 0.000005)
             )
 
             sequence_goal_request.request.items.append(sequence_item)

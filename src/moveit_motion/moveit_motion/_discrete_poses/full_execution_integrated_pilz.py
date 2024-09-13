@@ -61,9 +61,8 @@ def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float,
             waypoints=waypoints, planning_frame='world',
             attempts=1,
             _planner_type="cartesian_sequence_action", 
-            allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
-            max_acceleration_scaling_factor=0.1, num_planning_attempts=100,
-            blend_radius=0.000005
+            allowed_planning_time=10.0, max_velocity_scaling_factor=0.3,
+            max_acceleration_scaling_factor=0.3, num_planning_attempts=100
         )
 
         print("\n\n\=====================================================")
@@ -96,6 +95,11 @@ def get_mse_planend_current(_client, _trajectory):
     _target_joint_state.position = _trajectory.joint_trajectory.points[-1].positions
     return rsmod.MSE_joint_states(_current_joint_state, _target_joint_state)
 
+def get_mse_pose_end_current(_client, _pose):
+    _current_pose = _client.get_current_robot_pose()
+    _target_pose = _pose
+    return rsmod.MSE_poses(_current_pose, _target_pose)
+
 
 KG_HOME = [-0.614, 0.634, 2.302, -1.634, 1.526, -1.549, -1.897]
 KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494]
@@ -103,6 +107,8 @@ KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494]
 
 KG_CHISEL_START = [-0.908, 1.000, 2.218, -1.330, 1.377, -1.391, -2.146]
 KB_GRIPPER_START = [-0.548, -0.289, -1.942, 1.609, -1.596, 1.258, -0.877]
+
+SEGMENT_TIME_OUT = 120
 ###############################
 #------------ Main -----------#
 ###############################
@@ -145,11 +151,11 @@ def main():
     
     # action_generator = get_robot_next_actions()
 
-    # if kg: move_client_ptp(kg, KG_HOME)
-    # if kb: move_client_ptp(kb, KB_HOME)
+    if kg: move_client_ptp(kg, KG_HOME)
+    if kb: move_client_ptp(kb, KB_HOME)
     
-    # if kg: move_client_ptp(kg, KG_CHISEL_START)
-    # if kb: move_client_ptp(kb, KB_GRIPPER_START)
+    if kg: move_client_ptp(kg, KG_CHISEL_START)
+    if kb: move_client_ptp(kb, KB_GRIPPER_START)
     
     try :
         while True:
@@ -212,27 +218,27 @@ def main():
             if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, max_attemps=1)
 
 
-            # EXECUTE_FLAG = 'y' #input("Execute trajectory? (y/n): ").strip().lower()
+            EXECUTE_FLAG = 'y' #input("Execute trajectory? (y/n): ").strip().lower()
             
-            # if EXECUTE_FLAG == 'y':
-            #     if kg: kg.execute_joint_traj(kg_plan_handle['trajectory'])
-            #     if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
+            if EXECUTE_FLAG == 'y':
+                if kg: kg.execute_joint_traj(kg_plan_handle['trajectory'])
+                if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
 
-            #     _tick = time.time()
-            #     execution_finished = False
-            #     while not execution_finished:
-            #         mse_kg = 0
-            #         if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle['trajectory'])
+                _tick = time.time()
+                execution_finished = False
+                while not execution_finished:
+                    mse_kg = 0
+                    if kg: mse_kg = get_mse_pose_end_current(kg, _pose_waypoints_chisel[-1]); print("MSE KG: ", mse_kg)
 
-            #         mse_kb = 0
-            #         if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle['trajectory'])
+                    mse_kb = 0
+                    if kb: mse_kb = get_mse_pose_end_current(kb, _pose_waypoints_gripper[-1]); print("MSE KB: ", mse_kb)
 
-            #         if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
+                    if (mse_kg < 0.0001) and (mse_kb < 0.0001): execution_finished = True
                     
-            #         _tock = time.time()
-            #         if _tock - _tick > 10: print("Timeout: Execution not finished"); break
+                    _tock = time.time()
+                    if _tock - _tick > SEGMENT_TIME_OUT: print("Timeout: Execution not finished"); break
 
-            #         time.sleep(0.01)
+                    time.sleep(0.01)
                     
     except KeyboardInterrupt:
         print("\nKeyboard interrupt received. Exiting loop...")

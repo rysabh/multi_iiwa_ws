@@ -71,8 +71,17 @@ def MSE_joint_points(point_1, point_2):
     return _mse
 
 
-def MSE_poses():
-    pass
+def MSE_poses(pose_1, pose_2):
+    current_position = np.array([pose_1.position.x, pose_1.position.y, pose_1.position.z])
+    target_position = np.array([pose_2.position.x, pose_2.position.y, pose_2.position.z])
+    
+    current_orientation = np.array([pose_1.orientation.x, pose_1.orientation.y, pose_1.orientation.z, pose_1.orientation.w])
+    target_orientation = np.array([pose_2.orientation.x, pose_2.orientation.y, pose_2.orientation.z, pose_2.orientation.w])
+    
+    mse_position = np.mean((current_position - target_position) ** 2)
+    mse_orientation = np.mean((current_orientation - target_orientation) ** 2)
+    mse_total = mse_position + mse_orientation
+    return mse_total
 
 
 def sort_joint_state(joint_state: JointState) -> JointState:
