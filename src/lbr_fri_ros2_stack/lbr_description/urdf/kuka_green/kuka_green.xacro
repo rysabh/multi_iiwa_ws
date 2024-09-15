@@ -69,6 +69,7 @@
     <joint name="joint_tcp" type="fixed">
         <parent link="link_ee"/>
         <child link="link_tcp"/>
-        <origin rpy="0 0 0" xyz="0.00051 -0.00012 0.23332"/>
+        <!-- <origin rpy="0 0 0" xyz="0.00051 -0.00012 0.23332"/> NO FORCE CHISEL-->
+        <origin rpy="0 0 0" xyz="0.00243 0.0003 0.22498"/>
     </joint>
 </robot>
