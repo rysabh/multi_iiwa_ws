@@ -322,12 +322,31 @@ def main():
                 new_ob_2.capture_data =  response_mocap_2.latest_message
                 new_ob_2.ati_data = response_ati_2.msg
                 
-            _pose_waypoints_chisel_2 = [_pose_waypoints_chisel_2.position.x, _pose_waypoints_chisel_2.position.y, _pose_waypoints_chisel_2.position.z, 
-                                        _pose_waypoints_chisel_2.orientation.x, _pose_waypoints_chisel_2.orientation.y, _pose_waypoints_chisel_2.orientation.z, _pose_waypoints_chisel_2.orientation.w]
-            _pose_waypoints_gripper_2 = [_pose_waypoints_gripper_2.position.x, _pose_waypoints_gripper_2.position.y, _pose_waypoints_gripper_2.position.z,
-                                        _pose_waypoints_gripper_2.orientation.x, _pose_waypoints_gripper_2.orientation.y, _pose_waypoints_gripper_2.orientation.z, _pose_waypoints_gripper_2.orientation.w]
-            if kg: move_client_ptp(kg, _pose_waypoints_chisel_2)
-            if kb: move_client_ptp(kb, _pose_waypoints_gripper_2)
+            kg_plan_handle = kg.get_cartesian_ptp_plan(_pose_waypoints_chisel_1[-1], _pose_waypoints_chisel_2)
+            kb_plan_handle = kb.get_cartesian_ptp_plan(_pose_waypoints_gripper_1[-1], _pose_waypoints_gripper_2)
+
+            EXECUTE_FLAG = 'y' 
+            # EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
+            
+            if EXECUTE_FLAG == 'y':
+                if kg:kg.execute_joint_traj(kg_plan_handle['trajectory'])
+                if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
+
+                _tick = time.time()
+                execution_finished = False
+                while not execution_finished:
+                    mse_kg = 0
+                    if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle['trajectory'])
+
+                    mse_kb = 0
+                    if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle['trajectory'])
+
+                    if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
+                    
+                    _tock = time.time()
+                    if _tock - _tick > EXECUTION_TIMEOUT: print("Timeout: Execution not finished"); break
+
+                    time.sleep(0.01)
 
 
     except KeyboardInterrupt:
