@@ -195,38 +195,42 @@ def main():
     
     
     try :
+        new_ob_2 =  None
+        
         while True:
             _data_points_chisel = []
             _data_points_gripper = []
+            new_test = []
             
             time.sleep(0.01)
-            state_observations = diffusion_client.get_mocap_data(); rclpy.spin_until_future_complete(diffusion_client, state_observations)
-    
-            force_observations = diffusion_client.get_force_torque(); rclpy.spin_until_future_complete(diffusion_client, force_observations)
+            state_observations_1 = diffusion_client.get_mocap_data(); rclpy.spin_until_future_complete(diffusion_client, state_observations_1)
+            force_observations_1 = diffusion_client.get_force_torque(); rclpy.spin_until_future_complete(diffusion_client, force_observations_1)
 
-            if state_observations.done() and force_observations.done():
+            if state_observations_1.done() and force_observations_1.done():
                 # Wait until the mocap service call completes
             # Wait until the mocap service call completes
-                response_mocap = state_observations.result()
+                response_mocap_1 = state_observations_1.result()
                 diffusion_client.get_logger().info(f'Mocap Service call completed')
 
-                response_ati = force_observations.result()
+                response_ati_1 = force_observations_1.result()
                 diffusion_client.get_logger().info(f"Ati Service call successful")
 
-
                 # Send the observation to the diffusion service
-                new_test = []
-                new_ob = Observation()
-                # print(new_ob)
-                new_ob.capture_data =  response_mocap.latest_message
+                new_ob_1 = Observation()
+                new_ob_1.capture_data =  response_mocap_1.latest_message
                 print("############################################")
-                
-                print("Force DATA -",response_ati.msg)
-                new_ob.ati_data = response_ati.msg
+                print("Force DATA -",response_ati_1.msg)
+                new_ob_1.ati_data = response_ati_1.msg
                 print("############################################")
                 
                 # new_test.append(new_ob)
-                new_test.append(new_ob)
+                if new_ob_2 is None:
+                    new_test.append(new_ob_1)
+                    new_test.append(new_ob_1)
+                else:
+                    new_test.append(new_ob_2)
+                    new_test.append(new_ob_1)
+                    
                 print("New test: ", len(new_test))
                 # print("New test: ", new_test)
                 print("############################################")
@@ -257,6 +261,8 @@ def main():
             _data_points_chisel = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_chisel)
             _pose_waypoints_chisel = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_chisel)
             _pose_waypoints_chisel = _pose_waypoints_chisel.tolist()
+            _pose_waypoints_chisel_1 = _pose_waypoints_chisel[:-1]
+            _pose_waypoints_chisel_2 = _pose_waypoints_chisel[-1]
 
             # _data_points_gripper = next_actions['data_gripper']
             _data_points_gripper = dft.filter_outliers_verbose(_data_points_gripper, threshold=1.5)
@@ -266,15 +272,17 @@ def main():
             _data_points_gripper = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_gripper)
             _pose_waypoints_gripper = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_gripper)
             _pose_waypoints_gripper = _pose_waypoints_gripper.tolist()
+            _pose_waypoints_gripper_1 = _pose_waypoints_gripper[:-1]
+            _pose_waypoints_gripper_2 = _pose_waypoints_gripper[-1]
 
             # CARTESIAN_MSE_THRESHOLD = 0.0002
             CARTESIAN_MSE_THRESHOLD = 1
             #TODO - play with the threshold parameters
-            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, max_attemps=1,
+            if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel_1, CARTESIAN_MSE_THRESHOLD, max_attemps=1,
                                                           max_step=0.001, jump_threshold = 0.0, revolute_jump_threshold=0.0, 
                                                           slowness_factor=SLOWNESS_FACTOR)
             
-            if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, max_attemps=1, 
+            if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper_1, CARTESIAN_MSE_THRESHOLD, max_attemps=1, 
                                                           slowness_factor=SLOWNESS_FACTOR)
 
 
@@ -300,7 +308,28 @@ def main():
                     if _tock - _tick > EXECUTION_TIMEOUT: print("Timeout: Execution not finished"); break
 
                     time.sleep(0.01)
-                    
+            
+            state_observations_2 = diffusion_client.get_mocap_data(); rclpy.spin_until_future_complete(diffusion_client, state_observations)
+            force_observations_2 = diffusion_client.get_force_torque(); rclpy.spin_until_future_complete(diffusion_client, force_observations)
+            
+            if state_observations_2.done() and force_observations_2.done():
+                response_mocap_2 = state_observations_2.result()
+                diffusion_client.get_logger().info(f'Mocap Service call completed')
+                response_ati_2 = force_observations_2.result()
+                diffusion_client.get_logger().info(f"Ati Service call successful")
+                
+                new_ob_2 = Observation()
+                new_ob_2.capture_data =  response_mocap_2.latest_message
+                new_ob_2.ati_data = response_ati_2.msg
+                
+            _pose_waypoints_chisel_2 = [_pose_waypoints_chisel_2.position.x, _pose_waypoints_chisel_2.position.y, _pose_waypoints_chisel_2.position.z, 
+                                        _pose_waypoints_chisel_2.orientation.x, _pose_waypoints_chisel_2.orientation.y, _pose_waypoints_chisel_2.orientation.z, _pose_waypoints_chisel_2.orientation.w]
+            _pose_waypoints_gripper_2 = [_pose_waypoints_gripper_2.position.x, _pose_waypoints_gripper_2.position.y, _pose_waypoints_gripper_2.position.z,
+                                        _pose_waypoints_gripper_2.orientation.x, _pose_waypoints_gripper_2.orientation.y, _pose_waypoints_gripper_2.orientation.z, _pose_waypoints_gripper_2.orientation.w]
+            if kg: move_client_ptp(kg, _pose_waypoints_chisel_2)
+            if kb: move_client_ptp(kb, _pose_waypoints_gripper_2)
+
+
     except KeyboardInterrupt:
         print("\nKeyboard interrupt received. Exiting loop...")
 

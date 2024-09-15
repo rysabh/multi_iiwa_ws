@@ -17,12 +17,14 @@ find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(mocap_optitrack_interfaces REQUIRED)
+find_package(ati_sensor_interfaces REQUIRED)
+
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/DiffusionAction.srv"
   "msg/PredictedAction.msg"
   "msg/Observation.msg"
-  DEPENDENCIES mocap_optitrack_interfaces geometry_msgs std_msgs
+  DEPENDENCIES mocap_optitrack_interfaces geometry_msgs std_msgs ati_sensor_interfaces
  )
 
 ament_package()

@@ -7,3 +7,4 @@ log/
 **/.DS_Stores
 **/__pycache__
 **/no-sync/*
+**/src/service_launch/takes/*
