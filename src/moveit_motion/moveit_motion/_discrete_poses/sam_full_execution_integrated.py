@@ -309,8 +309,8 @@ def main():
 
                     time.sleep(0.01)
             
-            state_observations_2 = diffusion_client.get_mocap_data(); rclpy.spin_until_future_complete(diffusion_client, state_observations)
-            force_observations_2 = diffusion_client.get_force_torque(); rclpy.spin_until_future_complete(diffusion_client, force_observations)
+            state_observations_2 = diffusion_client.get_mocap_data(); rclpy.spin_until_future_complete(diffusion_client, state_observations_2)
+            force_observations_2 = diffusion_client.get_force_torque(); rclpy.spin_until_future_complete(diffusion_client, force_observations_2)
             
             if state_observations_2.done() and force_observations_2.done():
                 response_mocap_2 = state_observations_2.result()
