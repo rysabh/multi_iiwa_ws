@@ -14,8 +14,8 @@ sys.path.append(parent_dir)
 
 
 # Set Matplotlib backend
-import matplotlib
-matplotlib.use('TkAgg')
+# import matplotlib
+# matplotlib.use('TkAgg')
 
 from moveit_motion.diffusion_policy_cam.submodules import robomath_addon as rma
 from moveit_motion.diffusion_policy_cam.submodules import robomath as rm
@@ -50,54 +50,54 @@ class DiffusionService(Node):
         self.num_diffusion_iters = num_diffusion_iters
         self.noise_pred_net = noise_pred_net
         self.device = device
-        self.init_plot()
+        # self.init_plot()
 
 
-    def init_plot(self):
-        # Initialize Matplotlib plot
-        self.fig, self.ax = plt.subplots(3, 1, figsize=(10, 6))
-        self.force_xdata, self.force_ydata_x, self.force_ydata_y, self.force_ydata_z = [], [], [], []
-        self.max_length = 100
-        self.counter = 0
-        self.line_x, = self.ax[0].plot([], [], 'r-', label='Fx')
-        self.line_y, = self.ax[1].plot([], [], 'g-', label='Fy')
-        self.line_z, = self.ax[2].plot([], [], 'b-', label='Fz')
-        self.ax[0].set_xlim(0, self.max_length)
-        self.ax[0].set_ylim(-10, 10)
-        self.ax[0].set_ylabel('Force (x)')
-        self.ax[1].set_xlim(0, self.max_length)
-        self.ax[1].set_ylim(-10, 10)
-        self.ax[1].set_ylabel('Force (y)')
-        self.ax[2].set_xlim(0, self.max_length)
-        self.ax[2].set_ylim(-10, 10)
-        self.ax[2].set_xlabel('Index')
-        self.ax[2].set_ylabel('Force (z)')
-        self.ax[0].legend()
-        self.ax[1].legend()
-        self.ax[2].legend()
-        self.ani = animation.FuncAnimation(self.fig, self.update_plot, blit=True, interval=1000)
+    # def init_plot(self):
+    #     # Initialize Matplotlib plot
+    #     self.fig, self.ax = plt.subplots(3, 1, figsize=(10, 6))
+    #     self.force_xdata, self.force_ydata_x, self.force_ydata_y, self.force_ydata_z = [], [], [], []
+    #     self.max_length = 100
+    #     self.counter = 0
+    #     self.line_x, = self.ax[0].plot([], [], 'r-', label='Fx')
+    #     self.line_y, = self.ax[1].plot([], [], 'g-', label='Fy')
+    #     self.line_z, = self.ax[2].plot([], [], 'b-', label='Fz')
+    #     self.ax[0].set_xlim(0, self.max_length)
+    #     self.ax[0].set_ylim(-10, 10)
+    #     self.ax[0].set_ylabel('Force (x)')
+    #     self.ax[1].set_xlim(0, self.max_length)
+    #     self.ax[1].set_ylim(-10, 10)
+    #     self.ax[1].set_ylabel('Force (y)')
+    #     self.ax[2].set_xlim(0, self.max_length)
+    #     self.ax[2].set_ylim(-10, 10)
+    #     self.ax[2].set_xlabel('Index')
+    #     self.ax[2].set_ylabel('Force (z)')
+    #     self.ax[0].legend()
+    #     self.ax[1].legend()
+    #     self.ax[2].legend()
+    #     self.ani = animation.FuncAnimation(self.fig, self.update_plot, blit=True, interval=1000)
 
-        # Use plt.show() in a non-blocking manner
-        # self.fig.canvas.manager.window.after(0, plt.show)
-        # Use plt.show() in a non-blocking manner
-        plt.show(block=False)
+    #     # Use plt.show() in a non-blocking manner
+    #     # self.fig.canvas.manager.window.after(0, plt.show)
+    #     # Use plt.show() in a non-blocking manner
+    #     plt.show(block=False)
         
         
-    def update_plot(self, frame):
-        if len(self.force_xdata) > 0:
-            self.line_x.set_data(self.force_xdata, self.force_ydata_x)
-            self.line_y.set_data(self.force_xdata, self.force_ydata_y)
-            self.line_z.set_data(self.force_xdata, self.force_ydata_z)
-            self.ax[0].set_xlim(max(0, len(self.force_xdata) - self.max_length), len(self.force_xdata))
-            self.ax[1].set_xlim(max(0, len(self.force_xdata) - self.max_length), len(self.force_xdata))
-            self.ax[2].set_xlim(max(0, len(self.force_xdata) - self.max_length), len(self.force_xdata))
-        self.ax[0].relim()
-        self.ax[0].autoscale_view()
-        self.ax[1].relim()
-        self.ax[1].autoscale_view()
-        self.ax[2].relim()
-        self.ax[2].autoscale_view()
-        return self.line_x, self.line_y, self.line_z
+    # def update_plot(self, frame):
+    #     if len(self.force_xdata) > 0:
+    #         self.line_x.set_data(self.force_xdata, self.force_ydata_x)
+    #         self.line_y.set_data(self.force_xdata, self.force_ydata_y)
+    #         self.line_z.set_data(self.force_xdata, self.force_ydata_z)
+    #         self.ax[0].set_xlim(max(0, len(self.force_xdata) - self.max_length), len(self.force_xdata))
+    #         self.ax[1].set_xlim(max(0, len(self.force_xdata) - self.max_length), len(self.force_xdata))
+    #         self.ax[2].set_xlim(max(0, len(self.force_xdata) - self.max_length), len(self.force_xdata))
+    #     self.ax[0].relim()
+    #     self.ax[0].autoscale_view()
+    #     self.ax[1].relim()
+    #     self.ax[1].autoscale_view()
+    #     self.ax[2].relim()
+    #     self.ax[2].autoscale_view()
+    #     return self.line_x, self.line_y, self.line_z
         
     def extract_rigid_bodies_and_marker_sets(self, mocap_data):
         # rigid_bodies = []
@@ -134,9 +134,18 @@ class DiffusionService(Node):
     def extract_force_positions(self, force_data):
         force_positions = []
         self.get_logger().info(f"Force data: {force_data}")
+        # Compute f = sqrt(x*x + y*y + z*z)
+        # f = np.sqrt(force_data.fx**2 + force_data.fy**2 + force_data.fz**2)
+        
+        # # Normalize x, y, z
+        # x_f = force_data.fx / f
+        # y_f = force_data.fy / f
+        # z_f = force_data.fz / f
+        
         force_positions.append(force_data.fx)
         force_positions.append(force_data.fy)
         force_positions.append(force_data.fz)
+        # force_positions.append(f)
         
         return force_positions
 
@@ -198,28 +207,28 @@ class DiffusionService(Node):
         for observation in request.observations:
             rigid_bodies, marker_sets = self.extract_rigid_bodies_and_marker_sets(observation.capture_data)
             state_observation = self.bodies_and_markers(rigid_bodies, marker_sets)
-            force_observation = self.extract_force_positions(observation.ati_data)
-            result = force_observation + state_observation
-            all_observations.append(result)
-            # all_observations.append(state_observation)
+            # force_observation = self.extract_force_positions(observation.ati_data)
+            # result = force_observation + state_observation
+            # all_observations.append(result)
+            all_observations.append(state_observation)
             
                         
             # Update live plot data
-            if len(self.force_xdata) >= self.max_length:
-                self.force_xdata.pop(0)
-                self.force_ydata_x.pop(0)
-                self.force_ydata_x.pop(0)
-                self.force_ydata_x.pop(0)
-            self.force_xdata.append(self.counter)
-            self.force_ydata_x.append(force_observation[0])
-            self.force_ydata_y.append(force_observation[1])
-            self.force_ydata_z.append(force_observation[2])
-            self.counter += 1
+            # if len(self.force_xdata) >= self.max_length:
+            #     self.force_xdata.pop(0)
+            #     self.force_ydata_x.pop(0)
+            #     self.force_ydata_x.pop(0)
+            #     self.force_ydata_x.pop(0)
+            # self.force_xdata.append(self.counter)
+            # self.force_ydata_x.append(force_observation[0])
+            # self.force_ydata_y.append(force_observation[1])
+            # self.force_ydata_z.append(force_observation[2])
+            # self.counter += 1
             
             
         self.get_logger().info(f'Got observations --- state obs - {len(state_observation)}')
-        self.get_logger().info(f'Got observations --- force obs - {len(force_observation)}')
-        self.get_logger().info(f'Got observations --- result - {len(result)}')
+        # self.get_logger().info(f'Got observations --- force obs - {len(force_observation)}')
+        # self.get_logger().info(f'Got observations --- result - {len(result)}')
 
         
         actions = live._pred_traj(all_observations, self.statistics, self.obs_horizon,
@@ -268,9 +277,9 @@ def main(args=None):
     action_bodies = [6, 7]     # Example IDs for action bodies
     obs_bodies = [4]       # Example IDs for observed bodies
     unlabbled_marker =  0000 # Example ID for the unlabeled marker
-    labbled_markers = [40,39,37,36] # Example IDs for labeled markers
+    labbled_markers = [40, 39, 37, 36] # Example IDs for labeled markers
 
-    checkpoint_path = 'no-sync/chkpts/checkpoint_training_24_obs_1_action_8_epoch_199.pth'
+    checkpoint_path = 'no-sync/chkpts/checkpoint_training_4_obs_1_action_60_epoch_199.pth'
 
     checkpoint = torch.load(checkpoint_path)
 

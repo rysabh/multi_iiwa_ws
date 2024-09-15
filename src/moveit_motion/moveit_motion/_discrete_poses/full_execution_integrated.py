@@ -235,6 +235,8 @@ def main():
                 # Wait until the diffusion service call completes
                 rclpy.spin_until_future_complete(diffusion_client, actions)
                 
+                print("Actions len -",len(actions.result().actions))
+                
                 if actions.done():
                     # diffusion_client.get_logger().info(f'Response: {actions.result().actions}')
                     # print("Received data: ", actions.result().actions)

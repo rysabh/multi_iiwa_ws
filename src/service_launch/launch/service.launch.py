@@ -72,7 +72,7 @@ def generate_launch_description():
     ld.add_action(diffusion_node)
     ld.add_action(natnet_client)
     ld.add_action(ati_node)
-    ld.add_action(ati_sensor_node)
+    # ld.add_action(ati_sensor_node)
 
     return ld
     
