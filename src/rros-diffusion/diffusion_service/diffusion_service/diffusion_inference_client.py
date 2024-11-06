@@ -59,18 +59,19 @@ def main(args=None):
     state_observations = diffusion_client.get_mocap_data()
     rclpy.spin_until_future_complete(diffusion_client, state_observations)
     
-    force_observations = diffusion_client.get_force_torque()
-    rclpy.spin_until_future_complete(diffusion_client, force_observations)
+    # force_observations = diffusion_client.get_force_torque()
+    # rclpy.spin_until_future_complete(diffusion_client, force_observations)
     
     
-    if state_observations.done() and force_observations.done():
+    # if state_observations.done() and force_observations.done():
+    if state_observations.done():
         try:
             # Wait until the mocap service call completes
             response_mocap = state_observations.result()
             diffusion_client.get_logger().info(f'Mocap Service call completed')
 
-            response_ati = force_observations.result()
-            diffusion_client.get_logger().info(f"Ati Service call successful")
+            # response_ati = force_observations.result()
+            # diffusion_client.get_logger().info(f"Ati Service call successful")
 
 
             # Send the observation to the diffusion service
@@ -81,8 +82,8 @@ def main(args=None):
             # print("############################################")
             
             # print(response_ati.msg.fx)
-            new_ob.ati_data = response_ati.msg
-            print(new_ob.ati_data)
+            # new_ob.ati_data = response_ati.msg
+            # print(new_ob.ati_data)
             # print("############################################")
             
             # new_test.append(new_ob)

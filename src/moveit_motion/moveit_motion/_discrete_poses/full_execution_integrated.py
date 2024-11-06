@@ -137,12 +137,40 @@ def get_mse_planend_current(_client, _trajectory):
     return rsmod.MSE_joint_states(_current_joint_state, _target_joint_state)
 
 
-KG_HOME = [-0.614, 0.634, 2.302, -1.634, 1.526, -1.549, -1.897]
-KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494]
+# KG_HOME = [-0.614, 0.634, 2.302, -1.634, 1.526, -1.549, -1.897]
+KG_HOME = [-1.1024725513365605, 0.8110270609209829, 2.2307813006892285, -1.4287002552588133, 1.604325087473934, -1.3662565244916118, -2.0382540102696893]
+
+# RS ORIGINAL
+# KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494]
 
 
-KG_CHISEL_START = [-0.908, 1.000, 2.218, -1.330, 1.377, -1.391, -2.146]
-KB_GRIPPER_START = [-0.548, -0.289, -1.942, 1.609, -1.596, 1.258, -0.877]
+#RS_NEW
+KB_HOME = [-2.070580090640219, -1.812505979193253, 0.09044884021634995, -1.6915134242631444, -2.3737221381017464, 1.9649195538572661, 0.6261765302330542]
+
+
+# KG_CHISEL_START = [-0.908, 1.000, 2.218, -1.330, 1.377, -1.391, -2.146]        #ORIGINAL
+# KG_CHISEL_START = [-1.1014122720883037, 0.822412610124071, 2.240110823951185, -1.4985485541620371, 1.579684159886321, -1.3597612860352672, -1.9706041761213333]   #ORIGINAL MODIFIED
+# KG_CHISEL_START = [-0.15673057,  0.69324478,  1.2812462 , -0.89343404,  1.24703775, -1.75667389, -1.94551852]
+
+#RS Original Mod FT_1
+KG_CHISEL_START = position=[-1.089514863775427, 0.8072470286077791, 2.2262522360145, -1.3662222194627858, 1.6119818365949197, -1.3726784940950467, -2.091010894819293]
+
+#RS Original Mod FT_2 SLOWNESS_FACTOR = NONE
+# KG_CHISEL_START = [-1.0601302434590743, 0.8409170423409222, 2.1722489721155345, -1.3470277402052244, 1.5864082126577137, -1.331293906464206, -2.1165155976321604]
+
+# new 1
+# KG_CHISEL_START = [-0.9691929702879897, 0.923678741693638, 2.199126961589384, -1.4383381643744493, 1.4478293588982245, -1.347179078999628, -2.020279542336448] #new
+
+#new 2 
+# KG_CHISEL_START = [-1.1024725513365605, 0.8110270609209829, 2.2307813006892285, -1.4287002552588133, 1.604325087473934, -1.3662565244916118, -2.0382540102696893] #new2
+
+#RS new_3 comfortable new position
+# KB_HOME = [-2.66817706075705, -1.6893574022393618, -0.5804520983287493, -1.7093600324023448, -1.7830769291946402, 1.426744385467081, 0.9088713928634107]
+
+
+# KB_GRIPPER_START = [-0.548, -0.289, -1.942, 1.609, -1.596, 1.258, -0.877] # modified testing
+KB_GRIPPER_START = KB_HOME 
+
 
 EXECUTION_TIMEOUT = 60
 SLOWNESS_FACTOR = 5
@@ -202,16 +230,18 @@ def main():
             time.sleep(0.01)
             state_observations = diffusion_client.get_mocap_data(); rclpy.spin_until_future_complete(diffusion_client, state_observations)
     
-            force_observations = diffusion_client.get_force_torque(); rclpy.spin_until_future_complete(diffusion_client, force_observations)
+            force_observations = diffusion_client.get_force_torque(); rclpsrc/rros-mocap-optitrack/data_collection/data_collection/robot_interface.pyy.spin_until_future_complete(diffusion_client, force_observations)
 
             if state_observations.done() and force_observations.done():
+            # if state_observations.done():
+                
                 # Wait until the mocap service call completes
             # Wait until the mocap service call completes
                 response_mocap = state_observations.result()
-                diffusion_client.get_logger().info(f'Mocap Service call completed')
+                diffusion_client.get_logger().info(f'Mocap Service call completed {response_mocap.latest_message}')
 
                 response_ati = force_observations.result()
-                diffusion_client.get_logger().info(f"Ati Service call successful")
+                diffusion_client.get_logger().info(f"Ati Service call successful {response_ati}")
 
 
                 # Send the observation to the diffusion service
@@ -244,14 +274,14 @@ def main():
             
             
             
-            # print("Gripper: ", _data_points_gripper)
+            print("Gripper: ", _data_points_gripper)
             
-            # print("Chisel: ", _data_points_chisel)
+            print("Chisel: ", _data_points_chisel)
             
         
             # _data_points_chisel = next_actions['data_chisel'] 
-            _data_points_chisel = dft.filter_outliers_verbose(_data_points_chisel, threshold=2)
-            # _data_points_chisel = dft.smooth_waypoints_sg(_data_points_chisel, window_length=4, polyorder=3) #remove to have more chiseling
+            _data_points_chisel = dft.filter_outliers_verbose(_data_points_chisel, threshold=2.5)
+            _data_points_chisel = dft.smooth_waypoints_sg(_data_points_chisel, window_length=4, polyorder=3) #remove to have more chiseling
             
             _data_points_chisel = np.apply_along_axis(rma.TxyzRxyz_2_TxyzQwxyz, 1,_data_points_chisel)
             _data_points_chisel = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_chisel)
@@ -259,8 +289,8 @@ def main():
             _pose_waypoints_chisel = _pose_waypoints_chisel.tolist()
 
             # _data_points_gripper = next_actions['data_gripper']
-            _data_points_gripper = dft.filter_outliers_verbose(_data_points_gripper, threshold=1.5)
-            # _data_points_gripper = dft.smooth_waypoints_sg(_data_points_gripper, window_length=10, polyorder=3)
+            _data_points_gripper = dft.filter_outliers_verbose(_data_points_gripper, threshold=2.5)
+            _data_points_gripper = dft.smooth_waypoints_sg(_data_points_gripper, window_length=10, polyorder=3)
     
             _data_points_gripper = np.apply_along_axis(rma.TxyzRxyz_2_TxyzQwxyz, 1,_data_points_gripper)
             _data_points_gripper = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_gripper)

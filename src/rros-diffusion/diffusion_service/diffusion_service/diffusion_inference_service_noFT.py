@@ -75,6 +75,7 @@ class DiffusionService(Node):
 
         # Extract marker sets
         for ms in mocap_data.marker_sets:
+            self.get_logger().info(f"Marker Set: {type(ms.id)}")
             marker_set_info[ms.id] = [
                     ms.position.x,
                     ms.position.y,
@@ -145,8 +146,7 @@ class DiffusionService(Node):
         #     observation.extend([self.gripper_state(rigid_bodies[rb], marker_sets[self.unlabbled_marker])])
         
         for ms in self.labbled_markers:
-            # print(f"\n\n\n\nMarker: \n\n{ms}\n\n\n\n")
-            marker = rma.motive_2_robodk_marker(np.array(marker_sets[ms], dtype=float))
+            marker = rma.motive_2_robodk_marker(np.array(marker_sets[int(ms)], dtype=float))
             
             # Multiply the first three elements by 1000
             marker_sets[ms] = [val * 1000 for val in marker]
@@ -167,32 +167,19 @@ class DiffusionService(Node):
             rigid_bodies, marker_sets = self.extract_rigid_bodies_and_marker_sets(observation.capture_data)
             state_observation = self.bodies_and_markers(rigid_bodies, marker_sets)
             force_observation = self.extract_force_positions(observation.ati_data)
-            # chisel_observation = rigid_bodies[13]
-            _TxyzRxyz = state_observation[0:6]
-            Pose_chisel = rm.TxyzRxyz_2_Pose(_TxyzRxyz)
-            # print(Pose_chisel)
-            Fc_vector = rm.Mat([*force_observation, 0])
-            Fw_vector = Pose_chisel * Fc_vector
-            Fw = Fw_vector.tolist()
-            Fw = Fw[0:3]
-
-            # # print("#########################################")
-            # Fw_mag = np.sqrt(Fw[0]**2 + Fw[1]**2 + Fw[2]**2)
-            # # Fw_mag = np.sqrt(Fw[0]**2  + Fw[2]**2)
-            result = [Fw[0]] + state_observation
-            all_observations.append(result)
-            # all_observations.append(state_observation)
+            all_observations.append(state_observation)
             
             
         self.get_logger().info(f'Got observations --- state obs - {len(state_observation)}')
         self.get_logger().info(f'Got observations --- force obs - {len(force_observation)}')
-        self.get_logger().info(f'Got observations --- Total - {len(result)}')
+        # self.get_logger().info(f'Got observations --- Total - {len(result)}')
 
         
         actions = live._pred_traj(all_observations, self.statistics, self.obs_horizon,
                         self.pred_horizon, self.action_horizon, self.action_dim, 
                         self.noise_scheduler, self.num_diffusion_iters,
                         self.noise_pred_net, self.device)
+        
         
         # actions = [[0.21505458652973175, 0.20627030730247498, 0.23463064432144165, -1.4847859896086955, 0.5324402244345928, 2.99450595146179, -1.0]]
         action_list = []
@@ -215,22 +202,24 @@ def main(args=None):
     rclpy.init(args=args)
 
     # Specify the initial values for the attributes
-    rigid_bodies = [6, 7]  # Example IDs for rigid bodies
-    action_bodies = [6, 7]     # Example IDs for action bodies
+    rigid_bodies = [13, 7, 17]  # Example IDs for rigid bodies
+    action_bodies = [13, 7]     # Example IDs for action bodies
     obs_bodies = [17]       # Example IDs for observed bodies
     unlabbled_marker =  0000 # Example ID for the unlabeled marker
-    # labbled_markers = [40, 36] # Example IDs for labeled markers
 
-    edge_1 =  [10, 6]
-    edge_2 = [6, 40]
-    edge_3 = [40, 36]
-    edge_4 = [10, 36]
+    edge_1 =  ['10', '14', '7', '6']
+    edge_2 = ['6', '3', '26', '40']
+    edge_3 = ['40', '39', '37', '36']
+    edge_4 = ['10', '19', '29', '36']
+
+    ###### in Diffusion service calss inintilzation below change the edge lable whoch ever edge you are performing the infrance on #######
 
 
 
+    # labbled_markers = [40, 39, 37, 36] # Example IDs for labeled markers
 
     # checkpoint_path = 'no-sync/chkpts/checkpoint_training_34_obs_1_action_30_FX_epoch_199.pth'
-    checkpoint_path = '/home/cam/Documents/GitHub/multi_iiwa_ws/no-sync/chkpts/checkpoint_training_34_obs_1_action_30_FX_epoch_199.pth'
+    checkpoint_path = 'no-sync/chkpts/state/checkpoint_training_38_obs_1_action_30_epoch_199.pth'
     
 
     checkpoint = torch.load(checkpoint_path)
@@ -248,7 +237,9 @@ def main(args=None):
     len_dataloader = checkpoint['len_dataloader']   
     num_diffusion_iters = checkpoint['num_diffusion_iters']
     
-    noise_pred_net, noise_scheduler, device, ema, optimizer, lr_scheduler = live._model_initalization(action_dim, obs_dim, obs_horizon, pred_horizon, num_epochs, len_dataloader, num_diffusion_iters)
+    noise_pred_net, noise_scheduler, device, ema, optimizer, lr_scheduler = live._model_initalization(action_dim, obs_dim, 
+                                                                                                      obs_horizon, pred_horizon, num_epochs, len_dataloader, 
+                                                                                                      num_diffusion_iters)
     
     noise_pred_net.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -256,7 +247,7 @@ def main(args=None):
     ema.load_state_dict(checkpoint['ema_state_dict'])
 
     # Instantiate the DiffusionService node with the specific values
-    diffusion_service = DiffusionService(rigid_bodies, action_bodies, obs_bodies, unlabbled_marker, edge_3, 
+    diffusion_service = DiffusionService(rigid_bodies, action_bodies, obs_bodies, unlabbled_marker, edge_4, 
                                          statistics, obs_horizon, pred_horizon, action_horizon, action_dim,
                                          noise_scheduler, num_diffusion_iters, noise_pred_net, device)
 

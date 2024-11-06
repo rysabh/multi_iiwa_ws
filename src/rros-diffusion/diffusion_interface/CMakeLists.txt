@@ -25,6 +25,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PredictedAction.msg"
   "msg/Observation.msg"
   DEPENDENCIES mocap_optitrack_interfaces geometry_msgs std_msgs ati_sensor_interfaces
+  # DEPENDENCIES mocap_optitrack_interfaces geometry_msgs std_msgs
+
  )
 
 ament_package()

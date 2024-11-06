@@ -20,11 +20,13 @@ from moveit_motion.ros_submodules.RobotInterface import RobotInterface
 import moveit_motion.ros_submodules.RS_submodules as rsmod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-KG_HOME = [-0.614, 0.634, 2.302, -1.634, 1.526, -1.549, -1.897]
-KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494]
+# KG_HOME = [-0.614, 0.634, 2.302, -1.634, 1.526, -1.549, -1.897] # og csv_execute_author.py
+# KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494] # og csv_execute_author.py
 
 # KG_CHISEL_START = [-0.908, 1.000, 2.218, -1.330, 1.377, -1.391, -2.146]
 # KB_GRIPPER_START = [-0.548, -0.289, -1.942, 1.609, -1.596, 1.258, -0.877]
+
+
 
 def move_client_ptp(_client, goal_list: list, tolerance=0.0005, time_out=60):
     _cjs = _client.get_current_joint_state()
@@ -55,20 +57,18 @@ def move_client_ptp(_client, goal_list: list, tolerance=0.0005, time_out=60):
 
 
 def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float, max_attemps: int = 5):
+    planner_type = "cartesian_interpolator"
     for _attempt in range(max_attemps):
         _cartesian_plan_handle = _client.get_cartesian_spline_plan(
             waypoints=waypoints, planning_frame='world',
             attempts=1,
-            _planner_type="cartesian_sequence_action", 
+            # _planner_type="cartesian_sequence_action", 
+            _planner_type = planner_type,
             allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
             max_acceleration_scaling_factor=0.1, num_planning_attempts=100
         )
 
-        print("\n\n\=====================================================")
-        print(_client.spline_client_._action_name.split("/")[-1])
-        print("=====================================================\n\n\n")
-
-        if _client.spline_client_._action_name.split("/")[-1] == "sequence_move_group":
+        if planner_type == "sequence_move_group":
             return
         
         _start_traj_point = _cartesian_plan_handle['trajectory'].joint_trajectory.points[0]
@@ -93,28 +93,25 @@ def main(_file_name):
     rclpy.init()
     kg =None; kb = None
     
-    kg =  MoveitInterface(node_name=f"client_kuka_green",     
-                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
-                                  remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
-                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-                                 )
-
-
-    # kb = MoveitInterface(node_name=f"client_kuka_blue",     
-    #                               move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
-    #                               remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
+    # kg =  MoveitInterface(node_name=f"client_kuka_green",     
+    #                               move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+    #                               remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
     #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
     #                              )
-    
-    # kg_cjs = kg.get_current_joint_state(); # print("kg_cjs: ", kg_cjs.position)
-    
-    # print(kg.get_current_robot_pose())
 
-    if kg: move_client_ptp(kg, KG_HOME)
-    if kb: move_client_ptp(kb, KB_HOME)
+
+    kb = MoveitInterface(node_name=f"client_kuka_blue",     
+                                  move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
     
-    # if kg: move_client_ptp(kg, KG_CHISEL_START)
-    # if kb: move_client_ptp(kb, KB_GRIPPER_START)
+    if kb: move_client_ptp(kb, KB_HOME)
+    if kg: move_client_ptp(kg, KG_HOME)
+    
+    if kb: move_client_ptp(kb, KB_GRIPPER_START)
+    if kg: move_client_ptp(kg, KG_CHISEL_START)
+    
 
     path = f'no-sync/edge_3/{_file_name}'
     data_loader = cfp.DataParser.from_quat_file(file_path = path, target_fps= 60, filter=False, window_size=30, polyorder=4)
@@ -145,7 +142,7 @@ def main(_file_name):
     _pose_waypoints_gripper = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_gripper)
     _pose_waypoints_gripper = _pose_waypoints_gripper.tolist()
 
-    CARTESIAN_MSE_THRESHOLD = 0.13
+    CARTESIAN_MSE_THRESHOLD = 1.5
     
     if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, 5)
     if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, 5)
@@ -210,10 +207,9 @@ def main(_file_name):
 if __name__ == '__main__':
     import sys
 
-    _file_name = sys.argv[1] if len(sys.argv) > 1 else "ft_009_edge_3_step_3.csv"
+    _file_name = sys.argv[1] if len(sys.argv) > 1 else "ft_010.csv"
 
     main(_file_name)
-
 
 
 
