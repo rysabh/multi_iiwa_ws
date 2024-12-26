@@ -1,11 +1,10 @@
-# diffusion_policy_cam
+
+# multi_iiwa_ws
 
 GNU GENERAL PUBLIC LICENSE
 Version 3, 29 June 2007
 
-Copyright (C) 2024 Rishabh Shukla
-
-RROS, Center for Advanced Manufacturing, USC
+Copyright (C) RROS, Center for Advanced Manufacturing, USC
 
 email: rysabh@gmail.com
 
@@ -21,4 +20,5 @@ GNU General Public License for more details.
 
 see <https://www.gnu.org/licenses/>.
 
-Written by Rishabh Shukla
+---
+Rishabh Shukla
