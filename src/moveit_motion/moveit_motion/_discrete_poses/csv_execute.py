@@ -139,7 +139,7 @@ def main(_robot_name, _file_name):
 if __name__ == '__main__':
     import sys
 
-    _robot_name = sys.argv[1] if len(sys.argv) > 1 else "kuka_green"
+    _robot_name = sys.argv[1] if len(sys.argv) > 1 else "kuka_blue"
     _file_name = sys.argv[2] if len(sys.argv) > 2 else "ft_010.csv"
 
     main(_robot_name, _file_name)

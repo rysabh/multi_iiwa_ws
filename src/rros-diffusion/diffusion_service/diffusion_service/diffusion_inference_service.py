@@ -25,8 +25,7 @@ from moveit_motion.diffusion_policy_cam.diffusion_jupyternotebook import live_in
 
 class DiffusionService(Node):
 
-    def __init__(self, rigid_bodies, action_bodies, obs_bodies, unlabbled_marker,
-                        labbled_markers, statistics, obs_horizon,
+    def __init__(self, statistics, obs_horizon,
                         pred_horizon, action_horizon, action_dim, 
                         noise_scheduler, num_diffusion_iters,
                         noise_pred_net, device):
@@ -36,11 +35,7 @@ class DiffusionService(Node):
                                        self.predicted_action_callback)
         
         # Initialize the attributes
-        self.rigid_bodies = rigid_bodies
-        self.action_bodies = action_bodies
-        self.obs_bodies = obs_bodies
-        self.unlabbled_marker = unlabbled_marker
-        self.labbled_markers = labbled_markers
+
         self.obs_horizon = obs_horizon
         self.pred_horizon = pred_horizon
         self.action_horizon = action_horizon
