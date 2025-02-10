@@ -123,14 +123,14 @@ class MoveitInterface(Node):
         
         return rsmod.sort_joint_state(_current_joint_state)
 
-    def get_fk(self, joint_state: JointState) -> Union[Pose, None]:
+    def get_fk(self, joint_state: JointState, header_frame_id:str = 'world') -> Union[Pose, None]:
         '''
         Pose for the real robot
         '''
         _robot_state = rosm.joint_2_robot_state(joint_state)
         _request = GetPositionFK.Request()
         # _request.header.frame_id = self.base_
-        _request.header.frame_id = 'world'
+        _request.header.frame_id = header_frame_id
         # _request.header.frame_id = 'lbr/link_0' #kuka_blue_link_0
         _request.header.stamp = self.get_clock().now().to_msg()
         # _request.fk_link_names.append('link_ee')
@@ -166,8 +166,8 @@ class MoveitInterface(Node):
     def get_ik(self, pose: Pose) -> Union[JointState, None]:
         request = GetPositionIK.Request()
         request.ik_request.group_name = self.move_group_name_
-        # request.ik_request.pose_stamped.header.frame_id = self.base_
-        request.ik_request.pose_stamped.header.frame_id = "world"
+        request.ik_request.pose_stamped.header.frame_id = self.base_
+        # request.ik_request.pose_stamped.header.frame_id = "world"
         request.ik_request.pose_stamped.header.stamp = self.get_clock().now().to_msg()
         request.ik_request.pose_stamped.pose = pose
         request.ik_request.avoid_collisions = True
@@ -280,20 +280,35 @@ class MoveitInterface(Node):
         self.get_logger().info("Trajectory accepted, moving the robot...")
         result_future = goal_handle.get_result_async()
 
-        # rclpy.spin_until_future_complete(self, result_future)
-        #Hantao's Code
-        # expect_duration = traj.joint_trajectory.points[-1].time_from_start
-        # expect_time = time.time() + 2 * expect_duration.sec 
-        # while not result_future.done() and time.time() < expect_time:
-        #     time.sleep(0.01)
+        rclpy.spin_until_future_complete(self, result_future)
 
-        # robot_interface_node.get_logger().info("Trajectory executed")
-        # if not result_future.done():
-        #     self.get_logger().info("!!! Trajectory NOT executed")
-        #     raise RuntimeError
-        
         self.get_logger().info("Trajectory executed")
         return
+    
+
+    # def execute_joint_traj(self, trajectory: RobotTrajectory):
+    #     self._set_execute_action_client()
+    #     goal = ExecuteTrajectory.Goal()
+    #     goal.trajectory = trajectory
+
+    #     goal_future = self.execute_client_.send_goal_async(goal)
+    #     goal_future.add_done_callback(self._on_goal_response)
+
+    # def _on_goal_response(self, future):
+    #     goal_handle = future.result()
+
+    #     if not goal_handle.accepted:
+    #         self.get_logger().error("Failed to execute trajectory")
+    #         return
+
+    #     self.get_logger().info("Trajectory accepted, moving the robot...")
+    #     result_future = goal_handle.get_result_async()
+    #     result_future.add_done_callback(self._on_result_response)
+
+    # def _on_result_response(self, future):
+    #     self.get_logger().info("Trajectory executed")
+
+
     #================== End of Moveit Execution ========================
 
     #===================================================================
@@ -356,9 +371,9 @@ class MoveitInterface(Node):
 
     
     def get_joint_ptp_plan(self, start_joint_state: JointState, target_joint_state: JointState, attempts: int = 100, **kwargs) -> Union[RobotTrajectory, None]:
-        if rsmod.MSE_joint_states(target_joint_state, start_joint_state) <= self.THRESHOLD_2_MOVE:
+        if rsmod.MSE_joint_states(target_joint_state, start_joint_state) <= 0.0000000005: # self.THRESHOLD_2_MOVE:
             self.get_logger().info("Start and End goals match. ** NOT ** moving anything and Passing Empty Trajectory")
-            return RobotTrajectory()
+            return {'trajectory' : RobotTrajectory()}
         
         ##Create target using target_joint_state
         _constraints = [rosm.joint_states_2_constraints(target_joint_state)]
@@ -466,7 +481,12 @@ cartesian-interpolator-specific parameters:
         }
 
         if _planner_type not in _CHOICES.keys():
-            self.get_logger().error(f"Invalid Planner Type: {_planner_type}.\nValid options are: {list(_CHOICES.keys())}")
+            selif _residuals_container[-1] < tol:
+            #     if flag_iteration_output:
+            #         logger.debug(
+            #             f"Converged at iteration {i}, residual: {_residuals_container[-1]}",
+            #         )
+            #     breakf.get_logger().error(f"Invalid Planner Type: {_planner_type}.\nValid options are: {list(_CHOICES.keys())}")
             exit(1)
             
         if not self.SPLINE_CLIENT_FLAG:

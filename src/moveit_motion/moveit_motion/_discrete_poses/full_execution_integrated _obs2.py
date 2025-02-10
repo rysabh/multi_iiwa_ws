@@ -25,15 +25,7 @@ from diffusion_interface.msg import Observation
 # from mocap_optitrack_interfaces.srv import GetMotionCaptureData
 from diffusion_service.diffusion_inference_client import DiffusionClient
 
-
-
-def move_client_ptp(_client, goal_list: list, tolerance=0.0005, time_out=60):
-    _cjs = _client.get_current_joint_state()
-    _goal_state = rosm.joint_list_2_state(goal_list, _cjs.name)
-
-    if rsmod.MSE_joint_states(_cjs, _goal_state) < tolerance:
-        print("Already at goal")
-        return
+parse_robot_data
     
     _goal_plan_handle = _client.get_joint_ptp_plan(_cjs, _goal_state, max_velocity_scaling_factor=0.1)
     

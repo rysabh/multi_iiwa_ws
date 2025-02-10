@@ -31,8 +31,6 @@ def joint_list_2_state(joint_positions: list, joint_names: list) -> JointState:
     joint_state.effort = [0.0] * len(joint_positions)
     return joint_state
 
-
-
 def joint_state_2_list(joint_state: JointState, **kwargs) -> list:
     """
     def joint_state_2_list(joint_state: JointState) -> list: print -> enabled
@@ -58,10 +56,13 @@ def joint_state_2_list(joint_state: JointState, **kwargs) -> list:
         print(f'initial_positions:')
         for joint_name, joint_position in sorted_joints:
             print(f'  {joint_name}: {joint_position:.3f}')
+
+        _joint_list = []
+        for joint_name, joint_position in sorted_joints:
+            _joint_list.append(round(joint_position,3))
+        print(f'joint_list: {_joint_list}')
     
     return sorted_positions
-
-
 
 
 def joint_2_robot_state(joint_state: JointState) -> RobotState:
@@ -200,7 +201,7 @@ def joint_points_2_trajectory(points: Union[np.ndarray, list],
     trajectory_msg.joint_trajectory.joint_names = joint_names
 
     # Check if times are provided, if not generate them
-    if not times:
+    if times is None or len(times) == 0:
         sampling_rate = float(kwargs.get("sampling_rate", 1))
         times = [i / sampling_rate for i in range(len(points))]
 
@@ -210,7 +211,7 @@ def joint_points_2_trajectory(points: Union[np.ndarray, list],
         trajectory_point = JointTrajectoryPoint()
         
         # Assign joint positions
-        trajectory_point.positions = list(points[i])
+        trajectory_point.positions = [float(pos) for pos in points[i]]
 
         # Set the time_from_start
         trajectory_point.time_from_start = Duration(sec=int(times[i]), nanosec=int((times[i] % 1) * 1e9))
