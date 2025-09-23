@@ -40,11 +40,14 @@
         <!-- <origin xyz="0.5654642 -0.4159573 -0.2717773" rpy="0.0046846 -0.0042898 0.7420555"/>  -->
 
         <!-- PlayBack -->
-        <origin xyz="0.5754642 -0.4159573 -0.2417773" rpy="0.0046846 -0.0042898 0.7420555"/> 
+        <!-- <origin xyz="0.5754642 -0.4159573 -0.2417773" rpy="0.0046846 -0.0042898 0.7420555"/>  -->
 
         <!-- Sam 0.5cm forward in x -->
         <!-- <origin xyz="0.5704642 -0.4159573 -0.2667773" rpy="0.0046846 -0.0042898 0.7420555"/>  -->
         <!-- <origin xyz="0 0 0" rpy="0 0 0 "/> -->
+
+        <!-- original -->
+        <origin xyz="0.5754642 -0.4159573 -0.2417773" rpy="0.0 0.0 0.0"/> 
     </joint>
 
     <!-- iiwa -->
@@ -88,8 +91,9 @@
         <child link="link_tcp"/>
 
         <!-- RS_Original -->
-        <origin rpy="0 0 0" xyz="0.00031 0.00073 0.17152"/>
-
+        <!-- <origin rpy="0 0 0" xyz="0.00031 0.00073 0.17152"/> --> <!-- original value used for robotiq gripper on chiseling project-->
+        <origin rpy="0 0 0" xyz="0.0688 -0.001 0.3506"/> <!-- UMI gripper data-->
+        
         <!-- Sam 1cm backward in z -->
         <!-- <origin rpy="0 0 0" xyz="0.00031 0.00073 0.16152"/> -->
 

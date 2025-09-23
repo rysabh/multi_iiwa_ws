@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'marker_broadcaster = visualizer.marker_broadcaster:main',
+            'fk = visualizer.fk:main',
         ],
     },
 )

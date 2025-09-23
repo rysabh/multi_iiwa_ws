@@ -1,4 +1,5 @@
 #NOT WORKING
+from __future__ import annotations
 import os
 import rclpy
 from rclpy.action import ActionClient
@@ -20,11 +21,32 @@ from moveit_motion.ros_submodules.RobotInterface import RobotInterface
 import moveit_motion.ros_submodules.RS_submodules as rsmod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-KG_HOME = [-0.614, 0.634, 2.302, -1.634, 1.526, -1.549, -1.897] # og csv_execute_author.py
-KB_HOME = [-0.590, -1.136, -2.251, 1.250, -1.929, 0.964, 0.494] # og csv_execute_author.py
 
-KG_CHISEL_START = [-0.908, 1.000, 2.218, -1.330, 1.377, -1.391, -2.146]
-KB_GRIPPER_START = [-0.548, -0.289, -1.942, 1.609, -1.596, 1.258, -0.877]
+
+import csv
+from pathlib import Path
+import numpy as np
+
+_HEADER = ["X", "Y", "Z", "x", "y", "z", "w"]
+def read_waypoints_csv(path):
+    """
+    Read a CSV file written by :func:`export_waypoints_csv`.
+
+    Returns
+    -------
+    np.ndarray, shape(N_pts, 7)
+    """
+    path = Path(path)
+    with path.open(newline="") as fh:
+        reader = csv.reader(fh)
+        header = next(reader)
+        if [h.strip() for h in header] != _HEADER:
+            raise ValueError(
+                f"Unexpected header {header} – expected {_HEADER!r}"
+            )
+        data = [[float(x) for x in row] for row in reader]
+
+    return np.asarray(data, dtype=float)
 
 
 
@@ -64,8 +86,8 @@ def plan_client_cartesian(_client, waypoints: list, max_motion_threshold= float,
             attempts=1,
             # _planner_type="cartesian_sequence_action", 
             _planner_type = planner_type,
-            allowed_planning_time=10.0, max_velocity_scaling_factor=0.1,
-            max_acceleration_scaling_factor=0.1, num_planning_attempts=100
+            allowed_planning_time=10.0, max_velocity_scaling_factor=0.01,
+            max_acceleration_scaling_factor=0.01, num_planning_attempts=100
         )
 
         if planner_type == "sequence_move_group":
@@ -89,7 +111,7 @@ def get_mse_planend_current(_client, plan_handle):
     return rsmod.MSE_joint_states(_current_joint_state, _target_joint_state)
 
 
-def main(_file_name):
+def main():
     rclpy.init()
     kg =None; kb = None
     
@@ -100,102 +122,98 @@ def main(_file_name):
                                  )
 
 
-    # kb = MoveitInterface(node_name=f"client_kuka_blue",     
-    #                               move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
-    #                               remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
-    #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-    #                              )
-    
-    if kb: move_client_ptp(kb, KB_HOME)
-    if kg: move_client_ptp(kg, KG_HOME)
-    
-    if kb: move_client_ptp(kb, KB_GRIPPER_START)
-    if kg: move_client_ptp(kg, KG_CHISEL_START)
+
+
+    file_path = 'zigzag_path.csv'
+    #while not input is to quit
+
+    # Define the maximum motion threshold for the Cartesian planner
+    CARTESIAN_MSE_THRESHOLD = 1.5
     
 
-    path = f'no-sync/edge_3/{_file_name}'
-    data_loader = cfp.DataParser.from_quat_file(file_path = path, target_fps= 60, filter=False, window_size=30, polyorder=4)
-    #while not input is to quit
+    
+    _data_chisel = read_waypoints_csv(file_path)
+    _chisel_start_point = _data_chisel[0]
+    _chisel_start_pose = rosm.TxyzQxyzw_2_Pose(_chisel_start_point)
+    # lift chisel in z +10 cm
+    _chisel_home_point = copy.deepcopy(_chisel_start_point)
+    _chisel_home_point[2] += 0.1  # lift chisel in z +10 cm
+    _chisel_home_pose = rosm.TxyzQxyzw_2_Pose(_chisel_home_point)
+
+    if kg: kg_plan_handle_home = plan_client_cartesian(kg, [_chisel_home_pose], CARTESIAN_MSE_THRESHOLD, 5)
+
+    # # Execute both trajectories simultaneously
+    # EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
+        
+    # if EXECUTE_FLAG == "y":
+    #     if kg: kg.execute_joint_traj(kg_plan_handle_home['trajectory'])
+
+    #     _tick = time.time()
+    #     execution_finished = False
+    #     while not execution_finished:
+    #         mse_kg = 0
+    #         if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle_home)
+
+    #         if (mse_kg < 0.0002): execution_finished = True
+            
+    #         _tock = time.time()
+    #         if _tock - _tick > 60: print("Timeout: Execution not finished"); break
+    #         time.sleep(0.01)
+
+    
+    # if kg: kg_plan_handle_start = plan_client_cartesian(kg, [_chisel_start_pose], CARTESIAN_MSE_THRESHOLD, 5)
+    #     # Execute both trajectories simultaneously
+    # EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
+        
+    # if EXECUTE_FLAG == "y":
+    #     if kg: kg.execute_joint_traj(kg_plan_handle_start['trajectory'])
+
+    #     _tick = time.time()
+    #     execution_finished = False
+    #     while not execution_finished:
+    #         mse_kg = 0
+    #         if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle_start)
+
+    #         if (mse_kg < 0.0002): execution_finished = True
+            
+    #         _tock = time.time()
+    #         if _tock - _tick > 60: print("Timeout: Execution not finished"); break
+    #         time.sleep(0.01)
+
     FRACTION_TO_RUN = 1.0
     SLOWNESS_FACTOR = 1.0
 
-    
-    _data_chisel = data_loader.get_rigid_TxyzQwxyz()['chisel']
-    _data_gripper = data_loader.get_rigid_TxyzQwxyz()['gripper']
-    
     # define int(FRACTION_TO_RUN*len(_data_chisel)
     index_ = int(FRACTION_TO_RUN*len(_data_chisel))
 
     _data_points_chisel = _data_chisel[:index_]
-    _data_points_gripper = _data_gripper[:index_]
-    _data_times = data_loader.get_time()[:index_]
+
 
     print(f"Number of data points for chisel: {len(_data_points_chisel)}")
-    print(f"Number of data points for gripper: {len(_data_points_gripper)}")
-    print(f"Number of data points for time: {len(_data_times)}")
 
-    _data_points_chisel = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_chisel)
     _pose_waypoints_chisel = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_chisel)
     _pose_waypoints_chisel = _pose_waypoints_chisel.tolist()
 
-    _data_points_gripper = np.apply_along_axis(rosm.robodk_2_ros, 1, _data_points_gripper)
-    _pose_waypoints_gripper = np.apply_along_axis(rosm.TxyzQxyzw_2_Pose, 1, _data_points_gripper)
-    _pose_waypoints_gripper = _pose_waypoints_gripper.tolist()
 
-    CARTESIAN_MSE_THRESHOLD = 1.5
+    
     
     if kg: kg_plan_handle = plan_client_cartesian(kg, _pose_waypoints_chisel, CARTESIAN_MSE_THRESHOLD, 5)
-    if kb: kb_plan_handle = plan_client_cartesian(kb, _pose_waypoints_gripper, CARTESIAN_MSE_THRESHOLD, 5)
+
     
-    
-    # Proceed with trajectory timing correction
-    if kg:
-        ADD_TIMES_FLAG_CHISEL = len(_data_times) == len(_data_points_chisel)
-        if len(_data_times) > 0 and not ADD_TIMES_FLAG_CHISEL:
-            kg.get_logger().error("Invalid time_stamps provided")
-            return None
-
-        if ADD_TIMES_FLAG_CHISEL and kg_plan_handle['stop_flag']:
-            _completed_time_steps = int(len(_data_times) * kg_plan_handle['fraction'])
-            kg_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kg_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
-
-    if kb:
-        ADD_TIMES_FLAG_GRIPPER = len(_data_times) == len(_data_points_gripper)
-        if len(_data_times) > 0 and not ADD_TIMES_FLAG_GRIPPER:
-            kb.get_logger().error("Invalid time_stamps provided")
-            return None
-
-        if ADD_TIMES_FLAG_GRIPPER and kb_plan_handle['stop_flag']:
-            _completed_time_steps = int(len(_data_times) * kb_plan_handle['fraction'])
-            kb_plan_handle['trajectory'] = rosm.interpolate_trajectory_timestamps(kb_plan_handle['trajectory'], _data_times[:_completed_time_steps], scaling_factor=SLOWNESS_FACTOR)
-
-    # if kb:
-    #     # get ptp plan for gripper where goal is waypoint 0
-    #     _gcjs = kb.get_current_joint_state()
-    #     _gripper_goal = _pose_waypoints_gripper[0]
-    #     _gripper_goal_ik = kb.get_best_ik(_gcjs, _gripper_goal, attempts=100)
-        
-    #     _temp_plan = kb.get_joint_ptp_plan(_gcjs, _gripper_goal_ik, max_velocity_scaling_factor=0.01)
-    #     #execute the plan if yes
-    #     if input(f"Execute {kb.move_group_name_} plan? (y/n): ").strip().lower() == 'y':
-    #         kb.execute_joint_traj(_temp_plan['trajectory'])
-        
-        
 
     # Execute both trajectories simultaneously
     EXECUTE_FLAG = input("Execute trajectory? (y/n): ").strip().lower()
         
     if EXECUTE_FLAG == "y":
         if kg: kg.execute_joint_traj(kg_plan_handle['trajectory'])
-        if kb: kb.execute_joint_traj(kb_plan_handle['trajectory'])
+
         _tick = time.time()
         execution_finished = False
         while not execution_finished:
             mse_kg = 0
             if kg: mse_kg = get_mse_planend_current(kg, kg_plan_handle)
-            mse_kb = 0
-            if kb: mse_kb = get_mse_planend_current(kb, kb_plan_handle)
-            if (mse_kg < 0.0002) and (mse_kb < 0.0002): execution_finished = True
+
+            if (mse_kg < 0.0002): execution_finished = True
             
             _tock = time.time()
             if _tock - _tick > 60: print("Timeout: Execution not finished"); break
@@ -207,21 +225,4 @@ def main(_file_name):
 if __name__ == '__main__':
     import sys
 
-    _file_name = sys.argv[1] if len(sys.argv) > 1 else "ft_010.csv"
-
-    main(_file_name)
-
-
-
-    '''dump
-            # with ThreadPoolExecutor() as executor:
-            #     future_exec_kg = executor.submit(kg.execute_joint_traj, kg_plan_handle['trajectory'])
-            #     future_exec_kb = executor.submit(kb.execute_joint_traj, kb_plan_handle['trajectory'])
-                
-            #     # Ensure both have started simultaneously
-            #     future_exec_kg.result()
-            #     future_exec_kb.result()
-
-
-
-    '''
+    main()

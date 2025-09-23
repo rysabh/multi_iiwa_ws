@@ -12,8 +12,7 @@ def generate_launch_description():
         'config',
         'natnetclient.yaml'
     )
-    
-    
+     
     natnet_client = Node(
         package='mocap_optitrack_client',
         executable='mocap_optitrack_client',
@@ -75,12 +74,12 @@ def generate_launch_description():
         output = 'screen',
     )
     
-    # ld.add_action(mocap_node)
+    ld.add_action(mocap_node)
     # ld.add_action(diffusion_node)
-    # ld.add_action(natnet_client)
+    ld.add_action(natnet_client)
     ld.add_action(ati_node)
     ld.add_action(ati_sensor_node)
-    ld.add_action(arduino_node)
+    # ld.add_action(arduino_node)
 
     return ld
     
