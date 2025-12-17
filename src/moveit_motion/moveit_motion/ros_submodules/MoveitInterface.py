@@ -1,3 +1,29 @@
+# diffusion_policy_cam
+
+# GNU GENERAL PUBLIC LICENSE
+# Version 3, 29 June 2007
+
+# Copyright (C) 2024 Rishabh Shukla
+
+# RROS, Center for Advanced Manufacturing, USC
+
+# email: rysabh@gmail.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# see <https://www.gnu.org/licenses/>.
+
+# Written by Rishabh Shukla
+
+
 import os
 import rclpy
 from rclpy.action import ActionClient
@@ -49,7 +75,33 @@ import moveit_motion.ros_submodules.ros_math as rosm
 
 import os
 
+
+
+
+
 class MoveitInterface(Node):
+# GNU GENERAL PUBLIC LICENSE
+# Version 3, 29 June 2007
+
+# Copyright (C) 2024 Rishabh Shukla
+
+# RROS, Center for Advanced Manufacturing, USC
+
+# email: rysabh@gmail.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# see <https://www.gnu.org/licenses/>.
+
+# Written by Rishabh Shukla
     '''
     MoveitInterface(
         node_name="client_blue",      # lbr / kuka_blue -> required for FK service

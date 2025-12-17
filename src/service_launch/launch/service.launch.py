@@ -7,20 +7,6 @@ def generate_launch_description():
     log_level = "warn"
     ld = LaunchDescription()
     
-    config = os.path.join(
-        get_package_share_directory('mocap_optitrack_client'),
-        'config',
-        'natnetclient.yaml'
-    )
-     
-    natnet_client = Node(
-        package='mocap_optitrack_client',
-        executable='mocap_optitrack_client',
-        name='natnet_client',
-        parameters = [config],
-        arguments=['--ros-args', '--log-level', log_level]
-    )
-
     # Mocap Node
     mocap_node = Node(
         package='mocap_service',
@@ -53,6 +39,24 @@ def generate_launch_description():
     format_take_number = f"{take_number:03}"
     print(f"\n\n======================\n\nTake number: {format_take_number}\n\n======================\n\n")
     ft_data_file = os.path.join(take_dir, f"ft_{format_take_number}.csv")
+
+    config = os.path.join(
+        get_package_share_directory('mocap_optitrack_client'),
+        'config',
+        'natnetclient.yaml'
+    )
+
+    natnet_client = Node(
+        package='mocap_optitrack_client',
+        executable='mocap_optitrack_client',
+        name='natnet_client',
+        parameters=[
+            config,
+            {'record': True, 'take_name': f"ft_{format_take_number}"},
+        ],
+        arguments=['--ros-args', '--log-level', log_level]
+    )
+
     sensor_parameters = [
         {'sensor_ip': '192.168.10.100'},  # Replace with your sensor IP
         {'output_file': ft_data_file},  # Dynamically generated file name
@@ -74,11 +78,14 @@ def generate_launch_description():
         output = 'screen',
     )
     
-    ld.add_action(mocap_node)
     # ld.add_action(diffusion_node)
+    
+    ld.add_action(mocap_node)
     ld.add_action(natnet_client)
-    ld.add_action(ati_node)
-    ld.add_action(ati_sensor_node)
+    
+    # ld.add_action(ati_node)
+    # ld.add_action(ati_sensor_node)
+    
     # ld.add_action(arduino_node)
 
     return ld
