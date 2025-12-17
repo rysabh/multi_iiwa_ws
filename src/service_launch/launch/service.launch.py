@@ -7,7 +7,7 @@ def generate_launch_description():
     log_level = "warn"
     ld = LaunchDescription()
     
-    # Mocap Node
+    # Mocap Node -->  redundant with natnet client
     mocap_node = Node(
         package='mocap_service',
         executable='mocap_service_subscriber',
@@ -19,7 +19,7 @@ def generate_launch_description():
         executable='diffusion_inference_service',
         name='diffusion_inference_service',
     )
-    # ForceTorque Node
+    # ForceTorque Node --> redundant with ati_wrench_publisher
     ati_node = Node(
         package='ati_sensor_service',
         executable='ati_service',
@@ -80,11 +80,14 @@ def generate_launch_description():
     
     # ld.add_action(diffusion_node)
     
-    ld.add_action(mocap_node)
-    ld.add_action(natnet_client)
     
-    # ld.add_action(ati_node)
-    # ld.add_action(ati_sensor_node)
+    ld.add_action(natnet_client) # orginal service
+    ld.add_action(mocap_node) # redundant service
+    
+    ld.add_action(ati_sensor_node) # original service
+    ld.add_action(ati_node) # redundant service
+    
+    
     
     # ld.add_action(arduino_node)
 
