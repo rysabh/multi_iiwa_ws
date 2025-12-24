@@ -23,18 +23,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 def main():
     rclpy.init()
     kg =None; kb = None    
-    # kg = MoveitInterface(node_name=f"client_real_kuka_green",     
-    #                               move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
-    #                               remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
-    #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-    #                              )
+    kg = MoveitInterface(node_name=f"client_real_kuka_green",     
+                                  move_group_name="kuka_green", # arm # kuka_g/b..   #-> required for motion planning
+                                  remapping_name="kuka_green",           # lbr # ""          #-> required for service and action remapping
+                                  prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+                                 )
 
 
-    kb = MoveitInterface(node_name=f"client_real_kuka_blue",     
-                                    move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
-                                    remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
-                                    prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
-                                    )
+    # kb = MoveitInterface(node_name=f"client_real_kuka_blue",     
+    #                                 move_group_name="kuka_blue", # arm # kuka_g/b..   #-> required for motion planning
+    #                                 remapping_name="kuka_blue",           # lbr # ""          #-> required for service and action remapping
+    #                                 prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+    #                                 )
 
 
     if kb:

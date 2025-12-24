@@ -20,19 +20,8 @@ import pandas as pd
 import re
 
 
-KB_HOME = [1.464, 1.273, -1.529, -1.352, 1.068, 0.673, 0.28]
+KB_HOME = [2.3038370893638067, 1.286546810606163, 0.9388634138002693, 1.4017270163924056, 0.3789394657776249, -1.1635984302260418, -1.5263421627553195]
 
-# def get_robot_next_actions(step_size=8):
-#     # Zip the data_chisel and data_gripper so we can iterate over them simultaneously
-#     for i in range(0, len(_data_chisel), step_size):
-#         data_chisel_chunk = _data_chisel[i:i+step_size]
-#         data_gripper_chunk = _data_gripper[i:i+step_size]
-        
-#         # Yield the chunks for both chisel and gripper
-#         yield {
-#             'data_chisel': data_chisel_chunk,
-#             'data_gripper': data_gripper_chunk
-#         }
 
 def move_client_ptp(_client, goal_list: list, tolerance=0.00005, time_out=60):
     _cjs = _client.get_current_joint_state()
@@ -142,65 +131,6 @@ def get_mse_planend_current(_client, _trajectory):
     return rsmod.MSE_joint_states(_current_joint_state, _target_joint_state)
     
 
-
-# def parse_robot_data(file_path):
-#     """
-#     Parses the robot data file, renames joint columns to J1-J7,
-#     and extracts force and torque values.
-
-#     Parameters:
-#         file_path (str): Path to the data file.
-
-#     Returns:
-#         pd.DataFrame: A DataFrame containing renamed joint values and force/torque data.
-#     """
-#     # Step 1: Read the header line starting with '%'
-#     with open(file_path, 'r') as file:
-#         for line in file:
-#             if line.startswith('%'):
-#                 header = line.strip().lstrip('%').strip().split()
-#                 break
-#         else:
-#             raise ValueError("No header line starting with '%' found in the file.")
-    
-#     # Step 2: Load the data into a DataFrame
-#     df = pd.read_csv(
-#         file_path,
-#         delim_whitespace=True,    # Assuming the data is space-separated
-#         comment='%',              # Skip any lines starting with '%'
-#         names=header,             # Use the extracted header
-#         skiprows=1                # Skip the header line
-#     )
-    
-#     # Step 3: Identify and rename joint columns
-#     joint_pattern = re.compile(r'axisQMsr_LBR_iiwa_7_R800_1\[(\d+)\]')
-#     joint_columns = [col for col in header if joint_pattern.match(col)]
-    
-#     if len(joint_columns) != 7:
-#         raise ValueError(f"Expected 7 joint columns, found {len(joint_columns)}.")
-    
-#     # Sort joint columns based on their index and rename them to J1-J7
-#     joint_columns_sorted = sorted(
-#         joint_columns,
-#         key=lambda x: int(joint_pattern.match(x).group(1))
-#     )
-#     joint_rename_map = {col: f'J{idx+1}' for idx, col in enumerate(joint_columns_sorted)}
-#     df.rename(columns=joint_rename_map, inplace=True)
-    
-#     # Step 4: Extract force and torque columns
-#     force_columns = ['cartForce1_X', 'cartForce1_Y', 'cartForce1_Z']
-#     torque_columns = ['cartTorque1_TauX', 'cartTorque1_TauY', 'cartTorque1_TauZ']
-    
-#     # Verify that the required columns exist
-#     missing_columns = [col for col in force_columns + torque_columns if col not in df.columns]
-#     if missing_columns:
-#         raise ValueError(f"The following required columns are missing in the data: {missing_columns}")
-    
-#     # Step 5: Select the renamed joint columns along with force and torque data
-#     selected_columns = list(joint_rename_map.values()) #+ force_columns + torque_columns
-#     df_selected = df[selected_columns]
-    
-#     return df_selected
 
 
 import pandas as pd
@@ -324,7 +254,7 @@ def main_simple(robot_data):
     
     # action_generator = get_robot_next_actions()
     cjs = kb.get_current_joint_state()
-    # if kb: move_client_ptp(kb, KB_HOME)
+    if kb: move_client_ptp(kb, KB_HOME)
 
 
 
@@ -338,7 +268,7 @@ def main_simple(robot_data):
 
     move_client_ptp(kb, fjs)
     
-    # input("Press Enter to continue...")
+    input("Press Enter to continue...")
 
     # ##  ---------- method 1 ------------
 
@@ -359,36 +289,6 @@ def main_simple(robot_data):
 
     kb.execute_joint_traj(joint_trajectory_msg)
 
-    ##  ---------- method 2 ------------
-    # for joint_values in joint_values_rad[1:]:
-    #     move_client_ptp(kb, joint_values)
-
-
-    # ##  ---------- method 3 ------------
-
-
-    # for njv in joint_values_rad[1:]:
-    #     # cjs = kb.get_current_joint_state()
-    #     njs = rosm.joint_list_2_state(njv, cjs.name)
-    #     plan_2_njs = kb.get_joint_ptp_plan(
-    #         start_joint_state=cjs,
-    #         target_joint_state=njs,
-    #     )
-    #     cjs = copy.deepcopy(njs)
-    #     # print(njv)
-    #     kb.execute_joint_traj(plan_2_njs['trajectory'])
-
-    #  ---------- method 4 ------------
-
-    
-    # for njv in joint_values_rad[1:]:
-    #     cjv = kb.get_current_joint_state().position
-    #     jtm = rosm.joint_points_2_trajectory([cjv, njv], [0, 0.05], 'world', cjs.name)
-    #     cjv = njv
-    #     kb.execute_joint_traj(jtm)
-    #     time.sleep(0.01)
-
-    ''''''
     rclpy.shutdown()
 
 
@@ -396,30 +296,48 @@ def main_simple(robot_data):
 # Example Usage
 if __name__ == "__main__":
     import sys
+    from pathlib import Path
+    from datetime import datetime
 
-    argument = None
+    def latest_log_file(directory: Path) -> Path:
+        logs = list(directory.glob("*.log"))
+        if not logs:
+            raise FileNotFoundError(f"No .log files found in {directory}")
+        # Prefer filename order (your logs are YYYY-MM-DD_HH-MM-SS.log).
+        # KUKA controller clock can be wrong (mtime resets), so don't rely on mtime here.
+        return max(logs, key=lambda p: p.name)
 
-    if len(sys.argv) > 1:
-        argument = sys.argv[1]
-    # Replace 'data.txt' with the path to your actual data file
+    data_directory = Path("/mnt/rec_kuka_blue")
 
+    # Usage:
+    #   - no args: use latest .log in /mnt/rec_kuka_blue
+    #   - "latest": same as above
+    #   - "<full/path/to/file.log>": use that file
+    arg = sys.argv[1].strip() if len(sys.argv) > 1 else "latest"
+    if arg == "" or arg.lower() == "latest":
+        data_file = latest_log_file(data_directory)
+    else:
+        data_file = Path(arg).expanduser()
+        if not data_file.is_absolute():
+            raise ValueError("Pass a full path, or 'latest'.")
+        if not data_file.exists():
+            raise FileNotFoundError(f"Log file not found: {data_file}")
 
-
-
-    # data_file = 'no-sync/replay_traj_data/traj_178/waypoints.csv'
-    # data_file = '/mnt/data/rec5/2013-01-15_02-51-47.log' #demo 1
-    data_file = '/mnt/rec_kuka_blue/2025-12-23_11-58-16.log' #demo 2
-
-
-
-    # if argument == 'exit':
-    #     data_file = '/mnt/data/2013-01-02_19-42-31.log'
+    mtime = datetime.fromtimestamp(data_file.stat().st_mtime).strftime("%Y-%m-%d %I:%M:%S %p")
+    print(f"""
+        --------------------------------------
+        -- Replaying log:
+        -- {data_file}
+        --------------------------------------
+        """
+        )
+    # print(f"Replaying log: {data_file} (mtime: {mtime})")
 
     
     START_INDEX = 0  # Skip the first few rows of the data file
     
     try:
-        robot_data = parse_robot_data(data_file)
+        robot_data = parse_robot_data(str(data_file))
         # robot_data = read_joint_states_from_csv(data_file)[0]; robot_data = pd.DataFrame(robot_data, columns=['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7'])
         
         robot_data = robot_data[START_INDEX:]

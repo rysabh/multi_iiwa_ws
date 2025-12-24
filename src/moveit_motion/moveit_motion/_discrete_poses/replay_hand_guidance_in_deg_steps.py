@@ -322,6 +322,11 @@ def main_simple(robot_data):
                                   prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
                                  )
     
+    # kb = MoveitInterface(node_name=f"client_real_kuka_blue",     
+    #                               move_group_name="arm", # arm # kuka_g/b..   #-> required for motion planning
+    #                               remapping_name="lbr",           # lbr # ""          #-> required for service and action remapping
+    #                               prefix="",          # ""  # kuka_g/b..   #-> required for filtering joint states and links
+    #                              )
     # convert this from degrees to radians
 
     joint_columns = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7']
@@ -415,9 +420,13 @@ if __name__ == "__main__":
     # Replace 'data.txt' with the path to your actual data file
 
 
-    data_file = '/mnt/data/rec4/2013-01-15_01-40-32.log'; STEP_SIZE = 60
+    # data_file = '/mnt/data/rec4/2013-01-15_01-40-32.log'; STEP_SIZE = 60
     # data_file = '/mnt/data/rec4/2013-01-15_01-39-20.log'; STEP_SIZE = 30
     # data_file = '/mnt/data/rec4/2013-01-15_01-38-21.log'; STEP_SIZE = 30
+    
+    
+    data_file = '/mnt/kuka_datarec_blue/Roboter/log/DataRecorder/2013-01-12_23-18-48.log'; STEP_SIZE = 300
+
 
 
     # if argument == 'exit':

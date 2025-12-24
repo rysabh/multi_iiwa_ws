@@ -1,3 +1,7 @@
+"""
+DEPRECATED: Use `record_take.launch.py` (configurable via `config/sensors.yaml`).
+"""
+
 from launch import LaunchDescription
 from launch_ros.actions import Node
 import os
@@ -7,24 +11,16 @@ def generate_launch_description():
     log_level = "warn"
     ld = LaunchDescription()
     
-    # Mocap Node -->  redundant with natnet client
-    mocap_node = Node(
-        package='mocap_service',
-        executable='mocap_service_subscriber',
-        name='mocap_service_subscriber',
-    )
+    # The NatNet client node already publishes mocap data and now also serves
+    # `get_mocap_data`, so we do not launch a second "subscriber -> service" node.
     # Diffusion Inference Service
     diffusion_node = Node(
         package='diffusion_service',
         executable='diffusion_inference_service',
         name='diffusion_inference_service',
     )
-    # ForceTorque Node --> redundant with ati_wrench_publisher
-    ati_node = Node(
-        package='ati_sensor_service',
-        executable='ati_service',
-        name='ati_service',
-    )
+    # The ATI node publishes `force_torque` and serves `get_force_torque`, so we
+    # do not launch a second publisher.
     
     take_dir = "/home/cam/Downloads/GitHub/multi_iiwa_ws/src/service_launch/takes"
     take_number_file = os.path.join(take_dir, "take_number.txt")
@@ -57,19 +53,16 @@ def generate_launch_description():
         arguments=['--ros-args', '--log-level', log_level]
     )
 
-    sensor_parameters = [
-        {'sensor_ip': '192.168.10.100'},  # Replace with your sensor IP
-        {'output_file': ft_data_file},  # Dynamically generated file name
-        {'sample_rate': '240'}  # Replace with your desired rate
-    ]
-    
     ati_sensor_node = Node(
-            package='data_collection',
-            executable='ati_wrench_publisher',
-            name='ati_wrench_publisher',
-            output='screen',
-            parameters=sensor_parameters
-        )
+        package='ati_sensor_service',
+        executable='ati_service',
+        name='ati_sensor',
+        output='screen',
+        parameters=[
+            {'sensor_ip': '192.168.10.100'},
+            {'sample_rate': 240.0},
+        ],
+    )
     
     arduino_node = Node(
         package='arduino_signal',
@@ -82,10 +75,7 @@ def generate_launch_description():
     
     
     ld.add_action(natnet_client) # orginal service
-    ld.add_action(mocap_node) # redundant service
-    
     ld.add_action(ati_sensor_node) # original service
-    ld.add_action(ati_node) # redundant service
     
     
     

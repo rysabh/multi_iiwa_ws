@@ -1,0 +1,100 @@
+mocap:
+  enabled: false
+  # This config file lives in `mocap_optitrack_client/config/`.
+  natnet_config_file: natnetclient.yaml
+  # If true, the NatNet client will start/stop recording inside Motive.
+  record_in_motive: true
+
+ati:
+  enabled: true
+  sensor_ip: "192.168.10.100"
+  sample_rate_hz: 240.0
+  frame_id: "ati_sensor"
+
+realsense:
+  enabled: false
+  common:
+    enable_color: true
+    enable_depth: false
+    align_depth.enable: false
+    rgb_camera.color_profile: "640,480,30"
+    depth_module.depth_profile: "640,480,30"
+    pointcloud.enable: false
+    publish_tf: false
+  cameras:
+    - name: "camera_1"
+      enabled: true
+      serial_no: "128422270311"
+      params:
+        rgb_camera.color_profile: "640,480,30"
+    - name: "camera_2"
+      enabled: true
+      serial_no: "038522062901"
+      params:
+        rgb_camera.color_profile: "320,240,30"
+    - name: "camera_3"
+      enabled: true
+      serial_no: "932122060300"
+      params:
+        rgb_camera.color_profile: "320,240,30"
+    - name: "camera_4"
+      enabled: true
+      serial_no: "925322061835"
+      params:
+        rgb_camera.color_profile: "320,240,30"
+
+recorder:
+  enabled: true
+  record_hz: 30.0 #  is the final output rate you want.
+  record_enabled: false # controls whether saving starts immediately.
+  max_sync_slop_ms: 100.0 # is the timing tolerance for sync.
+
+screen_record:
+  enabled: true
+  backend: auto # auto|ffmpeg_x11|wf_recorder
+  monitor: "HDMI-0" # X11: monitor name from `xrandr --listmonitors`
+  geometry: "" # optional override: WIDTHxHEIGHT+X+Y (or WIDTHxHEIGHT+X,Y)
+  display: "" # X11: empty = use $DISPLAY
+  wayland_output: "" # Wayland: output name (from `wf-recorder --list-outputs`)
+
+  # Quality presets: uncomment ONE block, keep the others commented.
+  # Tip: in VSCode, select a block and use "Toggle Line Comment".
+  #
+  # --- BEST (sharp UI text; biggest files; more CPU) ---
+  # codec: libx264
+  # pix_fmt: yuv444p
+  # profile: high444
+  # tune: stillimage
+  # preset: slow
+  # crf: 14
+  # bitrate_kbps: 0
+  #
+  # --- MEDIUM (good default; compatible) ---
+  codec: libx264
+  pix_fmt: yuv420p
+  profile: high
+  tune: ""
+  preset: veryfast
+  crf: 18
+  bitrate_kbps: 0
+  #
+  # --- FAST (lowest CPU; lower quality) ---
+  # codec: libx264
+  # pix_fmt: yuv420p
+  # profile: high
+  # tune: ""
+  # preset: ultrafast
+  # crf: 24
+  # bitrate_kbps: 0
+  #
+  # Common settings (apply to all presets):
+  # If the video is choppy, first try lowering FPS to 30 and using a faster preset.
+  fps: 30
+  x264_params: "" # optional extra, e.g. "keyint=60:scenecut=0"
+  thread_queue_size: 1024
+  rtbufsize: "512M"
+  vsync: "cfr"
+
+paths:
+  # This is where each take directory (and take_number.txt) will be created.
+  take_root_dir: "/home/cam/Downloads/GitHub/multi_iiwa_ws/no-sync/RCIM/takes"

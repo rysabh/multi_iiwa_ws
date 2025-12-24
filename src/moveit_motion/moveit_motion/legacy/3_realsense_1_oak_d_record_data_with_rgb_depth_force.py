@@ -1,3 +1,11 @@
+"""
+LEGACY SCRIPT (3 RealSense + 1 Oak-D).
+
+This file is kept for historical reference. The current, ROS-native recording
+pipeline is launched via `ros2 launch service_launch record_take.launch.py` and
+is documented in `docs/sensing.md`.
+"""
+
 import os
 import re
 import csv

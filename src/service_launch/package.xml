@@ -9,8 +9,15 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>mocap_service</exec_depend>
+  <exec_depend>mocap_optitrack_client</exec_depend>
+  <exec_depend>ati_sensor_service</exec_depend>
   <exec_depend>diffusion_service</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>realsense2_camera</exec_depend>
+  <exec_depend>data_collection</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

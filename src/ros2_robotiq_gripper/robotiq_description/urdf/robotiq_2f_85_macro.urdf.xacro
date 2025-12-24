@@ -12,7 +12,10 @@
         use_fake_hardware:=false
         mock_sensor_commands:=false
         include_ros2_control:=true
-        com_port:=/dev/ttyUSB0">
+        com_port:=/dev/ttyUSB0
+        baudrate:=115200
+        timeout:=0.5
+        slave_address:=0x09">
 
         <!-- ros2 control include -->
         <xacro:include filename="$(find robotiq_description)/urdf/2f_85.ros2_control.xacro" />
@@ -26,7 +29,10 @@
                 isaac_joint_states="${isaac_joint_states}"
                 use_fake_hardware="${use_fake_hardware}"
                 mock_sensor_commands="${mock_sensor_commands}"
-                com_port="${com_port}"/>
+                com_port="${com_port}"
+                baudrate="${baudrate}"
+                timeout="${timeout}"
+                slave_address="${slave_address}"/>
         </xacro:if>
 
         <link name="${prefix}robotiq_85_base_link">

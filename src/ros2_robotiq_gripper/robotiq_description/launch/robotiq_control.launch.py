@@ -69,6 +69,34 @@ def generate_launch_description():
             name="launch_rviz", default_value="false", description="Launch RViz?"
         )
     )
+    args.append(
+        launch.actions.DeclareLaunchArgument(
+            name="com_port",
+            default_value="/dev/ttyUSB0",
+            description="Serial device for the gripper (e.g. /dev/ttyUSB0 or /dev/serial/by-id/...)",
+        )
+    )
+    args.append(
+        launch.actions.DeclareLaunchArgument(
+            name="baudrate",
+            default_value="115200",
+            description="Serial baudrate for the gripper",
+        )
+    )
+    args.append(
+        launch.actions.DeclareLaunchArgument(
+            name="timeout",
+            default_value="0.5",
+            description="Serial read/write timeout (seconds)",
+        )
+    )
+    args.append(
+        launch.actions.DeclareLaunchArgument(
+            name="slave_address",
+            default_value="0x09",
+            description="Modbus slave address (hex string, e.g. 0x09)",
+        )
+    )
 
     robot_description_content = Command(
         [
@@ -77,6 +105,18 @@ def generate_launch_description():
             LaunchConfiguration("model"),
             " ",
             "use_fake_hardware:=false",
+            " ",
+            "com_port:=",
+            LaunchConfiguration("com_port"),
+            " ",
+            "baudrate:=",
+            LaunchConfiguration("baudrate"),
+            " ",
+            "timeout:=",
+            LaunchConfiguration("timeout"),
+            " ",
+            "slave_address:=",
+            LaunchConfiguration("slave_address"),
         ]
     )
     robot_description_param = {
@@ -84,14 +124,6 @@ def generate_launch_description():
             robot_description_content, value_type=str
         )
     }
-
-    update_rate_config_file = PathJoinSubstitution(
-        [
-            description_pkg_share,
-            "config",
-            "robotiq_update_rate.yaml",
-        ]
-    )
 
     controllers_file = "robotiq_controllers.yaml"
     initial_joint_controllers = PathJoinSubstitution(
@@ -103,7 +135,6 @@ def generate_launch_description():
         executable="ros2_control_node",
         parameters=[
             robot_description_param,
-            update_rate_config_file,
             initial_joint_controllers,
         ],
     )
