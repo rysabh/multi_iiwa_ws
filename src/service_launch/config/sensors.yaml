@@ -6,7 +6,7 @@ mocap:
   record_in_motive: true
 
 ati:
-  enabled: true
+  enabled: false
   sensor_ip: "192.168.10.100"
   sample_rate_hz: 240.0
   frame_id: "ati_sensor"
@@ -44,13 +44,13 @@ realsense:
         rgb_camera.color_profile: "320,240,30"
 
 recorder:
-  enabled: true
+  enabled: false
   record_hz: 30.0 #  is the final output rate you want.
   record_enabled: false # controls whether saving starts immediately.
   max_sync_slop_ms: 100.0 # is the timing tolerance for sync.
 
 screen_record:
-  enabled: true
+  enabled: false
   backend: auto # auto|ffmpeg_x11|wf_recorder
   monitor: "HDMI-0" # X11: monitor name from `xrandr --listmonitors`
   geometry: "" # optional override: WIDTHxHEIGHT+X+Y (or WIDTHxHEIGHT+X,Y)
