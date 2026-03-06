@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Union
 
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -119,10 +119,9 @@ class LBRROS2ControlMixin:
             parameters=[
                 robot_description,
                 {"use_sim_time": use_sim_time},
-                # use robot name as frame prefix
-                {
-                    "frame_prefix": PathJoinSubstitution([robot_name, ""])
-                },  # neat hack to add trailing slash, which is required by frame_prefix
+                # robot_state_publisher expects frame_prefix to end with "/"
+                # neat hack to add trailing slash, which is required by frame_prefix
+                {"frame_prefix": PythonExpression(["'", robot_name, "/'"])},
             ],
             namespace=robot_name,
             **kwargs,
