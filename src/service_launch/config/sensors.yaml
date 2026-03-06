@@ -97,4 +97,4 @@ screen_record:
 
 paths:
   # This is where each take directory (and take_number.txt) will be created.
-  take_root_dir: "/home/cam/Downloads/GitHub/multi_iiwa_ws/no-sync/RCIM/takes"
+  take_root_dir: "/home/cam/Documents/GitHub/multi_iiwa_ws/no-sync/RCIM/takes"

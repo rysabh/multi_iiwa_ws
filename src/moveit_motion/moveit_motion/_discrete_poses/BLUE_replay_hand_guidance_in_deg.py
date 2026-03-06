@@ -10,13 +10,10 @@ import moveit_motion.ros_submodules.ros_math as rosm
 import numpy as np
 import moveit_motion.diffusion_policy_cam.submodules.robomath_addon as rma
 import moveit_motion.diffusion_policy_cam.submodules.robomath as rm
-import moveit_motion.diffusion_policy_cam.submodules.data_filter as dft
 import time
 import csv
 from math import pi
-import pandas as pd
 import moveit_motion.ros_submodules.RS_submodules as rsmod
-import pandas as pd
 import re
 
 
@@ -131,24 +128,18 @@ def get_mse_planend_current(_client, _trajectory):
     return rsmod.MSE_joint_states(_current_joint_state, _target_joint_state)
     
 
-
-
-import pandas as pd
 import re
 
 def parse_robot_data(file_path):
     """
-    Parses the robot data file, renames joint columns to J1-J7,
-    extracts and renames time, force, and torque values.
+    Parses the robot data file and returns selected fields as numpy arrays.
     
     Parameters:
         file_path (str): Path to the data file.
     
     Returns:
-        pd.DataFrame: A DataFrame containing time, renamed joint values,
-                      and renamed force/torque data.
+        dict[str, np.ndarray]: time, J1..J7, Fx/Fy/Fz, Tx/Ty/Tz arrays.
     """
-    # Step 1: Read the header line starting with '%'
     with open(file_path, 'r') as file:
         for line in file:
             if line.startswith('%'):
@@ -156,42 +147,34 @@ def parse_robot_data(file_path):
                 break
         else:
             raise ValueError("No header line starting with '%' found in the file.")
-    
-    # Step 2: Load the data into a DataFrame
-    df = pd.read_csv(
-        file_path,
-        delim_whitespace=True,    # Assuming the data is space-separated
-        comment='%',              # Skip any lines starting with '%'
-        names=header,             # Use the extracted header
-        skiprows=1                # Skip the header line
-    )
-    
-    # Step 3: Identify and rename joint columns
+
+    data = np.loadtxt(file_path, comments='%', ndmin=2)
+    if data.size == 0:
+        raise ValueError(f"No numeric rows found in {file_path}")
+
+    # Map each header token to its column index once.
+    col_idx = {name: i for i, name in enumerate(header)}
+
     joint_pattern = re.compile(r'axisQMsr_LBR_iiwa_7_R800_1\[(\d+)\]')
     joint_columns = [col for col in header if joint_pattern.match(col)]
-    
     if len(joint_columns) != 7:
         raise ValueError(f"Expected 7 joint columns, found {len(joint_columns)}.")
-    
-    # Sort joint columns based on their index and rename them to J1-J7
+
     joint_columns_sorted = sorted(
         joint_columns,
         key=lambda x: int(joint_pattern.match(x).group(1))
     )
-    joint_rename_map = {col: f'J{idx+1}' for idx, col in enumerate(joint_columns_sorted)}
-    df.rename(columns=joint_rename_map, inplace=True)
-    
-    # Step 4: Extract and combine time columns
-    if 'ZeitInSec' not in df.columns or 'ZeitInNanoSec' not in df.columns:
+
+    if 'ZeitInSec' not in col_idx or 'ZeitInNanoSec' not in col_idx:
         raise ValueError("Required time columns 'ZeitInSec' and/or 'ZeitInNanoSec' are missing.")
-    
-    # Combine 'ZeitInSec' and 'ZeitInNanoSec' into a single 'time' column in seconds
-    df['time'] = df['ZeitInSec'] + df['ZeitInNanoSec'] * 1e-9
-    
-    # Drop the original time columns as they are now combined
-    df.drop(columns=['ZeitInSec', 'ZeitInNanoSec'], inplace=True)
-    
-    # Step 5: Extract and rename force and torque columns
+
+    time_sec = data[:, col_idx['ZeitInSec']]
+    time_ns = data[:, col_idx['ZeitInNanoSec']]
+    out = {'time': time_sec + time_ns * 1e-9}
+
+    for j, source_col in enumerate(joint_columns_sorted, start=1):
+        out[f'J{j}'] = data[:, col_idx[source_col]]
+
     force_columns = {
         'cartForce1_X': 'Fx',
         'cartForce1_Y': 'Fy',
@@ -203,22 +186,18 @@ def parse_robot_data(file_path):
         'cartTorque1_TauZ': 'Tz'
     }
     
-    # Verify that the required force and torque columns exist
-    missing_force_columns = [col for col in force_columns.keys() if col not in df.columns]
-    missing_torque_columns = [col for col in torque_columns.keys() if col not in df.columns]
+    missing_force_columns = [col for col in force_columns.keys() if col not in col_idx]
+    missing_torque_columns = [col for col in torque_columns.keys() if col not in col_idx]
     missing_columns = missing_force_columns + missing_torque_columns
     if missing_columns:
         raise ValueError(f"The following required columns are missing in the data: {missing_columns}")
-    
-    # Rename force and torque columns
-    df.rename(columns=force_columns, inplace=True)
-    df.rename(columns=torque_columns, inplace=True)
-    
-    # Step 6: Select the relevant columns
-    selected_columns = ['time'] + list(joint_rename_map.values()) + list(force_columns.values()) + list(torque_columns.values())
-    df_selected = df[selected_columns]
-    
-    return df_selected
+
+    for source_col, target_col in force_columns.items():
+        out[target_col] = data[:, col_idx[source_col]]
+    for source_col, target_col in torque_columns.items():
+        out[target_col] = data[:, col_idx[source_col]]
+
+    return out
 
 def read_joint_states_from_csv(file_path):
     joint_states = []
@@ -259,7 +238,7 @@ def main_simple(robot_data):
 
 
     joint_columns = ['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7']
-    joint_values_deg = robot_data[joint_columns].to_numpy()
+    joint_values_deg = np.column_stack([robot_data[col] for col in joint_columns])
 
     joint_values_rad = np.deg2rad(joint_values_deg)
     # joint_values_rad = joint_values_deg
@@ -273,7 +252,7 @@ def main_simple(robot_data):
     # ##  ---------- method 1 ------------
 
 
-    joint_times = robot_data['time'].to_numpy()
+    joint_times = robot_data['time'].copy()
     joint_times = joint_times - joint_times[0]
     # joint_times = None
 
@@ -338,11 +317,10 @@ if __name__ == "__main__":
     
     try:
         robot_data = parse_robot_data(str(data_file))
-        # robot_data = read_joint_states_from_csv(data_file)[0]; robot_data = pd.DataFrame(robot_data, columns=['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7'])
-        
-        robot_data = robot_data[START_INDEX:]
+        # Keep parity with previous "skip initial rows" behavior.
+        robot_data = {k: v[START_INDEX:] for k, v in robot_data.items()}
         # print("Parsed Data:")
-        # print(robot_data.head())  # Display the first few rows of the DataFrame
+        # print({k: v[:5] for k, v in robot_data.items()})  # Preview first rows
     except Exception as e:
         print(f"An error occurred: {e}")
 

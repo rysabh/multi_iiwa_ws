@@ -65,19 +65,19 @@
             <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001" />
         </inertial>
         <visual>
-            <origin rpy="1.57 0 1.57" xyz="0.0 0.0 0.0" />
+            <origin rpy="0 3.14 0" xyz="0.0 0.0 0.0" />
             <geometry>
-                <mesh filename="package://lbr_description/meshes/iiwa7/visual/chisel.dae" scale="0.01 0.01 0.01"/>
+                <mesh filename="package://lbr_description/meshes/iiwa7/visual/aniket_gripper.dae" scale="0.001 0.001 0.001"/>
             </geometry>
         </visual>
         <collision>
-            <origin rpy="1.57 0 1.57" xyz="0.0 0.0 0.0" />
+            <origin rpy="0 3.14 0" xyz="0.0 0.0 0.0" />
             <geometry>
-                <mesh filename="package://lbr_description/meshes/iiwa7/collision/chisel.stl" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://lbr_description/meshes/iiwa7/collision/aniket_gripper.stl" scale="0.001 0.001 0.001"/>
             </geometry>
         </collision>
     </link>
-    
+
     <joint name="joint_ee" type="fixed">
         <parent link="link_7"/>
         <child link="link_ee"/>
