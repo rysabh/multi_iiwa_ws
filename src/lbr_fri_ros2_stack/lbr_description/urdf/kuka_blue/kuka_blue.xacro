@@ -4,11 +4,9 @@
 <robot name="iiwa7" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <!-- include the lbr iiwa macro -->
-    <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description.xacro" />
-    <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" />
+    <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description_mod.xacro" />
+    <!-- <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" /> -->
 
-
-    <xacro:arg name="robot_name" default="lbr" />
     <xacro:arg name="sim" default="true" />
     <xacro:arg name="use_fake_hardware" default="true" />
 
@@ -17,21 +15,21 @@
         default="$(find lbr_ros2_control)/config/lbr_system_parameters.yaml" />
 
     <!-- fixed to world, see http://classic.gazebosim.org/tutorials?tut=ros_urdf&cat=connect_ros -->
-    <link name="world" />
+    <link name="world">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </link>
 
-    <!-- joint between world and link_0 -->
-    <joint name="world_joint" type="fixed">
-        <parent link="world" />
-        <child link="link_0" />
-
-        <origin xyz="0.5754642 -0.4159573 -0.2417773" rpy="0.0 0.0 0.0"/> 
-    </joint>
+    <xacro:arg name="robot_name" default="kuka_blue" />
 
     <!-- iiwa -->
     <xacro:iiwa7
         robot_name="$(arg robot_name)"
+        parent = "world"
         sim="$(arg sim)"
         system_parameters_path="$(arg system_parameters_path)" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:iiwa7>
+
 
     <!-- End Effector -->
 
