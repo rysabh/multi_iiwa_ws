@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<robot name="dual_iiwa7" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description.xacro" />
+
+    <xacro:arg name="sim" default="true" />
+    <xacro:arg name="robot_name" default="workcell" />
+    <xacro:arg
+        name="system_parameters_path"
+        default="$(find lbr_ros2_control)/config/lbr_system_parameters.yaml" />
+    <xacro:arg
+        name="controllers_path"
+        default="$(find lbr_ros2_control)/config/lbr_controllers.yaml" />
+    <xacro:arg name="robot_name_1" default="kuka_blue" />
+    <xacro:arg name="robot_name_2" default="kuka_green" />
+
+    <link name="world" />
+
+    <joint name="$(arg robot_name_1)_world_joint" type="fixed">
+        <parent link="world" />
+        <child link="$(arg robot_name_1)_link_0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
+
+    <joint name="$(arg robot_name_2)_world_joint" type="fixed">
+        <parent link="world" />
+        <child link="$(arg robot_name_2)_link_0" />
+        <origin xyz="1 1 0" rpy="0 0 0" />
+    </joint>
+
+    <xacro:iiwa7
+        robot_name="$(arg robot_name_1)"
+        sim="$(arg sim)"
+        system_parameters_path="$(arg system_parameters_path)"
+        controllers_path="$(arg controllers_path)"
+        prefix_model_names="true" />
+
+    <xacro:iiwa7
+        robot_name="$(arg robot_name_2)"
+        sim="$(arg sim)"
+        system_parameters_path="$(arg system_parameters_path)"
+        controllers_path="$(arg controllers_path)"
+        prefix_model_names="true" />
+</robot>

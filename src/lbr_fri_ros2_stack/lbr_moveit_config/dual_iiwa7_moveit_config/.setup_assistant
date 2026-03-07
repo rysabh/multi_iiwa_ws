@@ -1,7 +1,7 @@
 moveit_setup_assistant_config:
   urdf:
     package: lbr_description
-    relative_path: urdf/dual_iiwa7/dual_iiwa7_mod.urdf
+    relative_path: urdf/dual_iiwa7/dual_iiwa7.xacro
   srdf:
     relative_path: config/dual_iiwa7.srdf
   package_settings:

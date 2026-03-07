@@ -2,7 +2,13 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:macro
         name="lbr_gazebo"
-        params="robot_name:=^|lbr controllers_path:=^|'$(find lbr_ros2_control)/config/lbr_controllers.yaml'">
+        params="robot_name:=^|lbr controllers_path:=^|'$(find lbr_ros2_control)/config/lbr_controllers.yaml' prefix_model_names:=^=false">
+        <xacro:property
+            name="use_prefix"
+            value="${str(prefix_model_names).lower() == 'true'}" />
+        <xacro:property
+            name="name_prefix"
+            value="${robot_name + '_' if use_prefix else ''}" />
 
         <!-- ros_control-plugin -->
         <gazebo>
@@ -32,20 +38,20 @@
         </xacro:macro>
 
         <!-- references -->
-        <xacro:gazebo_link_reference name="link_0" />
-        <xacro:gazebo_joint_reference name="A1" />
-        <xacro:gazebo_link_reference name="link_1" />
-        <xacro:gazebo_joint_reference name="A2" />
-        <xacro:gazebo_link_reference name="link_2" />
-        <xacro:gazebo_joint_reference name="A3" />
-        <xacro:gazebo_link_reference name="link_3" />
-        <xacro:gazebo_joint_reference name="A4" />
-        <xacro:gazebo_link_reference name="link_4" />
-        <xacro:gazebo_joint_reference name="A5" />
-        <xacro:gazebo_link_reference name="link_5" />
-        <xacro:gazebo_joint_reference name="A6" />
-        <xacro:gazebo_link_reference name="link_6" />
-        <xacro:gazebo_joint_reference name="A7" />
-        <xacro:gazebo_link_reference name="link_7" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_0" />
+        <xacro:gazebo_joint_reference name="${name_prefix}A1" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_1" />
+        <xacro:gazebo_joint_reference name="${name_prefix}A2" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_2" />
+        <xacro:gazebo_joint_reference name="${name_prefix}A3" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_3" />
+        <xacro:gazebo_joint_reference name="${name_prefix}A4" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_4" />
+        <xacro:gazebo_joint_reference name="${name_prefix}A5" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_5" />
+        <xacro:gazebo_joint_reference name="${name_prefix}A6" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_6" />
+        <xacro:gazebo_joint_reference name="${name_prefix}A7" />
+        <xacro:gazebo_link_reference name="${name_prefix}link_7" />
     </xacro:macro>
 </robot>

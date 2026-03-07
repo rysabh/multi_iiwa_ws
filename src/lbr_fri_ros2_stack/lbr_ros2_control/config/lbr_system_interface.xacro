@@ -1,10 +1,16 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:macro name="lbr_system_interface"
-        params="sim joint_limits system_parameters_path robot_name">
+        params="sim joint_limits system_parameters_path robot_name prefix_model_names:=^=false">
         <!-- load system parameters via yaml -->
         <xacro:property name="system_parameters"
             value="${xacro.load_yaml(system_parameters_path)}" />
+        <xacro:property
+            name="use_prefix"
+            value="${str(prefix_model_names).lower() == 'true'}" />
+        <xacro:property
+            name="name_prefix"
+            value="${robot_name + '_' if use_prefix else ''}" />
 
         <ros2_control name="lbr_system_interface" type="system">
             <!-- define hardware including parameters, also gazebo -->
@@ -56,8 +62,8 @@
 
                 <sensor
                     name="estimated_ft_sensor">
-                    <param name="chain_root">${system_parameters['estimated_ft_sensor']['chain_root']}</param>
-                    <param name="chain_tip">${system_parameters['estimated_ft_sensor']['chain_tip']}</param>
+                    <param name="chain_root">${name_prefix + 'link_0' if use_prefix else system_parameters['estimated_ft_sensor']['chain_root']}</param>
+                    <param name="chain_tip">${name_prefix + 'link_ee' if use_prefix else system_parameters['estimated_ft_sensor']['chain_tip']}</param>
                     <param name="damping">${system_parameters['estimated_ft_sensor']['damping']}</param>
                     <param name="force_x_th">${system_parameters['estimated_ft_sensor']['force_x_th']}</param>
                     <param name="force_y_th">${system_parameters['estimated_ft_sensor']['force_y_th']}</param>
@@ -115,47 +121,47 @@
                 </joint>
             </xacro:macro>
 
-            <xacro:joint_interface name="A1"
-                min_position="${joint_limits['A1']['lower'] * PI / 180}"
-                max_position="${joint_limits['A1']['upper'] * PI / 180}"
-                max_velocity="${joint_limits['A1']['velocity'] * PI / 180}"
-                max_torque="${joint_limits['A1']['effort']}"
+            <xacro:joint_interface name="${name_prefix}A1"
+                min_position="${joint_limits[name_prefix + 'A1']['lower'] * PI / 180}"
+                max_position="${joint_limits[name_prefix + 'A1']['upper'] * PI / 180}"
+                max_velocity="${joint_limits[name_prefix + 'A1']['velocity'] * PI / 180}"
+                max_torque="${joint_limits[name_prefix + 'A1']['effort']}"
                 sim="${sim}" />
-            <xacro:joint_interface name="A2"
-                min_position="${joint_limits['A2']['lower'] * PI / 180}"
-                max_position="${joint_limits['A2']['upper'] * PI / 180}"
-                max_velocity="${joint_limits['A2']['velocity'] * PI / 180}"
-                max_torque="${joint_limits['A2']['effort']}"
+            <xacro:joint_interface name="${name_prefix}A2"
+                min_position="${joint_limits[name_prefix + 'A2']['lower'] * PI / 180}"
+                max_position="${joint_limits[name_prefix + 'A2']['upper'] * PI / 180}"
+                max_velocity="${joint_limits[name_prefix + 'A2']['velocity'] * PI / 180}"
+                max_torque="${joint_limits[name_prefix + 'A2']['effort']}"
                 sim="${sim}" />
-            <xacro:joint_interface name="A3"
-                min_position="${joint_limits['A3']['lower'] * PI / 180}"
-                max_position="${joint_limits['A3']['upper'] * PI / 180}"
-                max_velocity="${joint_limits['A3']['velocity'] * PI / 180}"
-                max_torque="${joint_limits['A3']['effort']}"
+            <xacro:joint_interface name="${name_prefix}A3"
+                min_position="${joint_limits[name_prefix + 'A3']['lower'] * PI / 180}"
+                max_position="${joint_limits[name_prefix + 'A3']['upper'] * PI / 180}"
+                max_velocity="${joint_limits[name_prefix + 'A3']['velocity'] * PI / 180}"
+                max_torque="${joint_limits[name_prefix + 'A3']['effort']}"
                 sim="${sim}" />
-            <xacro:joint_interface name="A4"
-                min_position="${joint_limits['A4']['lower'] * PI / 180}"
-                max_position="${joint_limits['A4']['upper'] * PI / 180}"
-                max_velocity="${joint_limits['A4']['velocity'] * PI / 180}"
-                max_torque="${joint_limits['A4']['effort']}"
+            <xacro:joint_interface name="${name_prefix}A4"
+                min_position="${joint_limits[name_prefix + 'A4']['lower'] * PI / 180}"
+                max_position="${joint_limits[name_prefix + 'A4']['upper'] * PI / 180}"
+                max_velocity="${joint_limits[name_prefix + 'A4']['velocity'] * PI / 180}"
+                max_torque="${joint_limits[name_prefix + 'A4']['effort']}"
                 sim="${sim}" />
-            <xacro:joint_interface name="A5"
-                min_position="${joint_limits['A5']['lower'] * PI / 180}"
-                max_position="${joint_limits['A5']['upper'] * PI / 180}"
-                max_velocity="${joint_limits['A5']['velocity'] * PI / 180}"
-                max_torque="${joint_limits['A5']['effort']}"
+            <xacro:joint_interface name="${name_prefix}A5"
+                min_position="${joint_limits[name_prefix + 'A5']['lower'] * PI / 180}"
+                max_position="${joint_limits[name_prefix + 'A5']['upper'] * PI / 180}"
+                max_velocity="${joint_limits[name_prefix + 'A5']['velocity'] * PI / 180}"
+                max_torque="${joint_limits[name_prefix + 'A5']['effort']}"
                 sim="${sim}" />
-            <xacro:joint_interface name="A6"
-                min_position="${joint_limits['A6']['lower'] * PI / 180}"
-                max_position="${joint_limits['A6']['upper'] * PI / 180}"
-                max_velocity="${joint_limits['A6']['velocity'] * PI / 180}"
-                max_torque="${joint_limits['A6']['effort']}"
+            <xacro:joint_interface name="${name_prefix}A6"
+                min_position="${joint_limits[name_prefix + 'A6']['lower'] * PI / 180}"
+                max_position="${joint_limits[name_prefix + 'A6']['upper'] * PI / 180}"
+                max_velocity="${joint_limits[name_prefix + 'A6']['velocity'] * PI / 180}"
+                max_torque="${joint_limits[name_prefix + 'A6']['effort']}"
                 sim="${sim}" />
-            <xacro:joint_interface name="A7"
-                min_position="${joint_limits['A7']['lower'] * PI / 180}"
-                max_position="${joint_limits['A7']['upper'] * PI / 180}"
-                max_velocity="${joint_limits['A7']['velocity'] * PI / 180}"
-                max_torque="${joint_limits['A7']['effort']}"
+            <xacro:joint_interface name="${name_prefix}A7"
+                min_position="${joint_limits[name_prefix + 'A7']['lower'] * PI / 180}"
+                max_position="${joint_limits[name_prefix + 'A7']['upper'] * PI / 180}"
+                max_velocity="${joint_limits[name_prefix + 'A7']['velocity'] * PI / 180}"
+                max_torque="${joint_limits[name_prefix + 'A7']['effort']}"
                 sim="${sim}" />
         </ros2_control>
     </xacro:macro>

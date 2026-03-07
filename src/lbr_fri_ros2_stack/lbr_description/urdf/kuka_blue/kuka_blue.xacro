@@ -4,7 +4,7 @@
 <robot name="iiwa7" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
     <!-- include the lbr iiwa macro -->
-    <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description_mod.xacro" />
+    <xacro:include filename="$(find lbr_description)/urdf/iiwa7/iiwa7_description.xacro" />
     <!-- <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" /> -->
 
     <xacro:arg name="sim" default="true" />
@@ -32,7 +32,8 @@
         robot_name="$(arg robot_name)"
         sim="$(arg sim)"
         system_parameters_path="$(arg system_parameters_path)"
-        controllers_path="$(arg controllers_path)" />
+        controllers_path="$(arg controllers_path)"
+        prefix_model_names="true" />
 
 
     <!-- End Effector -->
