@@ -8,3 +8,6 @@ log/
 **/__pycache__
 **/no-sync/*
 **/src/service_launch/takes/*
+AGENTS.md
+.gitignore
+CLAUDE.md
