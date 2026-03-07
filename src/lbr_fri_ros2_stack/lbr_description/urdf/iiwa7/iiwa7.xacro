@@ -31,4 +31,12 @@
         sim="$(arg sim)"
         system_parameters_path="$(arg system_parameters_path)"
         controllers_path="$(arg controllers_path)" />
+
+    <joint name="joint_ee" type="fixed">
+        <parent link="link_7" />
+        <child link="link_ee" />
+        <origin xyz="0 0 0.035" rpy="0 0 0" />
+    </joint>
+
+    <link name="link_ee" />
 </robot>

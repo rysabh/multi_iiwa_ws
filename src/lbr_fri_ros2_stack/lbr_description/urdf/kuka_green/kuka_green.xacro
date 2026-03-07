@@ -30,7 +30,7 @@
         <!-- <origin xyz="0 0 0" rpy="0 0 0"/> -->
         <!-- <origin xyz="0.8057409 0.6804944 -0.4295127" rpy="-0.0265684 0.0060622 -2.3834002"/> -->
 
-         <!--RSOriginal-->
+        <!--RSOriginal-->
         <!-- <origin xyz="0.7947345 0.694259 -0.4280015" rpy="-0.0227401 0.0105353 -2.3640002"/>   -->
 
         <!-- <origin xyz="0.7947345 0.694259 -0.4330015" rpy="-0.0227401 0.0105353 -2.3640002"/> -->
@@ -68,24 +68,17 @@
         <visual>
             <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0" />
             <geometry>
-                <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://lbr_description/meshes/end_effectors/robotiq_gripper/visual/robotiq_gripper.dae" scale="0.001 0.001 0.001"/>
             </geometry>
         </visual>
         <collision>
             <origin rpy="1.57 0 1.57" xyz="-0.0925 0 0" />
             <geometry>
-                <mesh filename="package://lbr_description/meshes/iiwa7/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
+                <mesh filename="package://lbr_description/meshes/end_effectors/robotiq_gripper/collision/robotiq_gripper.stl" scale="0.001 0.001 0.001"/>
             </geometry>
         </collision>
     </link>
 
-    <joint name="joint_ee" type="fixed">
-        <parent link="link_7"/>
-        <child link="link_ee"/>
-        <origin rpy="0 0 0" xyz="0 0 0.035"/>
-    </joint>
-
-    <link name="link_tcp"/>
 
     <joint name="joint_tcp" type="fixed">
         <parent link="link_ee"/>

@@ -4,6 +4,7 @@ COLCON_IGNORE
 build/
 install/
 log/
+src/lbr_fri_ros2_stack/lbr_description/urdf/kuka_blue/kuka_blue.urdf
 **/.DS_Stores
 **/__pycache__
 **/no-sync/*
