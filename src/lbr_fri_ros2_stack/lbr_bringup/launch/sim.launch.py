@@ -88,6 +88,11 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
         config_path="config/moveit.rviz",
         move_group_namespace=robot_name,
     )
+    rviz_config = RVizMixin.configured_rviz_config_path(
+        package_name="lbr_bringup",
+        config_path="config/config.rviz",
+        robot_name=robot_name,
+    )
 
     ld.add_action(
         LBRMoveGroupMixin.node_move_group(
@@ -124,8 +129,7 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 
     # RViz no MoveIt
     rviz = RVizMixin.node_rviz(
-        rviz_config_pkg="lbr_bringup",
-        rviz_config="config/config.rviz",
+        rviz_config_path=rviz_config,
         condition=IfCondition(
             AndSubstitution(
                 LaunchConfiguration("rviz"),

@@ -1,4 +1,9 @@
+import re
+import tempfile
+from pathlib import Path
 from typing import Dict, List, Optional, Union
+
+from ament_index_python import get_package_share_directory
 
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -184,6 +189,52 @@ class LBRDescriptionMixin:
 
 
 class RVizMixin:
+    @staticmethod
+    def configured_rviz_config_path(
+        package_name: str,
+        config_path: str,
+        robot_name: str,
+    ) -> str:
+        source_path = Path(get_package_share_directory(package_name)) / config_path
+        rviz_config = source_path.read_text(encoding="utf-8")
+        replacements = (
+            (
+                r"^(\s*Value:)\s*/[^/]+/robot_description$",
+                rf"\1 /{robot_name}/robot_description",
+            ),
+            (
+                r"^(\s*TF Prefix:).*$",
+                rf"\1 {robot_name}",
+            ),
+            (
+                r"^(\s*Value:)\s*/[^/]+/force_torque_broadcaster/wrench$",
+                rf"\1 /{robot_name}/force_torque_broadcaster/wrench",
+            ),
+        )
+        rendered_config = rviz_config
+        replaced_any = False
+        for pattern, replacement in replacements:
+            rendered_config, count = re.subn(
+                pattern,
+                replacement,
+                rendered_config,
+                flags=re.MULTILINE,
+            )
+            replaced_any = replaced_any or count > 0
+
+        if not replaced_any:
+            return str(source_path)
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            prefix=f"{robot_name}_rviz_",
+            suffix=".rviz",
+            delete=False,
+        ) as temp_config:
+            temp_config.write(rendered_config)
+            return temp_config.name
+
     @staticmethod
     def arg_rviz_config_pkg(
         default_value: str = "lbr_description",
