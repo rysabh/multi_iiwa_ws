@@ -8,52 +8,52 @@
                 <!-- By default, set up controllers for simulation. This won't work on real hardware -->
                 <plugin>mock_components/GenericSystem</plugin>
             </hardware>
-            <joint name="A1">
+            <joint name="kuka_blue_A1">
                 <command_interface name="position"/>
                 <state_interface name="position">
-                  <param name="initial_value">${initial_positions['A1']}</param>
+                  <param name="initial_value">${initial_positions['kuka_blue_A1']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-            <joint name="A2">
+            <joint name="kuka_blue_A2">
                 <command_interface name="position"/>
                 <state_interface name="position">
-                  <param name="initial_value">${initial_positions['A2']}</param>
+                  <param name="initial_value">${initial_positions['kuka_blue_A2']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-            <joint name="A3">
+            <joint name="kuka_blue_A3">
                 <command_interface name="position"/>
                 <state_interface name="position">
-                  <param name="initial_value">${initial_positions['A3']}</param>
+                  <param name="initial_value">${initial_positions['kuka_blue_A3']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-            <joint name="A4">
+            <joint name="kuka_blue_A4">
                 <command_interface name="position"/>
                 <state_interface name="position">
-                  <param name="initial_value">${initial_positions['A4']}</param>
+                  <param name="initial_value">${initial_positions['kuka_blue_A4']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-            <joint name="A5">
+            <joint name="kuka_blue_A5">
                 <command_interface name="position"/>
                 <state_interface name="position">
-                  <param name="initial_value">${initial_positions['A5']}</param>
+                  <param name="initial_value">${initial_positions['kuka_blue_A5']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-            <joint name="A6">
+            <joint name="kuka_blue_A6">
                 <command_interface name="position"/>
                 <state_interface name="position">
-                  <param name="initial_value">${initial_positions['A6']}</param>
+                  <param name="initial_value">${initial_positions['kuka_blue_A6']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
             </joint>
-            <joint name="A7">
+            <joint name="kuka_blue_A7">
                 <command_interface name="position"/>
                 <state_interface name="position">
-                  <param name="initial_value">${initial_positions['A7']}</param>
+                  <param name="initial_value">${initial_positions['kuka_blue_A7']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
             </joint>

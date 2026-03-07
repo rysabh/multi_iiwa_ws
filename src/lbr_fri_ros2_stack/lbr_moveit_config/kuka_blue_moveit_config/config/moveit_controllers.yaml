@@ -11,10 +11,10 @@ moveit_simple_controller_manager:
     action_ns: follow_joint_trajectory
     default: true
     joints:
-      - A1
-      - A2
-      - A3
-      - A4
-      - A5
-      - A6
-      - A7
+      - kuka_blue_A1
+      - kuka_blue_A2
+      - kuka_blue_A3
+      - kuka_blue_A4
+      - kuka_blue_A5
+      - kuka_blue_A6
+      - kuka_blue_A7
