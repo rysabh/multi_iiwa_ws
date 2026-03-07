@@ -17,12 +17,18 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     ld.add_action(LBRMoveGroupMixin.args_publish_monitored_planning_scene())
 
     model = LaunchConfiguration("model").perform(context)
-    description_variant = LaunchConfiguration("description_variant").perform(context)
+    description_package = LaunchConfiguration("description_package").perform(context)
+    description_name = LaunchConfiguration("description_name").perform(context)
     moveit_config_pkg = LaunchConfiguration("moveit_config_pkg").perform(context)
+    sim = LaunchConfiguration("sim").perform(context)
+    robot_name = LaunchConfiguration("robot_name").perform(context)
     moveit_configs_builder = LBRMoveGroupMixin.moveit_configs_builder(
         model=model,
-        description_variant=description_variant,
+        description_package=description_package,
+        description_name=description_name,
         package_name=moveit_config_pkg,
+        robot_name=robot_name,
+        sim=sim,
     )
     movegroup_params = LBRMoveGroupMixin.params_move_group()
 
@@ -30,7 +36,6 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     # - requires world frame
     # - urdf only has robot_name/world
     # This transform needs publishing
-    robot_name = LaunchConfiguration("robot_name").perform(context)
     ld.add_action(
         LBRDescriptionMixin.node_static_tf(
             tf=[0, 0, 0, 0, 0, 0],  # keep zero
@@ -83,7 +88,8 @@ def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
 
     ld.add_action(LBRDescriptionMixin.arg_model())
-    ld.add_action(LBRDescriptionMixin.arg_description_variant())
+    ld.add_action(LBRDescriptionMixin.arg_description_package())
+    ld.add_action(LBRDescriptionMixin.arg_description_name())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
     ld.add_action(LBRDescriptionMixin.arg_sim())
     ld.add_action(LBRMoveGroupMixin.arg_moveit_config_pkg())

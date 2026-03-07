@@ -56,7 +56,8 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
     ld.add_action(LBRDescriptionMixin.arg_model())
-    ld.add_action(LBRDescriptionMixin.arg_description_variant())
+    ld.add_action(LBRDescriptionMixin.arg_description_package())
+    ld.add_action(LBRDescriptionMixin.arg_description_name())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
     ld.add_action(LBRDescriptionMixin.arg_port_id())
     ld.add_action(LBRROS2ControlMixin.arg_ctrl_cfg_pkg())

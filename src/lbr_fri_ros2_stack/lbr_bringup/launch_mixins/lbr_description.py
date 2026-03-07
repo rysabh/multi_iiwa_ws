@@ -57,21 +57,20 @@ class GazeboMixin:
 class LBRDescriptionMixin:
     @staticmethod
     def param_robot_description(
-        model: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
-            "model", default="iiwa7"
-        ),
-        description_variant: Optional[
+        description_package: Optional[
             Union[LaunchConfiguration, str]
         ] = LaunchConfiguration(
-            "description_variant",
-            default=LaunchConfiguration("model", default="iiwa7"),
+            "description_package", default="lbr_description"
+        ),
+        description_name: Optional[
+            Union[LaunchConfiguration, str]
+        ] = LaunchConfiguration(
+            "description_name", default=LaunchConfiguration("model", default="iiwa7")
         ),
         robot_name: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
             "robot_name", default="lbr"
         ),
-        port_id: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
-            "port_id", default="30200"
-        ),
+        port_id: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration("port_id"),
         sim: Optional[Union[LaunchConfiguration, bool]] = LaunchConfiguration(
             "sim", default="true"
         ),
@@ -84,10 +83,10 @@ class LBRDescriptionMixin:
             " ",
             PathJoinSubstitution(
                 [
-                    FindPackageShare("lbr_description"),
+                    FindPackageShare(description_package),
                     "urdf",
-                    description_variant,
-                    description_variant,
+                    description_name,
+                    description_name,
                 ]
             ),
             ".xacro",
@@ -120,16 +119,23 @@ class LBRDescriptionMixin:
         )
 
     @staticmethod
-    def arg_description_variant(
+    def arg_description_package(default_value: str = "lbr_description") -> DeclareLaunchArgument:
+        return DeclareLaunchArgument(
+            name="description_package",
+            default_value=default_value,
+            description="ROS package containing the top-level robot description xacro.",
+        )
+
+    @staticmethod
+    def arg_description_name(
         default_value: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
             "model", default="iiwa7"
         ),
     ) -> DeclareLaunchArgument:
         return DeclareLaunchArgument(
-            name="description_variant",
+            name="description_name",
             default_value=default_value,
-            description="Top-level robot description variant to load.",
-            choices=["iiwa7", "iiwa14", "med7", "med14", "green", "kuka_green", "kuka_blue"],
+            description="Top-level robot description entry name. This resolves to urdf/<name>/<name>.xacro within description_package.",
         )
 
     @staticmethod
@@ -141,12 +147,11 @@ class LBRDescriptionMixin:
         )
 
     @staticmethod
-    def arg_port_id(default_value: str = "30200") -> DeclareLaunchArgument:
+    def arg_port_id(default_value: str = "") -> DeclareLaunchArgument:
         return DeclareLaunchArgument(
             name="port_id",
             default_value=default_value,
-            description="Port ID of the FRI communication. Valid in range [30200, 30209].\n"
-            "\tUsefull in multi-robot setups.",
+            description="Optional FRI port override in [30200, 30209]. Leave empty to use the robot-specific value from lbr_system_parameters.yaml.",
         )
 
     @staticmethod
@@ -163,7 +168,7 @@ class LBRDescriptionMixin:
 
     @staticmethod
     def param_port_id() -> Dict[str, LaunchConfiguration]:
-        return {"port_id": LaunchConfiguration("port_id", default="30200")}
+        return {"port_id": LaunchConfiguration("port_id", default="")}
 
     @staticmethod
     def param_sim() -> Dict[str, LaunchConfiguration]:

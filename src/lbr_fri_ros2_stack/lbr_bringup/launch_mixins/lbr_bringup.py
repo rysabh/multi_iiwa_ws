@@ -19,9 +19,9 @@ class LBRMoveGroupMixin:
         return DeclareLaunchArgument(
             name="moveit_config_pkg",
             default_value=PythonExpression(
-                ["'", LaunchConfiguration("description_variant", default="iiwa7"), "_moveit_config'"]
+                ["'", LaunchConfiguration("model", default="iiwa7"), "_moveit_config'"]
             ),
-            description="MoveIt configuration package to load.",
+            description="MoveIt configuration package to load. Defaults to <model>_moveit_config; override this when using a custom description entry.",
         )
 
     @staticmethod
@@ -64,7 +64,14 @@ class LBRMoveGroupMixin:
 
     @staticmethod
     def moveit_configs_builder(
-        model: str, description_variant: str, package_name: str, **kwargs
+        model: str,
+        description_package: str,
+        description_name: str,
+        package_name: str,
+        robot_name: str,
+        sim: str = "false",
+        port_id: str = "",
+        **kwargs,
     ) -> MoveItConfigsBuilder:
         return (
             MoveItConfigsBuilder(
@@ -73,9 +80,14 @@ class LBRMoveGroupMixin:
             )
             .robot_description(
                 os.path.join(
-                    get_package_share_directory("lbr_description"),
-                    f"urdf/{description_variant}/{description_variant}.xacro",
+                    get_package_share_directory(description_package),
+                    f"urdf/{description_name}/{description_name}.xacro",
                 ),
+                mappings={
+                    "robot_name": robot_name,
+                    "sim": sim,
+                    "port_id": port_id,
+                },
             )
             .planning_pipelines(default_planning_pipeline="ompl", pipelines=["ompl", "pilz_industrial_motion_planner"])
         )

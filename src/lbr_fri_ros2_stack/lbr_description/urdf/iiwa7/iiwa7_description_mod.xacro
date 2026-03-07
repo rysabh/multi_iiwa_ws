@@ -3,7 +3,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <!-- robot as extracted via https://github.com/syuntoku14/fusion2urdf -->
     <xacro:macro name="iiwa7"
-        params="robot_name:=^|lbr sim:=^=true system_parameters_path:=^|'$(find lbr_ros2_control)/config/lbr_system_parameters.yaml' controllers_path:=^|'$(find lbr_ros2_control)/config/lbr_controllers.yaml'">
+        params="robot_name:=^|lbr sim:=^=true system_parameters_path:=^|'$(find lbr_ros2_control)/config/lbr_system_parameters.yaml' controllers_path:=^|'$(find lbr_ros2_control)/config/lbr_controllers.yaml' port_id:=^|''">
 
         <!-- includes -->
         <xacro:include filename="$(find lbr_description)/gazebo/lbr_gazebo_mod.xacro" />
@@ -37,7 +37,8 @@
             sim="${sim}"
             joint_limits="${joint_limits}"
             system_parameters_path="${system_parameters_path}"
-            robot_name="${robot_name}"/>
+            robot_name="${robot_name}"
+            port_id="${port_id}"/>
 
         <link name="${robot_name}_link_0">
             <inertial>

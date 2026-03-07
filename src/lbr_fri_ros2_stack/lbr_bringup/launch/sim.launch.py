@@ -71,12 +71,16 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     )
 
     model = LaunchConfiguration("model").perform(context)
-    description_variant = LaunchConfiguration("description_variant").perform(context)
+    description_package = LaunchConfiguration("description_package").perform(context)
+    description_name = LaunchConfiguration("description_name").perform(context)
     moveit_config_pkg = LaunchConfiguration("moveit_config_pkg").perform(context)
     moveit_configs_builder = LBRMoveGroupMixin.moveit_configs_builder(
         model=model,
-        description_variant=description_variant,
+        description_package=description_package,
+        description_name=description_name,
         package_name=moveit_config_pkg,
+        robot_name=robot_name,
+        sim="true",
     )
     movegroup_params = LBRMoveGroupMixin.params_move_group()
 
@@ -138,7 +142,8 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
     ld.add_action(LBRDescriptionMixin.arg_model())
-    ld.add_action(LBRDescriptionMixin.arg_description_variant())
+    ld.add_action(LBRDescriptionMixin.arg_description_package())
+    ld.add_action(LBRDescriptionMixin.arg_description_name())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
     ld.add_action(
         DeclareLaunchArgument(

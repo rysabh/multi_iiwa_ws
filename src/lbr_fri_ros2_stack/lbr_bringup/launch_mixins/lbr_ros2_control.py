@@ -36,15 +36,16 @@ class LBRROS2ControlMixin:
     @staticmethod
     def controller_config_path(
         context: LaunchContext,
-        description_variant: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
-            "description_variant", default=LaunchConfiguration("model", default="iiwa7")
+        description_package: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
+            "description_package", default="lbr_description"
+        ),
+        description_name: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
+            "description_name", default=LaunchConfiguration("model", default="iiwa7")
         ),
         robot_name: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
             "robot_name", default="lbr"
         ),
-        port_id: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
-            "port_id", default="30200"
-        ),
+        port_id: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration("port_id"),
         sim: Optional[Union[LaunchConfiguration, str, bool]] = LaunchConfiguration(
             "sim", default="false"
         ),
@@ -55,11 +56,14 @@ class LBRROS2ControlMixin:
             "ctrl_cfg", default="config/lbr_controllers.yaml"
         ),
     ) -> str:
-        description_variant_value = LBRROS2ControlMixin._resolve_value(
-            context, description_variant, "iiwa7"
+        description_package_value = LBRROS2ControlMixin._resolve_value(
+            context, description_package, "lbr_description"
+        )
+        description_name_value = LBRROS2ControlMixin._resolve_value(
+            context, description_name, "iiwa7"
         )
         robot_name_value = LBRROS2ControlMixin._resolve_value(context, robot_name, "lbr")
-        port_id_value = LBRROS2ControlMixin._resolve_value(context, port_id, "30200")
+        port_id_value = LBRROS2ControlMixin._resolve_value(context, port_id, "")
         sim_value = LBRROS2ControlMixin._resolve_value(context, sim, "false")
         ctrl_cfg_pkg_value = LBRROS2ControlMixin._resolve_value(
             context, ctrl_cfg_pkg, "lbr_ros2_control"
@@ -75,10 +79,10 @@ class LBRROS2ControlMixin:
             controller_config = yaml.safe_load(config_file)
 
         description_path = (
-            Path(get_package_share_directory("lbr_description"))
+            Path(get_package_share_directory(description_package_value))
             / "urdf"
-            / description_variant_value
-            / f"{description_variant_value}.xacro"
+            / description_name_value
+            / f"{description_name_value}.xacro"
         )
         description_doc = xacro.process_file(
             str(description_path),
