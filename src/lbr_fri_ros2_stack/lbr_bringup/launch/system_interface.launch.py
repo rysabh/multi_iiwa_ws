@@ -59,7 +59,6 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(LBRDescriptionMixin.arg_description_package())
     ld.add_action(LBRDescriptionMixin.arg_description_name())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
-    ld.add_action(LBRDescriptionMixin.arg_port_id())
     ld.add_action(LBRROS2ControlMixin.arg_ctrl_cfg_pkg())
     ld.add_action(LBRROS2ControlMixin.arg_ctrl_cfg())
     ld.add_action(LBRROS2ControlMixin.arg_ctrl())

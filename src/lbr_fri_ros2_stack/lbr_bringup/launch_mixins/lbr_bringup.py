@@ -1,5 +1,9 @@
 import os
+import re
+import tempfile
+from pathlib import Path
 from typing import Any, Dict, List
+import yaml
 
 from ament_index_python import get_package_share_directory
 from launch.actions import DeclareLaunchArgument
@@ -14,6 +18,27 @@ from moveit_configs_utils import MoveItConfigs, MoveItConfigsBuilder
 
 
 class LBRMoveGroupMixin:
+    @staticmethod
+    def moveit_config_name(package_name: str, fallback: str) -> str:
+        package_share = Path(get_package_share_directory(package_name))
+        setup_assistant_path = package_share / ".setup_assistant"
+        if setup_assistant_path.is_file():
+            with setup_assistant_path.open("r", encoding="utf-8") as file:
+                setup_assistant = yaml.safe_load(file) or {}
+            srdf_relative_path = (
+                setup_assistant.get("moveit_setup_assistant_config", {})
+                .get("srdf", {})
+                .get("relative_path", "")
+            )
+            if srdf_relative_path:
+                return Path(srdf_relative_path).stem
+
+        srdf_files = sorted((package_share / "config").glob("*.srdf"))
+        if len(srdf_files) == 1:
+            return srdf_files[0].stem
+
+        return fallback
+
     @staticmethod
     def arg_moveit_config_pkg() -> DeclareLaunchArgument:
         return DeclareLaunchArgument(
@@ -70,12 +95,15 @@ class LBRMoveGroupMixin:
         package_name: str,
         robot_name: str,
         sim: str = "false",
-        port_id: str = "",
         **kwargs,
     ) -> MoveItConfigsBuilder:
+        moveit_config_name = LBRMoveGroupMixin.moveit_config_name(
+            package_name=package_name,
+            fallback=model,
+        )
         return (
             MoveItConfigsBuilder(
-                robot_name=model,
+                robot_name=moveit_config_name,
                 package_name=package_name,
             )
             .robot_description(
@@ -86,11 +114,37 @@ class LBRMoveGroupMixin:
                 mappings={
                     "robot_name": robot_name,
                     "sim": sim,
-                    "port_id": port_id,
                 },
             )
             .planning_pipelines(default_planning_pipeline="ompl", pipelines=["ompl", "pilz_industrial_motion_planner"])
         )
+
+    @staticmethod
+    def configured_rviz_config_path(
+        package_name: str,
+        config_path: str,
+        move_group_namespace: str,
+    ) -> str:
+        source_path = Path(get_package_share_directory(package_name)) / config_path
+        rviz_config = source_path.read_text(encoding="utf-8")
+        rendered_config, replacements = re.subn(
+            r'^(\s*Move Group Namespace:).*$',
+            rf'\1 "{move_group_namespace}"',
+            rviz_config,
+            flags=re.MULTILINE,
+        )
+        if replacements == 0:
+            return str(source_path)
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            prefix=f"{move_group_namespace or 'move_group'}_rviz_",
+            suffix=".rviz",
+            delete=False,
+        ) as temp_config:
+            temp_config.write(rendered_config)
+            return temp_config.name
 
     @staticmethod
     def params_move_group() -> Dict[str, Any]:

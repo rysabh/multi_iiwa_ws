@@ -40,12 +40,11 @@ class LBRROS2ControlMixin:
             "description_package", default="lbr_description"
         ),
         description_name: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
-            "description_name", default=LaunchConfiguration("model", default="iiwa7")
+            "xacro_name", default=LaunchConfiguration("model", default="iiwa7")
         ),
         robot_name: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
             "robot_name", default="lbr"
         ),
-        port_id: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration("port_id"),
         sim: Optional[Union[LaunchConfiguration, str, bool]] = LaunchConfiguration(
             "sim", default="false"
         ),
@@ -63,7 +62,6 @@ class LBRROS2ControlMixin:
             context, description_name, "iiwa7"
         )
         robot_name_value = LBRROS2ControlMixin._resolve_value(context, robot_name, "lbr")
-        port_id_value = LBRROS2ControlMixin._resolve_value(context, port_id, "")
         sim_value = LBRROS2ControlMixin._resolve_value(context, sim, "false")
         ctrl_cfg_pkg_value = LBRROS2ControlMixin._resolve_value(
             context, ctrl_cfg_pkg, "lbr_ros2_control"
@@ -88,7 +86,6 @@ class LBRROS2ControlMixin:
             str(description_path),
             mappings={
                 "robot_name": robot_name_value,
-                "port_id": port_id_value,
                 "sim": sim_value,
                 "controllers_path": str(base_controller_config_path),
             },

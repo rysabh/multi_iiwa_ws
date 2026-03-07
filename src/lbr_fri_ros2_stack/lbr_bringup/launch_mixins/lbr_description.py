@@ -65,12 +65,11 @@ class LBRDescriptionMixin:
         description_name: Optional[
             Union[LaunchConfiguration, str]
         ] = LaunchConfiguration(
-            "description_name", default=LaunchConfiguration("model", default="iiwa7")
+            "xacro_name", default=LaunchConfiguration("model", default="iiwa7")
         ),
         robot_name: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
             "robot_name", default="lbr"
         ),
-        port_id: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration("port_id"),
         sim: Optional[Union[LaunchConfiguration, bool]] = LaunchConfiguration(
             "sim", default="true"
         ),
@@ -92,8 +91,6 @@ class LBRDescriptionMixin:
             ".xacro",
             " robot_name:=",
             robot_name,
-            " port_id:=",
-            port_id,
             " sim:=",
             sim,
         ]
@@ -133,9 +130,9 @@ class LBRDescriptionMixin:
         ),
     ) -> DeclareLaunchArgument:
         return DeclareLaunchArgument(
-            name="description_name",
+            name="xacro_name",
             default_value=default_value,
-            description="Top-level robot description entry name. This resolves to urdf/<name>/<name>.xacro within description_package.",
+            description="Top-level xacro entry name. This resolves to urdf/<name>/<name>.xacro within description_package and is independent from robot_name.",
         )
 
     @staticmethod
@@ -143,15 +140,7 @@ class LBRDescriptionMixin:
         return DeclareLaunchArgument(
             name="robot_name",
             default_value=default_value,
-            description="The robot's name.",
-        )
-
-    @staticmethod
-    def arg_port_id(default_value: str = "") -> DeclareLaunchArgument:
-        return DeclareLaunchArgument(
-            name="port_id",
-            default_value=default_value,
-            description="Optional FRI port override in [30200, 30209]. Leave empty to use the robot-specific value from lbr_system_parameters.yaml.",
+            description="Runtime robot instance name and namespace. This is independent from the selected xacro entry and MoveIt package.",
         )
 
     @staticmethod
@@ -165,10 +154,6 @@ class LBRDescriptionMixin:
     @staticmethod
     def param_robot_name() -> Dict[str, LaunchConfiguration]:
         return {"robot_name": LaunchConfiguration("robot_name", default="lbr")}
-
-    @staticmethod
-    def param_port_id() -> Dict[str, LaunchConfiguration]:
-        return {"port_id": LaunchConfiguration("port_id", default="")}
 
     @staticmethod
     def param_sim() -> Dict[str, LaunchConfiguration]:
@@ -221,6 +206,7 @@ class RVizMixin:
 
     @staticmethod
     def node_rviz(
+        rviz_config_path: Optional[Union[LaunchConfiguration, str]] = None,
         rviz_config_pkg: Optional[
             Union[LaunchConfiguration, str]
         ] = LaunchConfiguration("rviz_config_pkg", default="lbr_description"),
@@ -229,18 +215,23 @@ class RVizMixin:
         ),
         **kwargs,
     ) -> Node:
+        config_argument = (
+            rviz_config_path
+            if rviz_config_path is not None
+            else PathJoinSubstitution(
+                [
+                    FindPackageShare(rviz_config_pkg),
+                    rviz_config,
+                ]
+            )
+        )
         return Node(
             package="rviz2",
             executable="rviz2",
             name="rviz2",
             arguments=[
                 "-d",
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare(rviz_config_pkg),
-                        rviz_config,
-                    ]
-                ),
+                config_argument,
             ],
             **kwargs,
         )

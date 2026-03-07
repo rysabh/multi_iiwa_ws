@@ -93,9 +93,8 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 
     model = LaunchConfiguration("model").perform(context)
     description_package = LaunchConfiguration("description_package").perform(context)
-    description_name = LaunchConfiguration("description_name").perform(context)
+    description_name = LaunchConfiguration("xacro_name").perform(context)
     moveit_config_pkg = LaunchConfiguration("moveit_config_pkg").perform(context)
-    port_id = LaunchConfiguration("port_id").perform(context)
     moveit_configs_builder = LBRMoveGroupMixin.moveit_configs_builder(
         model=model,
         description_package=description_package,
@@ -103,9 +102,13 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
         package_name=moveit_config_pkg,
         robot_name=robot_name,
         sim="false",
-        port_id=port_id,
     )
     movegroup_params = LBRMoveGroupMixin.params_move_group()
+    moveit_rviz_config = LBRMoveGroupMixin.configured_rviz_config_path(
+        package_name=moveit_config_pkg,
+        config_path="config/moveit.rviz",
+        move_group_namespace=robot_name,
+    )
 
     ld.add_action(
         LBRMoveGroupMixin.node_move_group(
@@ -120,16 +123,8 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     )
 
     # RViz and MoveIt
-    config_file="config/moveit.rviz"
-    # if robot_name == "kuka_blue":
-    #     config_file="config/moveit_blue.rviz"
-    # if robot_name == "kuka_green":
-    #     config_file="config/moveit_green.rviz"
-
     rviz_moveit = RVizMixin.node_rviz(
-        rviz_config_pkg=moveit_config_pkg,
-        # rviz_config="config/moveit.rviz",
-        rviz_config=config_file,
+        rviz_config_path=moveit_rviz_config,
         parameters=LBRMoveGroupMixin.params_rviz(
             moveit_configs=moveit_configs_builder.to_moveit_configs()
         )
@@ -177,7 +172,6 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(LBRDescriptionMixin.arg_description_package())
     ld.add_action(LBRDescriptionMixin.arg_description_name())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
-    ld.add_action(LBRDescriptionMixin.arg_port_id())
     ld.add_action(
         DeclareLaunchArgument(
             name="moveit",
