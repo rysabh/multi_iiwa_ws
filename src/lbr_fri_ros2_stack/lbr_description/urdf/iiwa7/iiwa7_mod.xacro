@@ -11,6 +11,9 @@
     <xacro:arg
         name="system_parameters_path"
         default="$(find lbr_ros2_control)/config/lbr_system_parameters.yaml" />
+    <xacro:arg
+        name="controllers_path"
+        default="$(find lbr_ros2_control)/config/lbr_controllers.yaml" />
 
     <!-- fixed to world, see http://classic.gazebosim.org/tutorials?tut=ros_urdf&cat=connect_ros -->
     <link name="world" />
@@ -26,5 +29,6 @@
     <xacro:iiwa7
         robot_name="$(arg robot_name)"
         sim="$(arg sim)"
-        system_parameters_path="$(arg system_parameters_path)" />
+        system_parameters_path="$(arg system_parameters_path)"
+        controllers_path="$(arg controllers_path)" />
 </robot>

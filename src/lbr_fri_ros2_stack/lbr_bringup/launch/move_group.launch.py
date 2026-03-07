@@ -17,9 +17,12 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     ld.add_action(LBRMoveGroupMixin.args_publish_monitored_planning_scene())
 
     model = LaunchConfiguration("model").perform(context)
+    description_variant = LaunchConfiguration("description_variant").perform(context)
+    moveit_config_pkg = LaunchConfiguration("moveit_config_pkg").perform(context)
     moveit_configs_builder = LBRMoveGroupMixin.moveit_configs_builder(
-        robot_name=model,
-        package_name=f"{model}_moveit_config",
+        model=model,
+        description_variant=description_variant,
+        package_name=moveit_config_pkg,
     )
     movegroup_params = LBRMoveGroupMixin.params_move_group()
 
@@ -54,7 +57,7 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 
     # RViz
     rviz = RVizMixin.node_rviz(
-        rviz_config_pkg=f"{model}_moveit_config",
+        rviz_config_pkg=moveit_config_pkg,
         rviz_config="config/moveit.rviz",
         parameters=LBRMoveGroupMixin.params_rviz(
             moveit_configs=moveit_configs_builder.to_moveit_configs()
@@ -80,8 +83,10 @@ def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
 
     ld.add_action(LBRDescriptionMixin.arg_model())
+    ld.add_action(LBRDescriptionMixin.arg_description_variant())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
     ld.add_action(LBRDescriptionMixin.arg_sim())
+    ld.add_action(LBRMoveGroupMixin.arg_moveit_config_pkg())
 
     ld.add_action(OpaqueFunction(function=launch_setup))
 

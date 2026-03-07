@@ -11,6 +11,9 @@
     <xacro:arg
         name="system_parameters_path"
         default="$(find lbr_ros2_control)/config/lbr_system_parameters.yaml" />
+    <xacro:arg
+        name="controllers_path"
+        default="$(find lbr_ros2_control)/config/lbr_controllers.yaml" />
 
     <xacro:arg name="robot_name" default="kuka_blue" />
     <xacro:property name="robot_prefix" value="$(arg robot_name)" />
@@ -28,7 +31,8 @@
     <xacro:iiwa7
         robot_name="$(arg robot_name)"
         sim="$(arg sim)"
-        system_parameters_path="$(arg system_parameters_path)" />
+        system_parameters_path="$(arg system_parameters_path)"
+        controllers_path="$(arg controllers_path)" />
 
 
     <!-- End Effector -->

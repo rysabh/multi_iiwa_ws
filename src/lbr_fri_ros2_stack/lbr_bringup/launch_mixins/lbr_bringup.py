@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from ament_index_python import get_package_share_directory
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from moveit_configs_utils import MoveItConfigs, MoveItConfigsBuilder
@@ -14,6 +14,16 @@ from moveit_configs_utils import MoveItConfigs, MoveItConfigsBuilder
 
 
 class LBRMoveGroupMixin:
+    @staticmethod
+    def arg_moveit_config_pkg() -> DeclareLaunchArgument:
+        return DeclareLaunchArgument(
+            name="moveit_config_pkg",
+            default_value=PythonExpression(
+                ["'", LaunchConfiguration("description_variant", default="iiwa7"), "_moveit_config'"]
+            ),
+            description="MoveIt configuration package to load.",
+        )
+
     @staticmethod
     def arg_allow_trajectory_execution() -> DeclareLaunchArgument:
         return DeclareLaunchArgument(
@@ -54,17 +64,17 @@ class LBRMoveGroupMixin:
 
     @staticmethod
     def moveit_configs_builder(
-        robot_name: str, package_name: str, **kwargs
+        model: str, description_variant: str, package_name: str, **kwargs
     ) -> MoveItConfigsBuilder:
         return (
             MoveItConfigsBuilder(
-                robot_name=robot_name,
+                robot_name=model,
                 package_name=package_name,
             )
             .robot_description(
                 os.path.join(
                     get_package_share_directory("lbr_description"),
-                    f"urdf/{robot_name}/{robot_name}.xacro",
+                    f"urdf/{description_variant}/{description_variant}.xacro",
                 ),
             )
             .planning_pipelines(default_planning_pipeline="ompl", pipelines=["ompl", "pilz_industrial_motion_planner"])

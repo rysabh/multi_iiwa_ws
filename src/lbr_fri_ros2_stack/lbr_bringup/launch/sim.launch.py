@@ -17,8 +17,13 @@ from launch_mixins.lbr_ros2_control import LBRROS2ControlMixin
 
 def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     ld = LaunchDescription()
+    controller_config_path = LBRROS2ControlMixin.controller_config_path(
+        context, sim=True
+    )
 
-    robot_description = LBRDescriptionMixin.param_robot_description(sim=True)
+    robot_description = LBRDescriptionMixin.param_robot_description(
+        sim=True, controllers_path=controller_config_path
+    )
     world_robot_tf = [0, 0, 0, 0, 0, 0]  # keep zero
     ld.add_action(GazeboMixin.include_gazebo())  # Gazebo has its own controller manager
     spawn_entity = GazeboMixin.node_spawn_entity(tf=world_robot_tf)
@@ -66,9 +71,12 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     )
 
     model = LaunchConfiguration("model").perform(context)
+    description_variant = LaunchConfiguration("description_variant").perform(context)
+    moveit_config_pkg = LaunchConfiguration("moveit_config_pkg").perform(context)
     moveit_configs_builder = LBRMoveGroupMixin.moveit_configs_builder(
-        robot_name=model,
-        package_name=f"{model}_moveit_config",
+        model=model,
+        description_variant=description_variant,
+        package_name=moveit_config_pkg,
     )
     movegroup_params = LBRMoveGroupMixin.params_move_group()
 
@@ -86,7 +94,7 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 
     # RViz and MoveIt
     rviz_moveit = RVizMixin.node_rviz(
-        rviz_config_pkg=f"{model}_moveit_config",
+        rviz_config_pkg=moveit_config_pkg,
         rviz_config="config/moveit.rviz",
         parameters=LBRMoveGroupMixin.params_rviz(
             moveit_configs=moveit_configs_builder.to_moveit_configs()
@@ -130,6 +138,7 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
     ld.add_action(LBRDescriptionMixin.arg_model())
+    ld.add_action(LBRDescriptionMixin.arg_description_variant())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
     ld.add_action(
         DeclareLaunchArgument(
@@ -143,8 +152,11 @@ def generate_launch_description() -> LaunchDescription:
             name="rviz", default_value="true", description="Whether to launch RViz."
         )
     )
+    ld.add_action(LBRMoveGroupMixin.arg_moveit_config_pkg())
+    ld.add_action(LBRROS2ControlMixin.arg_ctrl_cfg_pkg())
+    ld.add_action(LBRROS2ControlMixin.arg_ctrl_cfg())
     ld.add_action(
         LBRROS2ControlMixin.arg_ctrl()
-    )  # Gazebo loads controller configuration through lbr_description/gazebo/*.xacro from lbr_ros2_control/config/lbr_controllers.yaml
+    )  # Gazebo loads a generated controller configuration through the xacro plugin path
     ld.add_action(OpaqueFunction(function=launch_setup))
     return ld

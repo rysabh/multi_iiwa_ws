@@ -18,9 +18,12 @@ from launch_mixins.lbr_ros2_control import LBRROS2ControlMixin
 def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     ld = LaunchDescription()
     robot_name = LaunchConfiguration("robot_name")
+    controller_config_path = LBRROS2ControlMixin.controller_config_path(
+        context, sim=False
+    )
 
     robot_description = LBRDescriptionMixin.param_robot_description(sim=False)
-    
+
     world_robot_tf = [0, 0, 0, 0, 0, 0]  # keep zero
 
     # robot state publisher
@@ -30,7 +33,9 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     ld.add_action(robot_state_publisher)
 
     # ros2 control node
-    ros2_control_node = LBRROS2ControlMixin.node_ros2_control()
+    ros2_control_node = LBRROS2ControlMixin.node_ros2_control(
+        controller_config_path=controller_config_path
+    )
     ld.add_action(ros2_control_node)
 
     # joint state broad caster and controller on ros2 control node start
@@ -87,9 +92,12 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     )
 
     model = LaunchConfiguration("model").perform(context)
+    description_variant = LaunchConfiguration("description_variant").perform(context)
+    moveit_config_pkg = LaunchConfiguration("moveit_config_pkg").perform(context)
     moveit_configs_builder = LBRMoveGroupMixin.moveit_configs_builder(
-        robot_name=model,
-        package_name=f"{model}_moveit_config",
+        model=model,
+        description_variant=description_variant,
+        package_name=moveit_config_pkg,
     )
     movegroup_params = LBRMoveGroupMixin.params_move_group()
 
@@ -113,7 +121,7 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
     #     config_file="config/moveit_green.rviz"
 
     rviz_moveit = RVizMixin.node_rviz(
-        rviz_config_pkg=f"{model}_moveit_config",
+        rviz_config_pkg=moveit_config_pkg,
         # rviz_config="config/moveit.rviz",
         rviz_config=config_file,
         parameters=LBRMoveGroupMixin.params_rviz(
@@ -160,6 +168,7 @@ def launch_setup(context: LaunchContext) -> List[LaunchDescriptionEntity]:
 def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
     ld.add_action(LBRDescriptionMixin.arg_model())
+    ld.add_action(LBRDescriptionMixin.arg_description_variant())
     ld.add_action(LBRDescriptionMixin.arg_robot_name())
     ld.add_action(LBRDescriptionMixin.arg_port_id())
     ld.add_action(
@@ -174,6 +183,7 @@ def generate_launch_description() -> LaunchDescription:
             name="rviz", default_value="true", description="Whether to launch RViz."
         )
     )
+    ld.add_action(LBRMoveGroupMixin.arg_moveit_config_pkg())
     ld.add_action(LBRROS2ControlMixin.arg_ctrl_cfg_pkg())
     ld.add_action(LBRROS2ControlMixin.arg_ctrl_cfg())
     ld.add_action(LBRROS2ControlMixin.arg_ctrl())

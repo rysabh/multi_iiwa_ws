@@ -60,6 +60,12 @@ class LBRDescriptionMixin:
         model: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
             "model", default="iiwa7"
         ),
+        description_variant: Optional[
+            Union[LaunchConfiguration, str]
+        ] = LaunchConfiguration(
+            "description_variant",
+            default=LaunchConfiguration("model", default="iiwa7"),
+        ),
         robot_name: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
             "robot_name", default="lbr"
         ),
@@ -69,31 +75,38 @@ class LBRDescriptionMixin:
         sim: Optional[Union[LaunchConfiguration, bool]] = LaunchConfiguration(
             "sim", default="true"
         ),
+        controllers_path: Optional[Union[LaunchConfiguration, str]] = None,
     ) -> Dict[str, str]:
         if type(sim) is bool:
             sim = "true" if sim else "false"
-        robot_description = {
-            "robot_description": Command(
+        command = [
+            FindExecutable(name="xacro"),
+            " ",
+            PathJoinSubstitution(
                 [
-                    FindExecutable(name="xacro"),
-                    " ",
-                    PathJoinSubstitution(
-                        [
-                            FindPackageShare("lbr_description"),
-                            "urdf",
-                            model,
-                            model,
-                        ]
-                    ),
-                    ".xacro",
-                    " robot_name:=",
-                    robot_name,
-                    " port_id:=",
-                    port_id,
-                    " sim:=",
-                    sim,
+                    FindPackageShare("lbr_description"),
+                    "urdf",
+                    description_variant,
+                    description_variant,
+                ]
+            ),
+            ".xacro",
+            " robot_name:=",
+            robot_name,
+            " port_id:=",
+            port_id,
+            " sim:=",
+            sim,
+        ]
+        if controllers_path is not None:
+            command.extend(
+                [
+                    " controllers_path:=",
+                    controllers_path,
                 ]
             )
+        robot_description = {
+            "robot_description": Command(command)
         }
         return robot_description
 
@@ -102,8 +115,21 @@ class LBRDescriptionMixin:
         return DeclareLaunchArgument(
             name="model",
             default_value=default_value,
-            description="The LBR model in use.",
-            choices=["iiwa7", "iiwa14", "med7", "med14", "kuka_green", "kuka_blue"],
+            description="The physical LBR model in use.",
+            choices=["iiwa7", "iiwa14", "med7", "med14"],
+        )
+
+    @staticmethod
+    def arg_description_variant(
+        default_value: Optional[Union[LaunchConfiguration, str]] = LaunchConfiguration(
+            "model", default="iiwa7"
+        ),
+    ) -> DeclareLaunchArgument:
+        return DeclareLaunchArgument(
+            name="description_variant",
+            default_value=default_value,
+            description="Top-level robot description variant to load.",
+            choices=["iiwa7", "iiwa14", "med7", "med14", "green", "kuka_green", "kuka_blue"],
         )
 
     @staticmethod
