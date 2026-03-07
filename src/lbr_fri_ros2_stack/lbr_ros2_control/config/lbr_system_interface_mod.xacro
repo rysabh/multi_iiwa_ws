@@ -17,7 +17,7 @@
                 <hardware>
                     <plugin>lbr_ros2_control::SystemInterface</plugin>
                     <param name="client_command_mode">${system_parameters['hardware']['client_command_mode']}</param>
-                    <param name="port_id">${system_parameters['hardware']['port_id']}</param>
+                    <param name="port_id">${system_parameters['hardware'].get(robot_name + '_port_id', system_parameters['hardware']['port_id'])}</param>
                     <param name="remote_host">${system_parameters['hardware']['remote_host']}</param>
                     <param name="rt_prio">${system_parameters['hardware']['rt_prio']}</param>
                     <param name="pid_p">${system_parameters['hardware']['pid_p']}</param>
@@ -54,8 +54,8 @@
 
                 <sensor
                     name="estimated_ft_sensor">
-                    <param name="chain_root">${system_parameters['estimated_ft_sensor']['chain_root']}</param>
-                    <param name="chain_tip">${system_parameters['estimated_ft_sensor']['chain_tip']}</param>
+                    <param name="chain_root">${robot_name + '_link_0'}</param>
+                    <param name="chain_tip">${robot_name + '_link_ee'}</param>
                     <param name="damping">${system_parameters['estimated_ft_sensor']['damping']}</param>
                     <param name="force_x_th">${system_parameters['estimated_ft_sensor']['force_x_th']}</param>
                     <param name="force_y_th">${system_parameters['estimated_ft_sensor']['force_y_th']}</param>

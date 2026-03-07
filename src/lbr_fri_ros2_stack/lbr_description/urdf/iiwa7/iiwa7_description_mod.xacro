@@ -12,18 +12,18 @@
         <!-- joint limits via yaml -->
         <xacro:property name="joint_limits_path"
             value="$(find lbr_description)/urdf/iiwa7/joint_limits.yaml" />
-        <xacro:property name="joint_limits" value="${xacro.load_yaml(joint_limits_path)}" />
+        <xacro:property name="base_joint_limits" value="${xacro.load_yaml(joint_limits_path)}" />
         <!-- Keep the YAML generic while exposing prefixed keys to the prefixed model/control macros. -->
         <xacro:property
             name="joint_limits"
             value="${dict([
-                (robot_name + '_' + 'A1', joint_limits['A1']),
-                (robot_name + '_' + 'A2', joint_limits['A2']),
-                (robot_name + '_' + 'A3', joint_limits['A3']),
-                (robot_name + '_' + 'A4', joint_limits['A4']),
-                (robot_name + '_' + 'A5', joint_limits['A5']),
-                (robot_name + '_' + 'A6', joint_limits['A6']),
-                (robot_name + '_' + 'A7', joint_limits['A7']),
+                (robot_name + '_' + 'A1', base_joint_limits['A1']),
+                (robot_name + '_' + 'A2', base_joint_limits['A2']),
+                (robot_name + '_' + 'A3', base_joint_limits['A3']),
+                (robot_name + '_' + 'A4', base_joint_limits['A4']),
+                (robot_name + '_' + 'A5', base_joint_limits['A5']),
+                (robot_name + '_' + 'A6', base_joint_limits['A6']),
+                (robot_name + '_' + 'A7', base_joint_limits['A7']),
             ])}" />
 
         <!-- constants -->

@@ -8,32 +8,32 @@
     <!-- <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" /> -->
 
     <xacro:arg name="sim" default="true" />
-    <xacro:arg name="use_fake_hardware" default="true" />
-
     <xacro:arg
         name="system_parameters_path"
         default="$(find lbr_ros2_control)/config/lbr_system_parameters.yaml" />
 
-    <!-- fixed to world, see http://classic.gazebosim.org/tutorials?tut=ros_urdf&cat=connect_ros -->
-    <link name="world">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-    </link>
-
     <xacro:arg name="robot_name" default="kuka_blue" />
+    <xacro:property name="robot_prefix" value="$(arg robot_name)" />
+
+    <!-- fixed to world, see http://classic.gazebosim.org/tutorials?tut=ros_urdf&cat=connect_ros -->
+    <link name="world" />
+
+    <joint name="${robot_prefix}_world_joint" type="fixed">
+        <parent link="world" />
+        <child link="${robot_prefix}_link_0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
 
     <!-- iiwa -->
     <xacro:iiwa7
         robot_name="$(arg robot_name)"
-        parent = "world"
         sim="$(arg sim)"
         system_parameters_path="$(arg system_parameters_path)" />
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-    </xacro:iiwa7>
 
 
     <!-- End Effector -->
 
-    <link name="link_ee">
+    <link name="${robot_prefix}_link_ee">
         <inertial>
             <origin rpy="1.57 0 1.57" xyz="0 0 0.055525" />
             <mass value="0.55" />
@@ -53,18 +53,18 @@
         </collision>
     </link>
 
-    <joint name="joint_ee" type="fixed">
-        <parent link="link_7"/>
-        <child link="link_ee"/>
+    <joint name="${robot_prefix}_joint_ee" type="fixed">
+        <parent link="${robot_prefix}_link_7"/>
+        <child link="${robot_prefix}_link_ee"/>
         <origin rpy="0 0 3.14" xyz="0 0 0.035"/>
     </joint>
 
     <!-- TCP Link -->
-    <link name="link_tcp"/>
+    <link name="${robot_prefix}_link_tcp"/>
 
-    <joint name="joint_tcp" type="fixed">
-        <parent link="link_ee"/>
-        <child link="link_tcp"/>
+    <joint name="${robot_prefix}_joint_tcp" type="fixed">
+        <parent link="${robot_prefix}_link_ee"/>
+        <child link="${robot_prefix}_link_tcp"/>
         <!-- <origin rpy="0 0 0" xyz="0.00051 -0.00012 0.23332"/> NO FORCE TOOL -->
         <!-- <origin rpy="0 0 0" xyz="0.00243 0.0003 0.22498"/> -->
         <origin rpy="0 0 0" xyz="0.0 0.0 0.33149"/>
